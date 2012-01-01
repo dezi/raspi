@@ -25,6 +25,7 @@ while (! feof($if))
 	echo str_pad($bc,6," ",STR_PAD_LEFT) .  " MB\r";
 }
 
+echo str_pad($bc,6," ",STR_PAD_LEFT) .  " MB\n";
 echo "Done...\n";
 
 fclose($if);
