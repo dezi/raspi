@@ -1,0 +1,70 @@
+##########################################################################
+#
+# Dezi's environment mock ups.
+#
+
+all: mockup.bash mockup.vi local
+
+##########################################################################
+#
+# Mock up bash + vi
+#
+
+~/.bashrc.orig:
+	touch ~/.bashrc
+	cp ~/.bashrc ~/.bashrc.orig
+	sed -i "s/#alias ll='ls -l'/alias ll='ls -Al'/" ~/.bashrc
+	echo "alias psg='ps -eaf | grep -v grep | grep'" >> ~/.bashrc
+
+mockup.bash: ~/.bashrc.orig
+
+~/.vimrc.orig:
+	touch ~/.vimrc
+	cp ~/.vimrc ~/.vimrc.orig
+	echo "set tabstop=4" >> ~/.vimrc
+
+mockup.vi: ~/.vimrc.orig
+
+##########################################################################
+#
+# /usr/local directories.
+#
+
+/usr/local:
+	sudo mkdir -p /usr/local/
+	sudo mkdir -p /usr/local/etc/
+	sudo mkdir -p /usr/local/src/
+	sudo mkdir -p /usr/local/include/
+	sudo mkdir -p /usr/local/lib/
+	sudo mkdir -p /usr/local/games/
+	sudo mkdir -p /usr/local/lib64/
+	sudo mkdir -p /usr/local/lib64/perl5/
+	sudo mkdir -p /usr/local/libexec/
+	sudo mkdir -p /usr/local/share/
+	sudo mkdir -p /usr/local/share/man/
+	sudo mkdir -p /usr/local/share/man/man2x/
+	sudo mkdir -p /usr/local/share/man/man7x/
+	sudo mkdir -p /usr/local/share/man/man3x/
+	sudo mkdir -p /usr/local/share/man/man8x/
+	sudo mkdir -p /usr/local/share/man/man6x/
+	sudo mkdir -p /usr/local/share/man/man9/
+	sudo mkdir -p /usr/local/share/man/man7/
+	sudo mkdir -p /usr/local/share/man/man5x/
+	sudo mkdir -p /usr/local/share/man/man1x/
+	sudo mkdir -p /usr/local/share/man/man1/
+	sudo mkdir -p /usr/local/share/man/man6/
+	sudo mkdir -p /usr/local/share/man/man5/
+	sudo mkdir -p /usr/local/share/man/man2/
+	sudo mkdir -p /usr/local/share/man/man9x/
+	sudo mkdir -p /usr/local/share/man/man8/
+	sudo mkdir -p /usr/local/share/man/man3/
+	sudo mkdir -p /usr/local/share/man/mann/
+	sudo mkdir -p /usr/local/share/man/man4/
+	sudo mkdir -p /usr/local/share/man/man4x/
+	sudo mkdir -p /usr/local/share/info/
+	sudo mkdir -p /usr/local/share/perl5/
+	sudo mkdir -p /usr/local/share/applications/
+	sudo mkdir -p /usr/local/sbin/
+	sudo mkdir -p /usr/local/bin/
+
+local: /usr/local

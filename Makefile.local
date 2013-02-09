@@ -1,0 +1,1168 @@
+#####################################################################
+#
+# Build local source add ons from scratch, loads latest sources from web.
+#
+# Dennis Zierahn
+#
+
+yasm_version 				= 1.2.0
+cmake_version				= 2.8.10.2
+gperf_version 				= 3.0.4
+gmp_version					= 5.0.5
+
+libcddb_version				= 1.3.2
+libcdio_version				= 0.90
+libcdio-paranoia_version	= 10.2+0.90
+sdl_version					= 1.2.15
+frei0r_version				= 1.3
+fdk-aac_version				= trunk
+gnutls_version				= 3.0.22
+nettle_version				= 2.5
+vo-amrwbenc_version			= 0.1.2
+vo-aacenc_version			= 0.1.2
+xvidcore_version			= 1.3.2
+xavs_version				= trunk
+utvideo_version				= 11.1.1
+opus_version				= 1.0.2
+openjpeg_version			= 1.5.1
+speex_version 				= 1.2rc1
+expat_version 				= 2.1.0
+fontconfig_version 			= trunk
+fribidi_version 			= 0.19.5
+freetype_version 			= 2.4.11
+orc_version 				= 0.4.16
+schroedinger_version 		= 1.0.11
+bzip2_version 				= 1.0.6
+zlib_version 				= 1.2.7
+lame_version 				= 3.99.5
+faad2_version 				= 2.7
+faac_version 				= 1.28
+opencore-amr_version 		= 0.1.3
+alsa_version 				= 1.0.25
+libgsm_version 				= 1.0.13-4
+libass_version 				= 0.10.1
+libmad_version 				= 0.15.1b
+libogg_version 				= 1.3.0
+libvorbis_version 			= 1.3.3
+libtheora_version 			= 1.1.1
+libdvdcss_version 			= 1.2.12
+libaacplus_version 			= 2.0.2
+gpac_version 				= trunk
+mp4v2_version 				= trunk
+rtmpdump_version 			= trunk
+libvpx_version 				= trunk
+x264_version 				= trunk
+libcaca_version 			= trunk
+libbluray_version 			= trunk
+cd-discid_version			= trunk
+abcde_version				= 2.5.4
+atomicparsley_version		= trunk
+
+#####################################################################
+
+cd-discid = cd-discid-$(cd-discid_version)
+libcddb = libcddb-$(libcddb_version)
+libcdio = libcdio-$(libcdio_version)
+libcdio-paranoia = libcdio-paranoia-$(libcdio-paranoia_version)
+cmake = cmake-$(cmake_version)
+sdl = SDL-$(sdl_version)
+frei0r = frei0r-$(frei0r_version)
+fdk-aac = fdk-aac-$(fdk-aac_version)
+gnutls = gnutls-$(gnutls_version)
+nettle = nettle-$(nettle_version)
+gmp = gmp-$(gmp_version)
+vo-amrwbenc = vo-amrwbenc-$(vo-amrwbenc_version)
+vo-aacenc = vo-aacenc-$(vo-aacenc_version)
+xvidcore = xvidcore-$(xvidcore_version)
+xavs = xavs-$(xavs_version)
+utvideo = utvideo-$(utvideo_version)
+opus = opus-$(opus_version)
+openjpeg = openjpeg-$(openjpeg_version)
+speex = speex-$(speex_version)
+expat = expat-$(expat_version)
+gperf = gperf-$(gperf_version)
+fontconfig = fontconfig-$(fontconfig_version)
+fribidi = fribidi-$(fribidi_version)
+freetype = freetype-$(freetype_version)
+orc = orc-$(orc_version)
+schroedinger = schroedinger-$(schroedinger_version)
+bzip2 = bzip2-$(bzip2_version)
+zlib = zlib-$(zlib_version)
+yasm = yasm-$(yasm_version)
+lame = lame-$(lame_version)
+faad2 = faad2-$(faad2_version)
+faac = faac-$(faac_version)
+opencore-amr = opencore-amr-$(opencore-amr_version)
+alsa = alsa-lib-$(alsa_version)
+libgsm = libgsm-$(libgsm_version)
+libass = libass-$(libass_version)
+libmad = libmad-$(libmad_version)
+libogg = libogg-$(libogg_version)
+libvorbis = libvorbis-$(libvorbis_version)
+libtheora = libtheora-$(libtheora_version)
+libdvdcss = libdvdcss-$(libdvdcss_version)
+libaacplus = libaacplus-$(libaacplus_version)
+gpac = gpac-$(gpac_version)
+mp4v2 = mp4v2-$(mp4v2_version)
+rtmpdump = rtmpdump-$(rtmpdump_version)
+libvpx = libvpx-$(libvpx_version)
+x264 = x264-$(x264_version)
+libcaca = libcaca-$(libcaca_version)
+libbluray = libbluray-$(libbluray_version)
+abcde = abcde-$(abcde_version)
+atomicparsley = atomicparsley-$(atomicparsley_version)
+
+######################################################################
+#
+# Build section.
+#
+
+all: ./local ./download
+	cd ./local; make work
+
+work: tools # helpers codecs utilities
+
+tools: gmp yasm cmake gperf # expat zlib bzip2 nettle gnutls
+
+helpers: sdl alsa fontconfig freetype fribidi rtmpdump libdvdcss libcddb cd-discid
+
+codecs: \
+	libass xvidcore xavs utvideo opus openjpeg speex \
+	lame faac faad2 opencore-amr orc schroedinger \
+	frei0r fdk-aac vo-amrwbenc vo-aacenc libgsm \
+	libcaca libmad libogg libvorbis libtheora \
+	libaacplus x264 libbluray libvpx libcdio
+
+utilities: mp4v2 gpac libcdio-paranoia abcde atomicparsley
+
+#####################################################################
+#
+# Local setup
+#
+
+./local:
+	mkdir ./local
+	ln -s ../Makefile.local ./local/Makefile
+
+./download:
+	mkdir ./download
+
+#####################################################################
+#
+# gmp => nettle
+#
+
+$(gmp).tar.bz2: 
+	wget ftp://ftp.gnu.org/gnu/gmp/$(gmp).tar.bz2
+	tar -xvjf $(gmp).tar.bz2
+	mv $(gmp).tar.bz2 ../download
+
+$(gmp)/dezi.done:
+	cd $(gmp); \
+	./configure --enable-static; \
+	make; \
+	sudo make install \
+	touch dezi.done
+
+gmp: $(gmp).tar.bz2 $(gmp)/dezi.done
+
+#####################################################################
+#
+# yasm
+#
+
+$(yasm).tar.gz: 
+	wget http://www.tortall.net/projects/yasm/releases/$(yasm).tar.gz
+	tar -xvzf $(yasm).tar.gz 
+	mv -f $(yasm).tar.gz ../download
+
+$(yasm)/dezi.done:
+	cd $(yasm); \
+	./configure; \
+	make; \
+	sudo make install \
+	touch dezi.done
+
+yasm: $(yasm).tar.gz $(yasm)/dezi.done
+
+#####################################################################
+#
+# cmake
+#
+
+$(cmake): 
+	wget http://www.cmake.org/files/v2.8/$(cmake).tar.gz
+	tar -xvzf $(cmake).tar.gz
+	mv -f $(cmake).tar.gz ../download
+
+$(cmake)/dezi.done:
+	cd $(cmake); \
+	./configure; \
+	make; \
+	sudo make install \
+	touch dezi.done
+
+cmake: $(cmake) $(cmake)/dezi.done
+
+#####################################################################
+#
+# gperf
+#
+
+$(gperf).tar.gz: 
+	wget http://ftp.gnu.org/pub/gnu/gperf/$(gperf).tar.gz
+	tar -xvzf $(gperf).tar.gz 
+	mv -f $(gperf).tar.gz ../download
+
+$(gperf)/dezi.done:
+	cd $(gperf); \
+	./configure; \
+	make; \
+	sudo make install \
+	touch dezi.done
+
+gperf: $(gperf).tar.gz $(gperf)/dezi.done
+
+#####################################################################
+#
+# mp4v2
+#
+
+$(mp4v2):
+	svn co https://mp4v2.googlecode.com/svn/trunk $(mp4v2)
+
+$(mp4v2)/config.log:
+	cd $(mp4v2); \
+	autoreconf -fiv; \
+	./configure; \
+	make; \
+	sudo make install
+
+mp4v2: $(mp4v2) $(mp4v2)/config.log
+
+#####################################################################
+#
+# cd-discid
+#
+
+$(cd-discid): 
+	git clone https://github.com/taem/cd-discid.git $(cd-discid)
+
+$(cd-discid)/cd-discid:
+	cd $(cd-discid); \
+	make; \
+	sudo make install
+
+cd-discid: $(cd-discid) $(cd-discid)/cd-discid
+
+#####################################################################
+#
+# libcddb
+#
+
+$(libcddb).tar.bz2: 
+	wget http://prdownloads.sourceforge.net/libcddb/$(libcddb).tar.bz2
+
+$(libcddb)/Makefile:
+	tar -xvjf $(libcddb).tar.bz2
+	cd $(libcddb); \
+	./configure; \
+	make; \
+	sudo make install
+
+libcddb: $(libcddb).tar.bz2 $(libcddb)/Makefile
+
+#####################################################################
+#
+# libcdio
+#
+
+$(libcdio).tar.gz: 
+	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio).tar.gz
+
+$(libcdio)/Makefile:
+	tar -xvzf $(libcdio).tar.gz
+	cd $(libcdio); \
+	./configure; \
+	make; \
+	sudo make install
+
+libcdio: $(libcdio).tar.gz $(libcdio)/Makefile
+
+#####################################################################
+#
+# libcdio-paranoia
+#
+
+$(libcdio-paranoia).tar.gz: 
+	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio-paranoia).tar.gz
+
+$(libcdio-paranoia)/Makefile:
+	tar -xvzf $(libcdio-paranoia).tar.gz
+	cd $(libcdio-paranoia); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	./configure; \
+	make; \
+	sudo make install
+
+libcdio-paranoia: $(libcdio-paranoia).tar.gz $(libcdio-paranoia)/Makefile
+
+#####################################################################
+#
+# fdk-aac
+#
+
+$(fdk-aac): 
+	git clone https://github.com/mstorsjo/fdk-aac.git $(fdk-aac)
+
+$(fdk-aac)/Makefile:
+	cd $(fdk-aac); \
+	autoreconf -fiv; \
+	./configure; \
+	make; \
+	sudo make install
+
+fdk-aac: $(fdk-aac) $(fdk-aac)/Makefile
+
+#####################################################################
+#
+# sdl
+#
+
+$(sdl).tar.gz: 
+	wget http://www.libsdl.org/release/SDL-$(sdl_version).tar.gz -O $(sdl).tar.gz
+
+$(sdl)/Makefile:
+	tar -xvzf $(sdl).tar.gz
+	cd $(sdl); \
+	./configure; \
+	make; \
+	sudo make install
+
+sdl: $(sdl).tar.gz $(sdl)/Makefile
+
+#####################################################################
+#
+# frei0r
+#
+
+$(frei0r).tar.gz: 
+	wget http://www.piksel.no/frei0r/releases/frei0r-plugins-$(frei0r_version).tar.gz -O $(frei0r).tar.gz
+
+$(frei0r)/Makefile:
+	tar -xvzf $(frei0r).tar.gz
+	cd $(frei0r); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+frei0r: $(frei0r).tar.gz $(frei0r)/Makefile
+
+#####################################################################
+#
+# nettle => gnutls
+#
+
+$(nettle).tar.gz: 
+	wget http://www.lysator.liu.se/~nisse/archive/$(nettle).tar.gz
+
+$(nettle)/Makefile:
+	tar -xvzf $(nettle).tar.gz
+	cd $(nettle); \
+	./configure; \
+	make; \
+	sudo make install
+
+nettle: $(nettle).tar.gz $(nettle)/Makefile
+
+#####################################################################
+#
+# gnutls
+#
+
+$(gnutls).tar.xz: 
+	wget ftp://ftp.gnu.org/gnu/gnutls/$(gnutls).tar.xz
+
+$(gnutls)/Makefile:
+	tar -xvJf $(gnutls).tar.xz
+	cd $(gnutls); \
+	./configure --enable-static; \
+	make; \
+	sudo make install
+
+gnutls: $(gnutls).tar.xz $(gnutls)/Makefile
+
+#####################################################################
+#
+# vo-amrwbenc
+#
+
+$(vo-amrwbenc).tar.gz: 
+	wget http://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/$(vo-amrwbenc).tar.gz
+
+$(vo-amrwbenc)/Makefile:
+	tar -xvzf $(vo-amrwbenc).tar.gz
+	cd $(vo-amrwbenc); \
+	./configure; \
+	make; \
+	sudo make install
+
+vo-amrwbenc: $(vo-amrwbenc).tar.gz $(vo-amrwbenc)/Makefile
+
+#####################################################################
+#
+# vo-aacenc
+#
+
+$(vo-aacenc).tar.gz: 
+	wget http://sourceforge.net/projects/opencore-amr/files/vo-aacenc/$(vo-aacenc).tar.gz
+
+$(vo-aacenc)/Makefile:
+	tar -xvzf $(vo-aacenc).tar.gz
+	cd $(vo-aacenc); \
+	./configure; \
+	make; \
+	sudo make install
+
+vo-aacenc: $(vo-aacenc).tar.gz $(vo-aacenc)/Makefile
+
+#####################################################################
+#
+# orc => schroedinger
+#
+
+$(orc).tar.gz: 
+	wget http://code.entropywave.com/download/orc/$(orc).tar.gz
+
+$(orc)/Makefile:
+	tar -xvzf $(orc).tar.gz
+	cd $(orc); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+orc: $(orc).tar.gz $(orc)/Makefile
+
+#####################################################################
+#
+# schroedinger
+#
+
+$(schroedinger).tar.gz: 
+	wget http://diracvideo.org/download/schroedinger/$(schroedinger).tar.gz
+
+$(schroedinger)/Makefile:
+	tar -xvzf $(schroedinger).tar.gz
+	cd $(schroedinger); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+schroedinger: $(schroedinger).tar.gz $(schroedinger)/Makefile
+
+#####################################################################
+#
+# libgsm
+#
+
+$(libgsm).tar.xz: 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(libgsm).tar.xz
+
+$(libgsm)/Makefile:
+	tar -xvJf $(libgsm).tar.xz
+	cd $(libgsm); \
+	sed -i 's/INSTALL_ROOT\t=/INSTALL_ROOT\t= \/usr\/local/g' Makefile; \
+	sed -i 's/GSM_INSTALL_ROOT)\/inc/GSM_INSTALL_ROOT)\/include/g' Makefile; \
+	sed -i 's/-c -O2/-fPIC -c -O2/g' Makefile; \
+	make; \
+	sudo make install
+
+libgsm: $(libgsm).tar.xz $(libgsm)/Makefile
+
+#####################################################################
+#
+# libass
+#
+
+$(libass).tar.xz: 
+	wget http://libass.googlecode.com/files/$(libass).tar.xz
+
+$(libass)/Makefile:
+	tar -xvJf $(libass).tar.xz
+	cd $(libass); \
+	./configure; \
+	make; \
+	sudo make install
+
+libass: $(libass).tar.xz $(libass)/Makefile
+
+#####################################################################
+#
+# bzip2
+#
+
+$(bzip2).tar.xz: 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/bzip2-$(bzip2_version).tar.xz
+
+$(bzip2)/bzip2:
+	tar -xvJf $(bzip2).tar.xz
+	cd $(bzip2); \
+	sed -i 's/CC=gcc/CC=gcc -fPIC/g' Makefile; \
+	make; \
+	sudo make install
+
+bzip2: $(bzip2).tar.xz $(bzip2)/bzip2
+
+#####################################################################
+#
+# zlib
+#
+
+$(zlib).tar.gz: 
+	wget http://zlib.net/$(zlib).tar.gz
+
+$(zlib)/Makefile:
+	tar -xvzf $(zlib).tar.gz 
+	cd $(zlib); \
+	./configure; \
+	make; \
+	sudo make install
+
+zlib: $(zlib).tar.gz $(zlib)/Makefile
+
+#####################################################################
+#
+# libmad
+#
+
+$(libmad).tar.gz: 
+	wget  http://downloads.sourceforge.net/mad/$(libmad).tar.gz
+
+$(libmad)/Makefile:
+	tar -xvzf $(libmad).tar.gz 
+	cd $(libmad); \
+	sed -i '/-fforce-mem/d' configure; \
+	./configure; \
+	make; \
+	sudo make install
+
+libmad: $(libmad).tar.gz $(libmad)/Makefile
+
+#####################################################################
+#
+# libogg
+#
+
+$(libogg).tar.gz: 
+	wget http://downloads.xiph.org/releases/ogg/$(libogg).tar.gz
+
+$(libogg)/Makefile:
+	tar -xvzf $(libogg).tar.gz 
+	cd $(libogg); \
+	./configure; \
+	make; \
+	sudo make install
+
+libogg: $(libogg).tar.gz $(libogg)/Makefile
+
+#####################################################################
+#
+# libvorbis
+#
+
+$(libvorbis).tar.gz: 
+	wget http://downloads.xiph.org/releases/vorbis/$(libvorbis).tar.gz
+
+$(libvorbis)/Makefile:
+	tar -xvzf $(libvorbis).tar.gz 
+	cd $(libvorbis); \
+	./configure; \
+	make; \
+	sudo make install
+
+libvorbis: $(libvorbis).tar.gz $(libvorbis)/Makefile
+
+#####################################################################
+#
+# libtheora
+#
+
+$(libtheora).tar.gz: 
+	wget http://downloads.xiph.org/releases/theora/$(libtheora).tar.gz
+
+$(libtheora)/Makefile:
+	tar -xvzf $(libtheora).tar.gz 
+	cd $(libtheora); \
+	./configure; \
+	make; \
+	sudo make install
+
+libtheora: $(libtheora).tar.gz $(libtheora)/Makefile
+
+#####################################################################
+#
+# lame
+#
+
+$(lame).tar.gz: 
+	wget http://sourceforge.net/projects/lame/files/lame/3.99/$(lame).tar.gz
+
+$(lame)/Makefile:
+	tar -xvzf $(lame).tar.gz 
+	cd $(lame); \
+	./configure; \
+	make; \
+	sudo make install
+
+lame: $(lame).tar.gz $(lame)/Makefile
+
+#####################################################################
+#
+# faac
+#
+
+$(faac).tar.gz: 
+	wget http://downloads.sourceforge.net/faac/$(faac).tar.gz
+	wget http://www.linuxfromscratch.org/patches/blfs/svn/faac-$(faac_version)-glibc_fixes-1.patch
+
+$(faac)/Makefile:
+	tar -xvzf $(faac).tar.gz 
+	cd $(faac); \
+	patch -Np1 -i ../faac-$(faac_version)-glibc_fixes-1.patch; \
+	./configure; \
+	make; \
+	sudo make install
+
+faac: $(faac).tar.gz $(faac)/Makefile
+
+#####################################################################
+#
+# faad2
+#
+
+$(faad2).tar.gz: 
+	wget http://downloads.sourceforge.net/faac/$(faad2).tar.gz
+
+$(faad2)/Makefile:
+	tar -xvzf $(faad2).tar.gz 
+	cd $(faad2); \
+	./configure; \
+	make; \
+	sudo make install
+
+faad2: $(faad2).tar.gz $(faad2)/Makefile
+
+#####################################################################
+#
+# opencore-amr
+#
+
+$(opencore-amr).tar.gz: 
+	wget http://sourceforge.net/projects/opencore-amr/files/opencore-amr/$(opencore-amr).tar.gz
+
+$(opencore-amr)/Makefile:
+	tar -xvzf $(opencore-amr).tar.gz 
+	cd $(opencore-amr); \
+	./configure; \
+	make; \
+	sudo make install
+
+opencore-amr: $(opencore-amr).tar.gz $(opencore-amr)/Makefile
+
+#####################################################################
+#
+# openjpeg
+#
+
+$(openjpeg).tar.xz: 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(openjpeg).tar.xz
+
+$(openjpeg)/Makefile:
+	tar -xvJf $(openjpeg).tar.xz 
+	cd $(openjpeg); \
+	./configure; \
+	make; \
+	sudo make install
+
+openjpeg: $(openjpeg).tar.xz $(openjpeg)/Makefile
+
+#####################################################################
+#
+# utvideo
+#
+
+$(utvideo).zip: 
+	wget http://github.com/downloads/rdp/FFmpeg/$(utvideo)-src.zip -O $(utvideo).zip
+	unzip $(utvideo).zip
+
+$(utvideo)/Makefile:
+	cd $(utvideo); \
+	sed -i 's/CXXFLAGS=/CXXFLAGS=-fPIC /g' GNUmakefile; \
+	make; \
+	sudo make install; \
+	touch Makefile 
+
+utvideo: $(utvideo).zip $(utvideo)/Makefile
+
+#####################################################################
+#
+# opus
+#
+
+$(opus).tar.gz: 
+	wget http://downloads.xiph.org/releases/opus/$(opus).tar.gz
+
+$(opus)/Makefile:
+	tar -xvzf $(opus).tar.gz 
+	cd $(opus); \
+	./configure; \
+	make; \
+	sudo make install
+
+opus: $(opus).tar.gz $(opus)/Makefile
+
+#####################################################################
+#
+# xvidcore
+#
+
+$(xvidcore).tar.gz: 
+	wget http://downloads.xvid.org/downloads/$(xvidcore).tar.gz
+
+$(xvidcore)/Make.dummy:
+	rm -rf $(xvidcore)
+	tar -xvzf $(xvidcore).tar.gz 
+	mv xvidcore $(xvidcore) 
+	cd $(xvidcore)/build/generic; \
+	./configure; \
+	make; \
+	sudo make install; \
+	cd ../..; \
+	touch Make.dummy
+
+xvidcore: $(xvidcore).tar.gz $(xvidcore)/Make.dummy
+
+#####################################################################
+#
+# speex
+#
+
+$(speex).tar.gz: 
+	wget http://downloads.xiph.org/releases/speex/$(speex).tar.gz
+
+$(speex)/Makefile:
+	tar -xvzf $(speex).tar.gz 
+	cd $(speex); \
+	./configure; \
+	make; \
+	sudo make install
+
+speex: $(speex).tar.gz $(speex)/Makefile
+
+#####################################################################
+#
+# expat => fontconfig
+#
+
+$(expat).tar.gz: 
+	wget http://heanet.dl.sourceforge.net/project/expat/expat/$(expat_version)/$(expat).tar.gz
+
+$(expat)/Makefile:
+	tar -xvzf $(expat).tar.gz 
+	cd $(expat); \
+	./configure; \
+	make; \
+	sudo make install
+
+expat: $(expat).tar.gz $(expat)/Makefile
+
+#####################################################################
+#
+# fontconfig => libass
+#
+
+$(fontconfig): 
+	git clone http://cgit.freedesktop.org/fontconfig $(fontconfig)
+
+$(fontconfig)/Makefile:
+	cd $(fontconfig); \
+	./autogen.sh; \
+	./configure -disable-docs; \
+	make; \
+	sudo make install
+
+fontconfig: $(fontconfig) $(fontconfig)/Makefile
+
+#####################################################################
+#
+# fribidi => libass
+#
+
+$(fribidi).tar.bz2: 
+	wget http://fribidi.org/download/$(fribidi).tar.bz2
+
+$(fribidi)/Makefile:
+	tar -xvjf $(fribidi).tar.bz2 
+	cd $(fribidi); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+fribidi: $(fribidi).tar.bz2 $(fribidi)/Makefile
+
+#####################################################################
+#
+# freetype => libass
+#
+
+$(freetype).tar.bz2: 
+	wget http://ignum.dl.sourceforge.net/project/freetype/freetype2/$(freetype_version)/$(freetype).tar.bz2
+
+$(freetype)/Makefile:
+	tar -xvjf $(freetype).tar.bz2 
+	cd $(freetype); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+freetype: $(freetype).tar.bz2 $(freetype)/Makefile
+
+#####################################################################
+#
+# alsa
+#
+
+$(alsa).tar.bz2: 
+	wget http://mirrors.zerg.biz/alsa/lib/$(alsa).tar.bz2
+
+$(alsa)/Makefile:
+	tar -xvjf $(alsa).tar.bz2 
+	cd $(alsa); \
+	./configure --prefix=/usr/local --enable-static=yes --enable-shared=no; \
+	make; \
+	sudo make install; \
+	make clean; \
+	./configure --prefix=/usr/local --enable-static=no --enable-shared=yes; \
+	make; \
+	sudo make install
+
+alsa: $(alsa).tar.bz2 $(alsa)/Makefile
+
+#####################################################################
+#
+# libdvdcss
+#
+
+$(libdvdcss).tar.bz2: 
+	wget http://www.videolan.org/pub/libdvdcss/$(libdvdcss_version)/$(libdvdcss).tar.bz2
+
+$(libdvdcss)/Makefile:
+	tar -xvjpf $(libdvdcss).tar.bz2 
+	cd $(libdvdcss); \
+	./configure; \
+	make; \
+	sudo make install
+	
+libdvdcss: $(libdvdcss).tar.bz2 $(libdvdcss)/Makefile
+
+#####################################################################
+#
+# libaacplus
+#
+
+$(libaacplus).tar.gz: 
+	wget http://217.20.164.161/~tipok/aacplus/$(libaacplus).tar.gz
+	#wget http://ffmpeg.gusari.org/uploads/$(libaacplus).tar.gz
+
+$(libaacplus)/Makefile:
+	tar -xzf $(libaacplus).tar.gz 
+	cd $(libaacplus); \
+	./autogen.sh --enable-shared --enable-static; \
+	make; \
+	sudo make install
+	
+libaacplus: $(libaacplus).tar.gz $(libaacplus)/Makefile
+
+#####################################################################
+#
+# rtmpdump
+#
+
+$(rtmpdump): 
+	git clone git://git.ffmpeg.org/rtmpdump $(rtmpdump)
+
+$(rtmpdump)/rtmpdump:
+	cd $(rtmpdump); \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
+	make; \
+	sudo make install
+
+rtmpdump: $(rtmpdump) $(rtmpdump)/rtmpdump
+
+#####################################################################
+#
+# x264
+#
+
+$(x264): 
+	git clone git://git.videolan.org/x264 $(x264)
+
+$(x264)/x264.o:
+	cd $(x264); \
+	./configure --enable-shared; \
+	make; \
+	sudo make install; \
+	sudo make install-lib-dev; \
+	sudo make install-lib-shared; \
+	sudo make install-lib-static
+
+x264: $(x264) $(x264)/x264.o
+
+#####################################################################
+#
+# libbluray
+#
+
+$(libbluray): 
+	git clone git://git.videolan.org/libbluray.git $(libbluray)
+
+$(libbluray)/Makefile: 
+	cd $(libbluray); \
+	./bootstrap; \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install
+
+libbluray: $(libbluray) $(libbluray)/Makefile
+
+#####################################################################
+#
+# libcaca
+#
+
+$(libcaca): 
+	git clone git://git.zoy.org/libcaca.git $(libcaca)
+
+$(libcaca)/Makefile: 
+	cd $(libcaca); \
+	./bootstrap; \
+	./configure; \
+	make; \
+	sudo make install
+
+libcaca: $(libcaca) $(libcaca)/Makefile
+
+#####################################################################
+#
+# libvpx
+#
+
+$(libvpx): 
+	git clone http://git.chromium.org/webm/libvpx.git $(libvpx)
+
+$(libvpx)/Makefile: 
+	cd $(libvpx); \
+	./configure --enable-static --disable-shared; \
+	make; \
+	sudo make install
+
+libvpx: $(libvpx) $(libvpx)/Makefile
+
+#####################################################################
+#
+# xavs
+#
+
+$(xavs):
+	svn co https://xavs.svn.sourceforge.net/svnroot/xavs/trunk $(xavs)
+
+$(xavs)/config.mak:
+	cd $(xavs); \
+	./configure --enable-pic --enable-shared --disable-asm; \
+	make; \
+	sudo make install
+
+xavs: $(xavs) $(xavs)/config.mak
+
+#####################################################################
+#
+# gpac
+#
+
+$(gpac):
+	svn co https://gpac.svn.sourceforge.net/svnroot/gpac/trunk/gpac $(gpac)
+
+$(gpac)/config.mak:
+	cd $(gpac); \
+	./configure --static-mp4box; \
+	make; \
+	sudo make install
+
+gpac: $(gpac) $(gpac)/config.mak
+
+#####################################################################
+#
+# atomicparsley
+#
+
+$(atomicparsley):
+	git clone https://github.com/beatgammit/atomicparsley.git $(atomicparsley)
+
+$(atomicparsley)/AtomicParsley:
+	cd $(atomicparsley); \
+	./autogen.sh; \
+	./configure; \
+	make; \
+	sudo make install
+
+atomicparsley: $(atomicparsley) $(atomicparsley)/AtomicParsley
+
+#####################################################################
+#
+# abcde
+#
+
+$(abcde).tar.gz: 
+	wget http://abcde.googlecode.com/files/$(abcde).tar.gz
+
+$(abcde)/done:
+	tar -xvzf $(abcde).tar.gz
+	cd $(abcde); \
+	sed -i "s/DESTDIR}\/usr/DESTDIR}\/usr\/local/g" Makefile; \
+	make; \
+	sudo make install; \
+	touch done
+
+abcde: $(abcde).tar.gz $(abcde)/done
+
+#####################################################################
+#
+# ffmpeg
+#
+
+ffmpeg-trunk: 
+	git clone git://source.ffmpeg.org/ffmpeg ffmpeg-trunk
+	
+ffmpeg-common = \
+	--enable-gpl \
+	--enable-version3 \
+	--enable-nonfree \
+	--enable-runtime-cpudetect \
+	--enable-hardcoded-tables \
+	--enable-zlib \
+	--enable-bzlib \
+	--enable-gnutls \
+	--enable-librtmp \
+	--enable-libfreetype \
+	--enable-libfdk-aac \
+	--enable-libopencore-amrnb \
+	--enable-libopencore-amrwb \
+	--enable-libvo-aacenc \
+	--enable-libvo-amrwbenc \
+	--enable-libmp3lame \
+	--enable-libopenjpeg \
+	--enable-libtheora \
+	--enable-libvorbis \
+	--enable-libspeex \
+	--enable-libass \
+	--enable-libopus \
+	--enable-libgsm \
+	--enable-libvpx \
+	--enable-libxavs \
+	--enable-libxvid \
+	--enable-libx264 \
+	--enable-libbluray \
+	--enable-libschroedinger \
+	--enable-libutvideo \
+	--enable-libcdio \
+	--enable-fontconfig \
+	--enable-frei0r \
+	--enable-filter=frei0r \
+	
+ffmpeg-static = \
+	--disable-ffserver \
+	--disable-shared \
+	--enable-static \
+	--extra-cflags=--static	\
+	--extra-libs="-lm" \
+	--extra-libs="-ldl" \
+	--extra-libs="-lrt" \
+	--extra-libs="-lexpat" \
+	--extra-libs="-lfreetype" \
+	--extra-libs="-lfontconfig" \
+	--extra-libs="-lfribidi" \
+	--extra-libs="-lorc-0.4" \
+	--extra-libs="-lgmp" \
+	--extra-libs="-lhogweed" \
+	--extra-libs="-lnettle" \
+	--extra-libs="-lgnutls" \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-static" \
+	
+ffmpeg-shared = \
+	--enable-shared \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	
+ffmpeg-moreoptions-dont-work:
+
+ffmpeg-moreoptions-dont-want:
+	--disable-mmx \
+	--enable-libfaac \
+	--disable-w32threads \
+	
+ffmpeg-trunk/config.static.done:
+	cd ffmpeg-trunk; \
+	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+	make clean; \
+	rm -f ffmpeg ffplay ffprobe ffserver; \
+	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	./configure $(ffmpeg-static) $(ffmpeg-common); \
+	make || exit; \
+	sudo make install; \
+	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \
+	sudo mv -f /usr/local/bin/ffplay  /usr/local/bin/ffplay-static; \
+	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
+	touch config.static.done
+	
+ffmpeg-trunk/config.shared.done:
+	cd ffmpeg-trunk; \
+	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+	make clean; \
+	rm -f ffmpeg ffplay ffprobe ffserver; \
+	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	./configure $(ffmpeg-shared) $(ffmpeg-common); \
+	make || exit; \
+	sudo make install; \
+	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
+	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared; \
+	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared; \
+	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
+	touch config.shared.done
+	
+ffmpeg: ffmpeg-trunk ffmpeg-trunk/config.static.done ffmpeg-trunk/config.shared.done 
+
+#####################################################################
+#
+# tvheadend
+#
+
+tvheadend: 
+	git clone git://github.com/tvheadend/tvheadend.git tvheadend-trunk
+
+#####################################################################
+#
+# v8
+#
+
+v8: 
+	git clone git://github.com/v8/v8.git v8-trunk

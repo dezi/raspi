@@ -1,0 +1,17 @@
+##########################################################################
+#
+# Dezi's CentOS mock ups.
+#
+
+all: update daemons
+
+daemons: 
+
+##########################################################################
+#
+# Update and upgrade system
+#
+
+update:
+	sudo yum update
+	sudo yum upgrade

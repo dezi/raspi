@@ -1,0 +1,74 @@
+##########################################################################
+#
+# Dezi's Raspberry Pi mock ups.
+#
+
+all: daemons developer
+allxx: update daemons
+
+daemons: proftpd samba
+
+##########################################################################
+#
+# Update and upgrade system
+#
+
+update:
+	sudo apt-get update -y
+	sudo apt-get upgrade -y
+
+##########################################################################
+#
+# ProFTPD
+#
+
+/etc/proftpd/proftpd.conf:
+	sudo apt-get install -y proftpd
+
+proftpd: /etc/proftpd/proftpd.conf
+
+##########################################################################
+#
+# Samba
+#
+
+/usr/sbin/smbd:
+	sudo apt-get install -y samba
+
+/usr/bin/smbpasswd:
+	sudo apt-get install -y samba-common-bin
+	smbpasswd
+
+samba: /usr/sbin/smbd /usr/bin/smbpasswd
+
+##########################################################################
+#
+# Developer packages
+#
+
+/usr/bin/svn:
+	sudo apt-get install -y subversion
+
+/usr/bin/eject:
+	sudo apt-get install -y eject
+
+/usr/bin/gperf:
+	sudo apt-get install -y gperf
+
+/usr/bin/autoconf:
+	sudo apt-get install -y autoconf
+
+/usr/bin/libtool:
+	sudo apt-get install -y libtool
+
+/usr/bin/apt-file:
+	sudo apt-get install -y apt-file
+
+developer: \
+	/usr/bin/svn \
+	/usr/bin/eject \
+	/usr/bin/gperf \
+	/usr/bin/libtool \
+	/usr/bin/autoconf \
+	/usr/bin/apt-file \
+	
