@@ -39,29 +39,28 @@ libcaca_version 			= git
 opus_version				= 1.0.2
 openjpeg_version			= 1.5.1
 x264_version 				= git
+lame_version 				= 3.99.5
+faac_version 				= 1.28
+faad2_version 				= 2.7
+opencore-amr_version 		= 0.1.3
+vo-amrwbenc_version			= 0.1.2
+vo-aacenc_version			= 0.1.2
 xvidcore_version			= 1.3.2
 orc_version 				= 0.4.16
 schroedinger_version 		= 1.0.11
+xavs_version				= svn
+utvideo_version				= 11.1.1
+speex_version 				= 1.2rc1
 
 cd-discid_version			= git
 libcdio-paranoia_version	= 10.2+0.90
 abcde_version				= 2.5.4
 atomicparsley_version		= git
 mp4v2_version 				= svn
-
+gpac_version 				= svn
 
 frei0r_version				= 1.3
 fdk-aac_version				= trunk
-vo-amrwbenc_version			= 0.1.2
-vo-aacenc_version			= 0.1.2
-xavs_version				= trunk
-utvideo_version				= 11.1.1
-speex_version 				= 1.2rc1
-lame_version 				= 3.99.5
-faad2_version 				= 2.7
-faac_version 				= 1.28
-opencore-amr_version 		= 0.1.3
-gpac_version 				= trunk
 
 #####################################################################
 
@@ -136,11 +135,12 @@ codecs: \
 	libogg libvorbis libtheora libbluray libvpx \
 	libaacplus libcaca \
 	opus openjpeg xvidcore x264 \
-	orc schroedinger #xavs utvideo speex \
 	lame faac faad2 opencore-amr \
-	frei0r fdk-aac vo-amrwbenc vo-aacenc \
+	vo-amrwbenc vo-aacenc \
+	orc schroedinger xavs utvideo speex \
+	frei0r fdk-aac \
 
-utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 # gpac
+utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
 #####################################################################
 #
@@ -764,6 +764,125 @@ x264: $(x264) $(x264)/dezi.done
 
 #####################################################################
 #
+# lame
+#
+
+$(lame): 
+	wget http://sourceforge.net/projects/lame/files/lame/3.99/$(lame).tar.gz
+	tar -xvzf $(lame).tar.gz 
+	mv -f $(lame).tar.gz ../download
+
+$(lame)/dezi.done:
+	cd $(lame); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+lame: $(lame) $(lame)/dezi.done
+
+#####################################################################
+#
+# faac
+#
+
+$(faac): 
+	wget http://downloads.sourceforge.net/faac/$(faac).tar.gz
+	wget http://www.linuxfromscratch.org/patches/blfs/svn/faac-$(faac_version)-glibc_fixes-1.patch
+	tar -xvzf $(faac).tar.gz 
+	mv -f $(faac).tar.gz ../download
+	cd $(faac); \
+	patch -Np1 -i ../faac-$(faac_version)-glibc_fixes-1.patch; \
+	cd ..;\
+	mv -f faac-$(faac_version)-glibc_fixes-1.patch ../download
+
+$(faac)/dezi.done:
+	cd $(faac); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+faac: $(faac) $(faac)/dezi.done
+
+#####################################################################
+#
+# faad2
+#
+
+$(faad2).tar.gz: 
+	wget http://downloads.sourceforge.net/faac/$(faad2).tar.gz
+	tar -xvzf $(faad2).tar.gz 
+	mv -f $(faad2).tar.gz ../download
+
+$(faad2)/dezi.done:
+	cd $(faad2); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+faad2: $(faad2) $(faad2)/dezi.done
+
+#####################################################################
+#
+# opencore-amr
+#
+
+$(opencore-amr): 
+	wget http://sourceforge.net/projects/opencore-amr/files/opencore-amr/$(opencore-amr).tar.gz
+	tar -xvzf $(opencore-amr).tar.gz 
+	mv -f $(opencore-amr).tar.gz ../download
+
+$(opencore-amr)/dezi.done:
+	cd $(opencore-amr); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+opencore-amr: $(opencore-amr) $(opencore-amr)/dezi.done
+
+#####################################################################
+#
+# vo-amrwbenc
+#
+
+$(vo-amrwbenc): 
+	wget http://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/$(vo-amrwbenc).tar.gz
+	tar -xvzf $(vo-amrwbenc).tar.gz
+	mv -f $(vo-amrwbenc).tar.gz ../download
+
+$(vo-amrwbenc)/dezi.done:
+	cd $(vo-amrwbenc); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+vo-amrwbenc: $(vo-amrwbenc) $(vo-amrwbenc)/dezi.done
+
+#####################################################################
+#
+# vo-aacenc
+#
+
+$(vo-aacenc): 
+	wget http://sourceforge.net/projects/opencore-amr/files/vo-aacenc/$(vo-aacenc).tar.gz
+	tar -xvzf $(vo-aacenc).tar.gz
+	mv -f $(vo-aacenc).tar.gz ../download
+
+$(vo-aacenc)/dezi.done:
+	cd $(vo-aacenc); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+vo-aacenc: $(vo-aacenc) $(vo-aacenc)/dezi.done
+
+#####################################################################
+#
 # orc => schroedinger
 #
 
@@ -800,6 +919,63 @@ $(schroedinger)/dezi.done:
 	touch dezi.done
 
 schroedinger: $(schroedinger) $(schroedinger)/dezi.done
+
+#####################################################################
+#
+# xavs
+#
+
+$(xavs):
+	svn co https://xavs.svn.sourceforge.net/svnroot/xavs/trunk $(xavs)
+	tar -cvzf $(xavs).tar.gz $(xavs)
+	mv -f $(xavs).tar.gz ../download
+
+$(xavs)/dezi.done:
+	cd $(xavs); \
+	./configure --enable-pic --enable-shared --disable-asm; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+xavs: $(xavs) $(xavs)/dezi.done
+
+#####################################################################
+#
+# utvideo
+#
+
+$(utvideo): 
+	wget http://github.com/downloads/rdp/FFmpeg/$(utvideo)-src.zip -O $(utvideo).zip
+	unzip $(utvideo).zip
+	mv -f $(utvideo).zip ../download
+
+$(utvideo)/dezi.done:
+	cd $(utvideo); \
+	sed -i 's/CXXFLAGS=/CXXFLAGS=-fPIC /g' GNUmakefile; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+utvideo: $(utvideo) $(utvideo)/dezi.done
+
+#####################################################################
+#
+# speex
+#
+
+$(speex): 
+	wget http://downloads.xiph.org/releases/speex/$(speex).tar.gz
+	tar -xvzf $(speex).tar.gz 
+	mv -f $(speex).tar.gz ../download
+
+$(speex)/dezi.done:
+	cd $(speex); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+speex: $(speex) $(speex)/dezi.done
 
 #####################################################################
 #
@@ -921,6 +1097,25 @@ mp4v2: $(mp4v2) $(mp4v2)/dezi.done
 
 #####################################################################
 #
+# gpac
+#
+
+$(gpac):
+	svn co https://gpac.svn.sourceforge.net/svnroot/gpac/trunk/gpac $(gpac)
+	tar -cvzf $(gpac).tar.gz  $(gpac)
+	mv -f $(gpac).tar.gz ../download
+
+$(gpac)/dezi.done:
+	cd $(gpac); \
+	./configure --static-mp4box; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+gpac: $(gpac) $(gpac)/dezi.done
+
+#####################################################################
+#
 # fdk-aac
 #
 
@@ -952,177 +1147,6 @@ $(frei0r)/Makefile:
 	sudo make install
 
 frei0r: $(frei0r).tar.gz $(frei0r)/Makefile
-
-#####################################################################
-#
-# vo-amrwbenc
-#
-
-$(vo-amrwbenc).tar.gz: 
-	wget http://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/$(vo-amrwbenc).tar.gz
-
-$(vo-amrwbenc)/Makefile:
-	tar -xvzf $(vo-amrwbenc).tar.gz
-	cd $(vo-amrwbenc); \
-	./configure; \
-	make; \
-	sudo make install
-
-vo-amrwbenc: $(vo-amrwbenc).tar.gz $(vo-amrwbenc)/Makefile
-
-#####################################################################
-#
-# vo-aacenc
-#
-
-$(vo-aacenc).tar.gz: 
-	wget http://sourceforge.net/projects/opencore-amr/files/vo-aacenc/$(vo-aacenc).tar.gz
-
-$(vo-aacenc)/Makefile:
-	tar -xvzf $(vo-aacenc).tar.gz
-	cd $(vo-aacenc); \
-	./configure; \
-	make; \
-	sudo make install
-
-vo-aacenc: $(vo-aacenc).tar.gz $(vo-aacenc)/Makefile
-
-#####################################################################
-#
-# lame
-#
-
-$(lame).tar.gz: 
-	wget http://sourceforge.net/projects/lame/files/lame/3.99/$(lame).tar.gz
-
-$(lame)/Makefile:
-	tar -xvzf $(lame).tar.gz 
-	cd $(lame); \
-	./configure; \
-	make; \
-	sudo make install
-
-lame: $(lame).tar.gz $(lame)/Makefile
-
-#####################################################################
-#
-# faac
-#
-
-$(faac).tar.gz: 
-	wget http://downloads.sourceforge.net/faac/$(faac).tar.gz
-	wget http://www.linuxfromscratch.org/patches/blfs/svn/faac-$(faac_version)-glibc_fixes-1.patch
-
-$(faac)/Makefile:
-	tar -xvzf $(faac).tar.gz 
-	cd $(faac); \
-	patch -Np1 -i ../faac-$(faac_version)-glibc_fixes-1.patch; \
-	./configure; \
-	make; \
-	sudo make install
-
-faac: $(faac).tar.gz $(faac)/Makefile
-
-#####################################################################
-#
-# faad2
-#
-
-$(faad2).tar.gz: 
-	wget http://downloads.sourceforge.net/faac/$(faad2).tar.gz
-
-$(faad2)/Makefile:
-	tar -xvzf $(faad2).tar.gz 
-	cd $(faad2); \
-	./configure; \
-	make; \
-	sudo make install
-
-faad2: $(faad2).tar.gz $(faad2)/Makefile
-
-#####################################################################
-#
-# opencore-amr
-#
-
-$(opencore-amr).tar.gz: 
-	wget http://sourceforge.net/projects/opencore-amr/files/opencore-amr/$(opencore-amr).tar.gz
-
-$(opencore-amr)/Makefile:
-	tar -xvzf $(opencore-amr).tar.gz 
-	cd $(opencore-amr); \
-	./configure; \
-	make; \
-	sudo make install
-
-opencore-amr: $(opencore-amr).tar.gz $(opencore-amr)/Makefile
-
-#####################################################################
-#
-# utvideo
-#
-
-$(utvideo).zip: 
-	wget http://github.com/downloads/rdp/FFmpeg/$(utvideo)-src.zip -O $(utvideo).zip
-	unzip $(utvideo).zip
-
-$(utvideo)/Makefile:
-	cd $(utvideo); \
-	sed -i 's/CXXFLAGS=/CXXFLAGS=-fPIC /g' GNUmakefile; \
-	make; \
-	sudo make install; \
-	touch Makefile 
-
-utvideo: $(utvideo).zip $(utvideo)/Makefile
-
-#####################################################################
-#
-# speex
-#
-
-$(speex).tar.gz: 
-	wget http://downloads.xiph.org/releases/speex/$(speex).tar.gz
-
-$(speex)/Makefile:
-	tar -xvzf $(speex).tar.gz 
-	cd $(speex); \
-	./configure; \
-	make; \
-	sudo make install
-
-speex: $(speex).tar.gz $(speex)/Makefile
-#####################################################################
-#
-# xavs
-#
-
-$(xavs):
-	svn co https://xavs.svn.sourceforge.net/svnroot/xavs/trunk $(xavs)
-
-$(xavs)/config.mak:
-	cd $(xavs); \
-	./configure --enable-pic --enable-shared --disable-asm; \
-	make; \
-	sudo make install
-
-xavs: $(xavs) $(xavs)/config.mak
-
-#####################################################################
-#
-# gpac
-#
-
-$(gpac):
-	svn co https://gpac.svn.sourceforge.net/svnroot/gpac/trunk/gpac $(gpac)
-
-$(gpac)/config.mak:
-	cd $(gpac); \
-	./configure --static-mp4box; \
-	make; \
-	sudo make install
-
-gpac: $(gpac) $(gpac)/config.mak
-
 #####################################################################
 #
 # ffmpeg
