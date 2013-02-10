@@ -1,0 +1,134 @@
+##################################################################
+#
+# Build ffmpeg from web.
+#
+# Dennis Zierahn
+#
+
+all: ./ffmpeg-local
+	cd ./ffmpeg-local; make work
+
+work: ffmpeg
+
+#####################################################################
+#
+# Local setup
+#
+
+./ffmpeg-local:
+	mkdir ./ffmpeg-local
+	ln -s ../Makefile.ffmpeg-local ./ffmpeg-local/Makefile
+
+#####################################################################
+#
+# ffmpeg
+#
+
+ffmpeg-git: 
+	git clone git://source.ffmpeg.org/ffmpeg ffmpeg-git
+	tar -cvzf ffmpeg-git.tar.gz ffmpeg-git
+	mv -f ffmpeg-git.tar.gz ../download
+	
+ffmpeg-common = \
+	--enable-gpl \
+	--enable-version3 \
+	--enable-nonfree \
+	--enable-runtime-cpudetect \
+	--enable-hardcoded-tables \
+	--enable-zlib \
+	--enable-bzlib \
+	--enable-gnutls \
+	--enable-librtmp \
+	--enable-libfreetype \
+	--enable-libfdk-aac \
+	--enable-libopencore-amrnb \
+	--enable-libopencore-amrwb \
+	--enable-libvo-aacenc \
+	--enable-libvo-amrwbenc \
+	--enable-libmp3lame \
+	--enable-libopenjpeg \
+	--enable-libtheora \
+	--enable-libvorbis \
+	--enable-libspeex \
+	--enable-libass \
+	--enable-libopus \
+	--enable-libgsm \
+	--enable-libvpx \
+	--enable-libxavs \
+	--enable-libxvid \
+	--enable-libx264 \
+	--enable-libbluray \
+	--enable-libschroedinger \
+	--enable-libutvideo \
+	--enable-libcdio \
+	--enable-fontconfig \
+	--enable-frei0r \
+	--enable-filter=frei0r \
+	
+ffmpeg-static = \
+	--disable-ffserver \
+	--disable-shared \
+	--enable-static \
+	--extra-cflags=--static	\
+	--extra-libs="-lm" \
+	--extra-libs="-ldl" \
+	--extra-libs="-lrt" \
+	--extra-libs="-lexpat" \
+	--extra-libs="-lfreetype" \
+	--extra-libs="-lfontconfig" \
+	--extra-libs="-lfribidi" \
+	--extra-libs="-lorc-0.4" \
+	--extra-libs="-lgmp" \
+	--extra-libs="-lhogweed" \
+	--extra-libs="-lnettle" \
+	--extra-libs="-lgnutls" \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-static" \
+	
+ffmpeg-shared = \
+	--enable-shared \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	
+ffmpeg-moreoptions-dont-work:
+
+ffmpeg-moreoptions-dont-want:
+	--disable-mmx \
+	--enable-libfaac \
+	--disable-w32threads \
+	
+ffmpeg-trunk/config.static.done:
+	cd ffmpeg-git; \
+	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+	make clean; \
+	rm -f ffmpeg ffplay ffprobe ffserver; \
+	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	./configure $(ffmpeg-static) $(ffmpeg-common); \
+	make || exit; \
+	sudo make install; \
+	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \
+	sudo mv -f /usr/local/bin/ffplay  /usr/local/bin/ffplay-static; \
+	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
+	touch config.static.done
+	
+ffmpeg-trunk/config.shared.done:
+	cd ffmpeg-git; \
+	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+	make clean; \
+	rm -f ffmpeg ffplay ffprobe ffserver; \
+	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	./configure $(ffmpeg-shared) $(ffmpeg-common); \
+	make || exit; \
+	sudo make install; \
+	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
+	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared; \
+	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared; \
+	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
+	touch config.shared.done
+	
+ffmpeg: ffmpeg-git ffmpeg-git/config.static.done ffmpeg-git/config.shared.done 
