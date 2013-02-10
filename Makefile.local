@@ -60,6 +60,7 @@ abcde_version				= 2.5.4
 atomicparsley_version		= git
 mp4v2_version 				= svn
 gpac_version 				= svn
+tvheadend_version 			= git
 
 #####################################################################
 
@@ -114,6 +115,7 @@ libcaca = libcaca-$(libcaca_version)
 libbluray = libbluray-$(libbluray_version)
 abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
+tvheadend = tvheadend-$(tvheadend_version)
 
 ######################################################################
 #
@@ -139,7 +141,7 @@ codecs: \
 	orc schroedinger xavs utvideo speex \
 	frei0r \
 
-utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
+utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac tvheadend
 
 #####################################################################
 #
@@ -1157,8 +1159,19 @@ frei0r: $(frei0r) $(frei0r)/dezi.done
 # tvheadend
 #
 
-tvheadend: 
-	git clone git://github.com/tvheadend/tvheadend.git tvheadend-trunk
+$(tvheadend): 
+	git clone git://github.com/tvheadend/tvheadend.git $(tvheadend)
+	tar -cvzf $(tvheadend).tar.gz $(tvheadend)
+	mv -f $(tvheadend).tar.gz ../download
+
+$(tvheadend)/dezi.done:
+	cd $(tvheadend); \
+	./configure || exit; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+tvheadend: $(tvheadend) $(tvheadend)/dezi.done
 
 #####################################################################
 #

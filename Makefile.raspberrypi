@@ -64,6 +64,9 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/bin/gperf:
 	sudo apt-get install -y gperf
 
+/usr/bin/dvbscan:
+	sudo apt-get install -y dvb-apps
+	
 /usr/bin/autoconf:
 	sudo apt-get install -y autoconf
 
@@ -73,6 +76,12 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/bin/apt-file:
 	sudo apt-get install -y apt-file
 
+/usr/include/jpeglib.h:
+	sudo apt-get install -y libjpeg8 libjpeg8-dbg libjpeg8-dev
+
+/usr/share/doc-base/libcurl4-openssl-dev:
+	sudo apt-get install -y libcurl4-openssl-dev
+
 developer: \
 	/usr/bin/cvs \
 	/usr/bin/svn \
@@ -81,8 +90,11 @@ developer: \
 	/usr/bin/bison \
 	/usr/bin/gperf \
 	/usr/bin/libtool \
+	/usr/bin/dvbscan \
 	/usr/bin/autoconf \
 	/usr/bin/apt-file \
+	/usr/include/jpeglib.h \
+	/usr/share/doc-base/libcurl4-openssl-dev
 
 ##########################################################################
 #

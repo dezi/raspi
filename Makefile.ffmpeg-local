@@ -102,10 +102,9 @@ ffmpeg-moreoptions-dont-want:
 	--enable-libfaac \
 	--disable-w32threads \
 	
-ffmpeg-trunk/config.static.done:
+ffmpeg-git/config.static.done:
 	cd ffmpeg-git; \
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
-	make clean; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	./configure $(ffmpeg-static) $(ffmpeg-common); \
@@ -116,10 +115,9 @@ ffmpeg-trunk/config.static.done:
 	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
 	touch config.static.done
 	
-ffmpeg-trunk/config.shared.done:
+ffmpeg-git/config.shared.done:
 	cd ffmpeg-git; \
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
-	make clean; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	./configure $(ffmpeg-shared) $(ffmpeg-common); \
