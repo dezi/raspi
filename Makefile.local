@@ -1,60 +1,65 @@
-#####################################################################
+##################################################################
 #
 # Build local source add ons from scratch, loads latest sources from web.
 #
 # Dennis Zierahn
 #
 
+gmp_version					= 5.0.5
 yasm_version 				= 1.2.0
 cmake_version				= 2.8.10.2
 gperf_version 				= 3.0.4
-gmp_version					= 5.0.5
+expat_version 				= 2.1.0
+zlib_version 				= 1.2.7
+bzip2_version 				= 1.0.6
+nettle_version				= 2.5
+gnutls_version				= 3.0.22
 
-libcddb_version				= 1.3.2
-libcdio_version				= 0.90
-libcdio-paranoia_version	= 10.2+0.90
 sdl_version					= 1.2.15
+alsa_version 				= 1.0.25
+freetype_version 			= 2.4.11
+fontconfig_version 			= git
+libcddb_version				= 1.3.2
+libdvdcss_version 			= 1.2.12
+fribidi_version 			= 0.19.5
+
+libcdio_version				= 0.90
+libgsm_version 				= 1.0.13-4
+libmad_version 				= 0.15.1b
+libass_version 				= 0.10.1
+libogg_version 				= 1.3.0
+libvorbis_version 			= 1.3.3
+libtheora_version 			= 1.1.1
+libbluray_version 			= git
+libvpx_version 				= git
+libaacplus_version 			= 2.0.2
+libcaca_version 			= git
+
+x264_version 				= git
+xvidcore_version			= 1.3.2
+
+cd-discid_version			= git
+libcdio-paranoia_version	= 10.2+0.90
+mp4v2_version 				= svn
+
+
 frei0r_version				= 1.3
 fdk-aac_version				= trunk
-gnutls_version				= 3.0.22
-nettle_version				= 2.5
 vo-amrwbenc_version			= 0.1.2
 vo-aacenc_version			= 0.1.2
-xvidcore_version			= 1.3.2
 xavs_version				= trunk
 utvideo_version				= 11.1.1
 opus_version				= 1.0.2
 openjpeg_version			= 1.5.1
 speex_version 				= 1.2rc1
-expat_version 				= 2.1.0
-fontconfig_version 			= trunk
-fribidi_version 			= 0.19.5
-freetype_version 			= 2.4.11
 orc_version 				= 0.4.16
 schroedinger_version 		= 1.0.11
-bzip2_version 				= 1.0.6
-zlib_version 				= 1.2.7
 lame_version 				= 3.99.5
 faad2_version 				= 2.7
 faac_version 				= 1.28
 opencore-amr_version 		= 0.1.3
-alsa_version 				= 1.0.25
-libgsm_version 				= 1.0.13-4
-libass_version 				= 0.10.1
-libmad_version 				= 0.15.1b
-libogg_version 				= 1.3.0
-libvorbis_version 			= 1.3.3
-libtheora_version 			= 1.1.1
-libdvdcss_version 			= 1.2.12
-libaacplus_version 			= 2.0.2
 gpac_version 				= trunk
-mp4v2_version 				= trunk
 rtmpdump_version 			= trunk
-libvpx_version 				= trunk
-x264_version 				= trunk
-libcaca_version 			= trunk
-libbluray_version 			= trunk
-cd-discid_version			= trunk
 abcde_version				= 2.5.4
 atomicparsley_version		= trunk
 
@@ -120,20 +125,22 @@ atomicparsley = atomicparsley-$(atomicparsley_version)
 all: ./local ./download
 	cd ./local; make work
 
-work: tools # helpers codecs utilities
+work: tools helpers codecs utilities
 
-tools: gmp yasm cmake gperf # expat zlib bzip2 nettle gnutls
+tools: gmp yasm cmake gperf expat zlib bzip2 nettle gnutls
 
-helpers: sdl alsa fontconfig freetype fribidi rtmpdump libdvdcss libcddb cd-discid
+helpers: sdl alsa freetype fontconfig libcddb libdvdcss fribidi # rtmpdump
 
 codecs: \
-	libass xvidcore xavs utvideo opus openjpeg speex \
+	libcdio libgsm libmad libass xvidcore \
+	libogg libvorbis libtheora libbluray libvpx \
+	libaacplus libcaca \
+	x264 \
+	#xavs utvideo opus openjpeg speex \
 	lame faac faad2 opencore-amr orc schroedinger \
-	frei0r fdk-aac vo-amrwbenc vo-aacenc libgsm \
-	libcaca libmad libogg libvorbis libtheora \
-	libaacplus x264 libbluray libvpx libcdio
+	frei0r fdk-aac vo-amrwbenc vo-aacenc \
 
-utilities: mp4v2 gpac libcdio-paranoia abcde atomicparsley
+utilities: cd-discid libcdio-paranoia mp4v2 # gpac abcde atomicparsley
 
 #####################################################################
 #
@@ -152,26 +159,26 @@ utilities: mp4v2 gpac libcdio-paranoia abcde atomicparsley
 # gmp => nettle
 #
 
-$(gmp).tar.bz2: 
+$(gmp): 
 	wget ftp://ftp.gnu.org/gnu/gmp/$(gmp).tar.bz2
 	tar -xvjf $(gmp).tar.bz2
 	mv $(gmp).tar.bz2 ../download
 
 $(gmp)/dezi.done:
 	cd $(gmp); \
-	./configure --enable-static; \
+	./configure; \
 	make; \
-	sudo make install \
+	sudo make install; \
 	touch dezi.done
 
-gmp: $(gmp).tar.bz2 $(gmp)/dezi.done
+gmp: $(gmp) $(gmp)/dezi.done
 
 #####################################################################
 #
 # yasm
 #
 
-$(yasm).tar.gz: 
+$(yasm): 
 	wget http://www.tortall.net/projects/yasm/releases/$(yasm).tar.gz
 	tar -xvzf $(yasm).tar.gz 
 	mv -f $(yasm).tar.gz ../download
@@ -180,10 +187,10 @@ $(yasm)/dezi.done:
 	cd $(yasm); \
 	./configure; \
 	make; \
-	sudo make install \
+	sudo make install; \
 	touch dezi.done
 
-yasm: $(yasm).tar.gz $(yasm)/dezi.done
+yasm: $(yasm) $(yasm)/dezi.done
 
 #####################################################################
 #
@@ -199,7 +206,7 @@ $(cmake)/dezi.done:
 	cd $(cmake); \
 	./configure; \
 	make; \
-	sudo make install \
+	sudo make install; \
 	touch dezi.done
 
 cmake: $(cmake) $(cmake)/dezi.done
@@ -209,7 +216,7 @@ cmake: $(cmake) $(cmake)/dezi.done
 # gperf
 #
 
-$(gperf).tar.gz: 
+$(gperf): 
 	wget http://ftp.gnu.org/pub/gnu/gperf/$(gperf).tar.gz
 	tar -xvzf $(gperf).tar.gz 
 	mv -f $(gperf).tar.gz ../download
@@ -218,27 +225,523 @@ $(gperf)/dezi.done:
 	cd $(gperf); \
 	./configure; \
 	make; \
-	sudo make install \
+	sudo make install; \
 	touch dezi.done
 
-gperf: $(gperf).tar.gz $(gperf)/dezi.done
+gperf: $(gperf) $(gperf)/dezi.done
 
 #####################################################################
 #
-# mp4v2
+# expat => fontconfig
 #
 
-$(mp4v2):
-	svn co https://mp4v2.googlecode.com/svn/trunk $(mp4v2)
+$(expat): 
+	wget http://heanet.dl.sourceforge.net/project/expat/expat/$(expat_version)/$(expat).tar.gz
+	tar -xvzf $(expat).tar.gz 
+	mv -f $(expat).tar.gz ../download
 
-$(mp4v2)/config.log:
-	cd $(mp4v2); \
-	autoreconf -fiv; \
+$(expat)/dezi.done:
+	cd $(expat); \
 	./configure; \
 	make; \
-	sudo make install
+	sudo make install; \
+	touch dezi.done
 
-mp4v2: $(mp4v2) $(mp4v2)/config.log
+expat: $(expat) $(expat)/dezi.done
+
+#####################################################################
+#
+# zlib
+#
+
+$(zlib): 
+	wget http://zlib.net/$(zlib).tar.gz
+	tar -xvzf $(zlib).tar.gz 
+	mv -f $(zlib).tar.gz ../download
+
+$(zlib)/dezi.done:
+	cd $(zlib); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+zlib: $(zlib) $(zlib)/dezi.done
+
+#####################################################################
+#
+# bzip2
+#
+
+$(bzip2): 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/bzip2-$(bzip2_version).tar.xz
+	tar -xvJf $(bzip2).tar.xz
+	mv -f $(bzip2).tar.xz ../download
+
+$(bzip2)/dezi.done:
+	cd $(bzip2); \
+	sed -i 's/CC=gcc/CC=gcc -fPIC/g' Makefile; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+bzip2: $(bzip2) $(bzip2)/dezi.done
+
+#####################################################################
+#
+# nettle => gnutls
+#
+
+$(nettle): 
+	wget http://www.lysator.liu.se/~nisse/archive/$(nettle).tar.gz
+	tar -xvzf $(nettle).tar.gz
+	mv -f $(nettle).tar.gz ../download
+
+$(nettle)/dezi.done:
+	cd $(nettle); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+nettle: $(nettle) $(nettle)/dezi.done
+
+#####################################################################
+#
+# gnutls
+#
+
+$(gnutls): 
+	wget ftp://ftp.gnu.org/gnu/gnutls/$(gnutls).tar.xz
+	tar -xvJf $(gnutls).tar.xz
+	mv -f $(gnutls).tar.xz ../download
+
+$(gnutls)/dezi.done:
+	cd $(gnutls); \
+	./configure --enable-static; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+gnutls: $(gnutls) $(gnutls)/dezi.done
+
+#####################################################################
+#
+# sdl
+#
+
+$(sdl): 
+	wget http://www.libsdl.org/release/SDL-$(sdl_version).tar.gz -O $(sdl).tar.gz
+	tar -xvzf $(sdl).tar.gz
+	mv -f $(sdl).tar.gz ../download
+
+$(sdl)/dezi.done:
+	cd $(sdl); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+sdl: $(sdl) $(sdl)/dezi.done
+
+#####################################################################
+#
+# alsa
+#
+
+$(alsa): 
+	wget http://mirrors.zerg.biz/alsa/lib/$(alsa).tar.bz2
+	tar -xvjf $(alsa).tar.bz2 
+	mv -f $(alsa).tar.bz2 ../download
+
+$(alsa)/dezi.done:
+	cd $(alsa); \
+	./configure --prefix=/usr/local --enable-static=yes --enable-shared=no; \
+	make; \
+	sudo make install; \
+	make clean; \
+	./configure --prefix=/usr/local --enable-static=no --enable-shared=yes; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+alsa: $(alsa) $(alsa)/dezi.done
+
+#####################################################################
+#
+# freetype => libass
+#
+
+$(freetype): 
+	wget http://ignum.dl.sourceforge.net/project/freetype/freetype2/$(freetype_version)/$(freetype).tar.bz2
+	tar -xvjf $(freetype).tar.bz2 
+	mv -f $(freetype).tar.bz2 ../download
+
+$(freetype)/dezi.done:
+	cd $(freetype); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+freetype: $(freetype) $(freetype)/dezi.done
+
+#####################################################################
+#
+# fontconfig => libass
+#
+
+$(fontconfig): 
+	git clone http://cgit.freedesktop.org/fontconfig $(fontconfig)
+	tar -cvzf $(fontconfig).tar.gz $(fontconfig)
+	mv $(fontconfig).tar.gz ../download
+
+$(fontconfig)/dezi.done:
+	cd $(fontconfig); \
+	./autogen.sh; \
+	./configure -disable-docs; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+fontconfig: $(fontconfig) $(fontconfig)/dezi.done
+
+#####################################################################
+#
+# libcddb
+#
+
+$(libcddb): 
+	wget http://prdownloads.sourceforge.net/libcddb/$(libcddb).tar.bz2
+	tar -xvjf $(libcddb).tar.bz2
+	mv -f $(libcddb).tar.bz2 ../download
+
+$(libcddb)/dezi.done:
+	cd $(libcddb); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libcddb: $(libcddb) $(libcddb)/dezi.done
+
+#####################################################################
+#
+# libdvdcss
+#
+
+$(libdvdcss): 
+	wget http://www.videolan.org/pub/libdvdcss/$(libdvdcss_version)/$(libdvdcss).tar.bz2
+	tar -xvjpf $(libdvdcss).tar.bz2 
+	mv -f $(libdvdcss).tar.bz2 ../download
+
+$(libdvdcss)/dezi.done:
+	cd $(libdvdcss); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+	
+libdvdcss: $(libdvdcss) $(libdvdcss)/dezi.done
+
+#####################################################################
+#
+# fribidi => libass
+#
+
+$(fribidi): 
+	wget http://fribidi.org/download/$(fribidi).tar.bz2
+	tar -xvjf $(fribidi).tar.bz2 
+	mv -f $(fribidi).tar.bz2 ../download
+
+$(fribidi)/dezi.done:
+	cd $(fribidi); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+fribidi: $(fribidi) $(fribidi)/dezi.done
+
+#####################################################################
+#
+# libcdio
+#
+
+$(libcdio): 
+	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio).tar.gz
+	tar -xvzf $(libcdio).tar.gz
+	mv -f $(libcdio).tar.gz ../download
+
+$(libcdio)/dezi.done:
+	cd $(libcdio); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libcdio: $(libcdio) $(libcdio)/dezi.done
+
+#####################################################################
+#
+# libgsm
+#
+
+$(libgsm): 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(libgsm).tar.xz
+	tar -xvJf $(libgsm).tar.xz
+	mv -f $(libgsm).tar.xz ../download
+
+$(libgsm)/dezi.done:
+	cd $(libgsm); \
+	sed -i 's/INSTALL_ROOT\t=/INSTALL_ROOT\t= \/usr\/local/g' Makefile; \
+	sed -i 's/GSM_INSTALL_ROOT)\/inc/GSM_INSTALL_ROOT)\/include/g' Makefile; \
+	sed -i 's/-c -O2/-fPIC -c -O2/g' Makefile; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libgsm: $(libgsm) $(libgsm)/dezi.done
+
+#####################################################################
+#
+# libmad
+#
+
+$(libmad): 
+	wget  http://downloads.sourceforge.net/mad/$(libmad).tar.gz
+	tar -xvzf $(libmad).tar.gz 
+	mv -f $(libmad).tar.gz ../download
+
+$(libmad)/dezi.done:
+	cd $(libmad); \
+	sed -i '/-fforce-mem/d' configure; \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libmad: $(libmad) $(libmad)/dezi.done
+
+#####################################################################
+#
+# libass
+#
+
+$(libass): 
+	wget http://libass.googlecode.com/files/$(libass).tar.xz
+	tar -xvJf $(libass).tar.xz
+	mv -f $(libass).tar.xz ../download
+
+$(libass)/dezi.done:
+	cd $(libass); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libass: $(libass) $(libass)/dezi.done
+
+#####################################################################
+#
+# libogg
+#
+
+$(libogg): 
+	wget http://downloads.xiph.org/releases/ogg/$(libogg).tar.gz
+	tar -xvzf $(libogg).tar.gz 
+	mv -f $(libogg).tar.gz ../download 
+
+$(libogg)/dezi.done:
+	cd $(libogg); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libogg: $(libogg) $(libogg)/dezi.done
+
+#####################################################################
+#
+# libvorbis
+#
+
+$(libvorbis): 
+	wget http://downloads.xiph.org/releases/vorbis/$(libvorbis).tar.gz
+	tar -xvzf $(libvorbis).tar.gz 
+	mv -f $(libvorbis).tar.gz ../download
+
+$(libvorbis)/dezi.done:
+	cd $(libvorbis); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libvorbis: $(libvorbis) $(libvorbis)/dezi.done
+
+#####################################################################
+#
+# libtheora
+#
+
+$(libtheora): 
+	wget http://downloads.xiph.org/releases/theora/$(libtheora).tar.gz
+	tar -xvzf $(libtheora).tar.gz 
+	mv -f $(libtheora).tar.gz ../download
+
+$(libtheora)/dezi.done:
+	cd $(libtheora); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libtheora: $(libtheora) $(libtheora)/dezi.done
+
+#####################################################################
+#
+# libbluray
+#
+
+$(libbluray): 
+	git clone git://git.videolan.org/libbluray.git $(libbluray)
+	tar -cvzf $(libbluray).tar.gz $(libbluray)
+	mv -f $(libbluray).tar.gz ../download
+
+$(libbluray)/dezi.done: 
+	cd $(libbluray); \
+	./bootstrap; \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libbluray: $(libbluray) $(libbluray)/dezi.done
+
+#####################################################################
+#
+# libvpx
+#
+
+$(libvpx): 
+	git clone http://git.chromium.org/webm/libvpx.git $(libvpx)
+	tar -cvzf $(libvpx).tar.gz $(libvpx)
+	mv -f $(libvpx).tar.gz ../download
+
+$(libvpx)/dezi.done: 
+	cd $(libvpx); \
+	./configure --enable-static --disable-shared; \
+	make; \
+	sudo make install; \
+	./configure --enable-shared --disable-static; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libvpx: $(libvpx) $(libvpx)/dezi.done
+
+#####################################################################
+#
+# libaacplus
+#
+
+$(libaacplus): 
+	wget http://217.20.164.161/~tipok/aacplus/$(libaacplus).tar.gz
+	tar -xzf $(libaacplus).tar.gz 
+	mv -f $(libaacplus).tar.gz ../download
+
+$(libaacplus)/dezi.done:
+	cd $(libaacplus); \
+	./autogen.sh --enable-shared --enable-static; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+	
+libaacplus: $(libaacplus) $(libaacplus)/dezi.done
+
+#####################################################################
+#
+# libcaca
+#
+
+$(libcaca): 
+	git clone git://git.zoy.org/libcaca.git $(libcaca)
+	tar -cvzf $(libcaca).tar.gz $(libcaca)
+	mv -f $(libcaca).tar.gz ../download
+
+$(libcaca)/dezi.done: 
+	cd $(libcaca); \
+	./bootstrap; \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libcaca: $(libcaca) $(libcaca)/dezi.done
+
+#####################################################################
+#
+# x264
+#
+
+$(x264): 
+	git clone git://git.videolan.org/x264 $(x264)
+	tar -cvzf $(x264).tar.gz $(x264)
+	mv -f $(x264).tar.gz ../download
+
+$(x264)/dezi.done:
+	cd $(x264); \
+	./configure --enable-shared --enabled-static; \
+	make; \
+	sudo make install; \
+	sudo make install-lib-dev; \
+	sudo make install-lib-shared; \
+	sudo make install-lib-static; \
+	touch dezi.done
+
+x264: $(x264) $(x264)/dezi.done
+
+#####################################################################
+#
+# xvidcore
+#
+
+$(xvidcore): 
+	wget http://downloads.xvid.org/downloads/$(xvidcore).tar.gz
+	tar -xvzf $(xvidcore).tar.gz 
+	mv xvidcore $(xvidcore) 
+	mv -f $(xvidcore).tar.gz ../download
+
+$(xvidcore)/dezi.done:
+	cd $(xvidcore)/build/generic; \
+	./configure; \
+	make; \
+	sudo make install; \
+	cd ../..; \
+	touch dezi.done
+
+xvidcore: $(xvidcore) $(xvidcore)/dezi.done
+
+#####################################################################
+#
+# libcdio-paranoia
+#
+
+$(libcdio-paranoia): 
+	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio-paranoia).tar.gz
+	tar -xvzf $(libcdio-paranoia).tar.gz
+	mv -f $(libcdio-paranoia).tar.gz ../download
+
+$(libcdio-paranoia)/dezi.done:
+	cd $(libcdio-paranoia); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libcdio-paranoia: $(libcdio-paranoia) $(libcdio-paranoia)/dezi.done
 
 #####################################################################
 #
@@ -247,65 +750,36 @@ mp4v2: $(mp4v2) $(mp4v2)/config.log
 
 $(cd-discid): 
 	git clone https://github.com/taem/cd-discid.git $(cd-discid)
+	tar -cvzf $(cd-discid).tar.gz $(cd-discid)
+	mv $(cd-discid).tar.gz ../download
 
-$(cd-discid)/cd-discid:
+$(cd-discid)/dezi.done:
 	cd $(cd-discid); \
 	make; \
-	sudo make install
+	sudo make install; \
+	touch dezi.done
 
-cd-discid: $(cd-discid) $(cd-discid)/cd-discid
-
-#####################################################################
-#
-# libcddb
-#
-
-$(libcddb).tar.bz2: 
-	wget http://prdownloads.sourceforge.net/libcddb/$(libcddb).tar.bz2
-
-$(libcddb)/Makefile:
-	tar -xvjf $(libcddb).tar.bz2
-	cd $(libcddb); \
-	./configure; \
-	make; \
-	sudo make install
-
-libcddb: $(libcddb).tar.bz2 $(libcddb)/Makefile
+cd-discid: $(cd-discid) $(cd-discid)/dezi.done
 
 #####################################################################
 #
-# libcdio
+# mp4v2
 #
 
-$(libcdio).tar.gz: 
-	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio).tar.gz
+$(mp4v2):
+	svn co https://mp4v2.googlecode.com/svn/trunk $(mp4v2)
+	tar -cvzf $(mp4v2).tar.gz  $(mp4v2)
+	mv -f $(mp4v2).tar.gz ../download
 
-$(libcdio)/Makefile:
-	tar -xvzf $(libcdio).tar.gz
-	cd $(libcdio); \
+$(mp4v2)/dezi.done:
+	cd $(mp4v2); \
+	autoreconf -fiv; \
 	./configure; \
 	make; \
-	sudo make install
+	sudo make install; \
+	touch dezi.done
 
-libcdio: $(libcdio).tar.gz $(libcdio)/Makefile
-
-#####################################################################
-#
-# libcdio-paranoia
-#
-
-$(libcdio-paranoia).tar.gz: 
-	wget http://ftp.gnu.org/gnu/libcdio/$(libcdio-paranoia).tar.gz
-
-$(libcdio-paranoia)/Makefile:
-	tar -xvzf $(libcdio-paranoia).tar.gz
-	cd $(libcdio-paranoia); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
-	./configure; \
-	make; \
-	sudo make install
-
-libcdio-paranoia: $(libcdio-paranoia).tar.gz $(libcdio-paranoia)/Makefile
+mp4v2: $(mp4v2) $(mp4v2)/dezi.done
 
 #####################################################################
 #
@@ -326,23 +800,6 @@ fdk-aac: $(fdk-aac) $(fdk-aac)/Makefile
 
 #####################################################################
 #
-# sdl
-#
-
-$(sdl).tar.gz: 
-	wget http://www.libsdl.org/release/SDL-$(sdl_version).tar.gz -O $(sdl).tar.gz
-
-$(sdl)/Makefile:
-	tar -xvzf $(sdl).tar.gz
-	cd $(sdl); \
-	./configure; \
-	make; \
-	sudo make install
-
-sdl: $(sdl).tar.gz $(sdl)/Makefile
-
-#####################################################################
-#
 # frei0r
 #
 
@@ -357,40 +814,6 @@ $(frei0r)/Makefile:
 	sudo make install
 
 frei0r: $(frei0r).tar.gz $(frei0r)/Makefile
-
-#####################################################################
-#
-# nettle => gnutls
-#
-
-$(nettle).tar.gz: 
-	wget http://www.lysator.liu.se/~nisse/archive/$(nettle).tar.gz
-
-$(nettle)/Makefile:
-	tar -xvzf $(nettle).tar.gz
-	cd $(nettle); \
-	./configure; \
-	make; \
-	sudo make install
-
-nettle: $(nettle).tar.gz $(nettle)/Makefile
-
-#####################################################################
-#
-# gnutls
-#
-
-$(gnutls).tar.xz: 
-	wget ftp://ftp.gnu.org/gnu/gnutls/$(gnutls).tar.xz
-
-$(gnutls)/Makefile:
-	tar -xvJf $(gnutls).tar.xz
-	cd $(gnutls); \
-	./configure --enable-static; \
-	make; \
-	sudo make install
-
-gnutls: $(gnutls).tar.xz $(gnutls)/Makefile
 
 #####################################################################
 #
@@ -460,145 +883,6 @@ $(schroedinger)/Makefile:
 	sudo make install
 
 schroedinger: $(schroedinger).tar.gz $(schroedinger)/Makefile
-
-#####################################################################
-#
-# libgsm
-#
-
-$(libgsm).tar.xz: 
-	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(libgsm).tar.xz
-
-$(libgsm)/Makefile:
-	tar -xvJf $(libgsm).tar.xz
-	cd $(libgsm); \
-	sed -i 's/INSTALL_ROOT\t=/INSTALL_ROOT\t= \/usr\/local/g' Makefile; \
-	sed -i 's/GSM_INSTALL_ROOT)\/inc/GSM_INSTALL_ROOT)\/include/g' Makefile; \
-	sed -i 's/-c -O2/-fPIC -c -O2/g' Makefile; \
-	make; \
-	sudo make install
-
-libgsm: $(libgsm).tar.xz $(libgsm)/Makefile
-
-#####################################################################
-#
-# libass
-#
-
-$(libass).tar.xz: 
-	wget http://libass.googlecode.com/files/$(libass).tar.xz
-
-$(libass)/Makefile:
-	tar -xvJf $(libass).tar.xz
-	cd $(libass); \
-	./configure; \
-	make; \
-	sudo make install
-
-libass: $(libass).tar.xz $(libass)/Makefile
-
-#####################################################################
-#
-# bzip2
-#
-
-$(bzip2).tar.xz: 
-	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/bzip2-$(bzip2_version).tar.xz
-
-$(bzip2)/bzip2:
-	tar -xvJf $(bzip2).tar.xz
-	cd $(bzip2); \
-	sed -i 's/CC=gcc/CC=gcc -fPIC/g' Makefile; \
-	make; \
-	sudo make install
-
-bzip2: $(bzip2).tar.xz $(bzip2)/bzip2
-
-#####################################################################
-#
-# zlib
-#
-
-$(zlib).tar.gz: 
-	wget http://zlib.net/$(zlib).tar.gz
-
-$(zlib)/Makefile:
-	tar -xvzf $(zlib).tar.gz 
-	cd $(zlib); \
-	./configure; \
-	make; \
-	sudo make install
-
-zlib: $(zlib).tar.gz $(zlib)/Makefile
-
-#####################################################################
-#
-# libmad
-#
-
-$(libmad).tar.gz: 
-	wget  http://downloads.sourceforge.net/mad/$(libmad).tar.gz
-
-$(libmad)/Makefile:
-	tar -xvzf $(libmad).tar.gz 
-	cd $(libmad); \
-	sed -i '/-fforce-mem/d' configure; \
-	./configure; \
-	make; \
-	sudo make install
-
-libmad: $(libmad).tar.gz $(libmad)/Makefile
-
-#####################################################################
-#
-# libogg
-#
-
-$(libogg).tar.gz: 
-	wget http://downloads.xiph.org/releases/ogg/$(libogg).tar.gz
-
-$(libogg)/Makefile:
-	tar -xvzf $(libogg).tar.gz 
-	cd $(libogg); \
-	./configure; \
-	make; \
-	sudo make install
-
-libogg: $(libogg).tar.gz $(libogg)/Makefile
-
-#####################################################################
-#
-# libvorbis
-#
-
-$(libvorbis).tar.gz: 
-	wget http://downloads.xiph.org/releases/vorbis/$(libvorbis).tar.gz
-
-$(libvorbis)/Makefile:
-	tar -xvzf $(libvorbis).tar.gz 
-	cd $(libvorbis); \
-	./configure; \
-	make; \
-	sudo make install
-
-libvorbis: $(libvorbis).tar.gz $(libvorbis)/Makefile
-
-#####################################################################
-#
-# libtheora
-#
-
-$(libtheora).tar.gz: 
-	wget http://downloads.xiph.org/releases/theora/$(libtheora).tar.gz
-
-$(libtheora)/Makefile:
-	tar -xvzf $(libtheora).tar.gz 
-	cd $(libtheora); \
-	./configure; \
-	make; \
-	sudo make install
-
-libtheora: $(libtheora).tar.gz $(libtheora)/Makefile
 
 #####################################################################
 #
@@ -724,27 +1008,6 @@ opus: $(opus).tar.gz $(opus)/Makefile
 
 #####################################################################
 #
-# xvidcore
-#
-
-$(xvidcore).tar.gz: 
-	wget http://downloads.xvid.org/downloads/$(xvidcore).tar.gz
-
-$(xvidcore)/Make.dummy:
-	rm -rf $(xvidcore)
-	tar -xvzf $(xvidcore).tar.gz 
-	mv xvidcore $(xvidcore) 
-	cd $(xvidcore)/build/generic; \
-	./configure; \
-	make; \
-	sudo make install; \
-	cd ../..; \
-	touch Make.dummy
-
-xvidcore: $(xvidcore).tar.gz $(xvidcore)/Make.dummy
-
-#####################################################################
-#
 # speex
 #
 
@@ -759,130 +1022,6 @@ $(speex)/Makefile:
 	sudo make install
 
 speex: $(speex).tar.gz $(speex)/Makefile
-
-#####################################################################
-#
-# expat => fontconfig
-#
-
-$(expat).tar.gz: 
-	wget http://heanet.dl.sourceforge.net/project/expat/expat/$(expat_version)/$(expat).tar.gz
-
-$(expat)/Makefile:
-	tar -xvzf $(expat).tar.gz 
-	cd $(expat); \
-	./configure; \
-	make; \
-	sudo make install
-
-expat: $(expat).tar.gz $(expat)/Makefile
-
-#####################################################################
-#
-# fontconfig => libass
-#
-
-$(fontconfig): 
-	git clone http://cgit.freedesktop.org/fontconfig $(fontconfig)
-
-$(fontconfig)/Makefile:
-	cd $(fontconfig); \
-	./autogen.sh; \
-	./configure -disable-docs; \
-	make; \
-	sudo make install
-
-fontconfig: $(fontconfig) $(fontconfig)/Makefile
-
-#####################################################################
-#
-# fribidi => libass
-#
-
-$(fribidi).tar.bz2: 
-	wget http://fribidi.org/download/$(fribidi).tar.bz2
-
-$(fribidi)/Makefile:
-	tar -xvjf $(fribidi).tar.bz2 
-	cd $(fribidi); \
-	./configure --enable-static --enable-shared; \
-	make; \
-	sudo make install
-
-fribidi: $(fribidi).tar.bz2 $(fribidi)/Makefile
-
-#####################################################################
-#
-# freetype => libass
-#
-
-$(freetype).tar.bz2: 
-	wget http://ignum.dl.sourceforge.net/project/freetype/freetype2/$(freetype_version)/$(freetype).tar.bz2
-
-$(freetype)/Makefile:
-	tar -xvjf $(freetype).tar.bz2 
-	cd $(freetype); \
-	./configure --enable-static --enable-shared; \
-	make; \
-	sudo make install
-
-freetype: $(freetype).tar.bz2 $(freetype)/Makefile
-
-#####################################################################
-#
-# alsa
-#
-
-$(alsa).tar.bz2: 
-	wget http://mirrors.zerg.biz/alsa/lib/$(alsa).tar.bz2
-
-$(alsa)/Makefile:
-	tar -xvjf $(alsa).tar.bz2 
-	cd $(alsa); \
-	./configure --prefix=/usr/local --enable-static=yes --enable-shared=no; \
-	make; \
-	sudo make install; \
-	make clean; \
-	./configure --prefix=/usr/local --enable-static=no --enable-shared=yes; \
-	make; \
-	sudo make install
-
-alsa: $(alsa).tar.bz2 $(alsa)/Makefile
-
-#####################################################################
-#
-# libdvdcss
-#
-
-$(libdvdcss).tar.bz2: 
-	wget http://www.videolan.org/pub/libdvdcss/$(libdvdcss_version)/$(libdvdcss).tar.bz2
-
-$(libdvdcss)/Makefile:
-	tar -xvjpf $(libdvdcss).tar.bz2 
-	cd $(libdvdcss); \
-	./configure; \
-	make; \
-	sudo make install
-	
-libdvdcss: $(libdvdcss).tar.bz2 $(libdvdcss)/Makefile
-
-#####################################################################
-#
-# libaacplus
-#
-
-$(libaacplus).tar.gz: 
-	wget http://217.20.164.161/~tipok/aacplus/$(libaacplus).tar.gz
-	#wget http://ffmpeg.gusari.org/uploads/$(libaacplus).tar.gz
-
-$(libaacplus)/Makefile:
-	tar -xzf $(libaacplus).tar.gz 
-	cd $(libaacplus); \
-	./autogen.sh --enable-shared --enable-static; \
-	make; \
-	sudo make install
-	
-libaacplus: $(libaacplus).tar.gz $(libaacplus)/Makefile
 
 #####################################################################
 #
@@ -902,76 +1041,6 @@ $(rtmpdump)/rtmpdump:
 	sudo make install
 
 rtmpdump: $(rtmpdump) $(rtmpdump)/rtmpdump
-
-#####################################################################
-#
-# x264
-#
-
-$(x264): 
-	git clone git://git.videolan.org/x264 $(x264)
-
-$(x264)/x264.o:
-	cd $(x264); \
-	./configure --enable-shared; \
-	make; \
-	sudo make install; \
-	sudo make install-lib-dev; \
-	sudo make install-lib-shared; \
-	sudo make install-lib-static
-
-x264: $(x264) $(x264)/x264.o
-
-#####################################################################
-#
-# libbluray
-#
-
-$(libbluray): 
-	git clone git://git.videolan.org/libbluray.git $(libbluray)
-
-$(libbluray)/Makefile: 
-	cd $(libbluray); \
-	./bootstrap; \
-	./configure --enable-static --enable-shared; \
-	make; \
-	sudo make install
-
-libbluray: $(libbluray) $(libbluray)/Makefile
-
-#####################################################################
-#
-# libcaca
-#
-
-$(libcaca): 
-	git clone git://git.zoy.org/libcaca.git $(libcaca)
-
-$(libcaca)/Makefile: 
-	cd $(libcaca); \
-	./bootstrap; \
-	./configure; \
-	make; \
-	sudo make install
-
-libcaca: $(libcaca) $(libcaca)/Makefile
-
-#####################################################################
-#
-# libvpx
-#
-
-$(libvpx): 
-	git clone http://git.chromium.org/webm/libvpx.git $(libvpx)
-
-$(libvpx)/Makefile: 
-	cd $(libvpx); \
-	./configure --enable-static --disable-shared; \
-	make; \
-	sudo make install
-
-libvpx: $(libvpx) $(libvpx)/Makefile
-
 #####################################################################
 #
 # xavs

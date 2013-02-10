@@ -46,11 +46,20 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 # Developer packages
 #
 
+/usr/bin/cvs:
+	sudo apt-get install -y cvs
+
 /usr/bin/svn:
 	sudo apt-get install -y subversion
 
+/usr/bin/flex:
+	sudo apt-get install -y flex
+
 /usr/bin/eject:
 	sudo apt-get install -y eject
+
+/usr/bin/bison:
+	sudo apt-get install -y bison
 
 /usr/bin/gperf:
 	sudo apt-get install -y gperf
@@ -65,8 +74,11 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 	sudo apt-get install -y apt-file
 
 developer: \
+	/usr/bin/cvs \
 	/usr/bin/svn \
+	/usr/bin/flex \
 	/usr/bin/eject \
+	/usr/bin/bison \
 	/usr/bin/gperf \
 	/usr/bin/libtool \
 	/usr/bin/autoconf \

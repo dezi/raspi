@@ -1,0 +1,44 @@
+##########################################################################
+#
+# Dezi's DVB-Sticks firmware.
+#
+
+all: dvbstick OpenELEC
+
+
+######################################################################
+#
+# Build section.
+#
+
+all: ./dvbstick 
+	cd ./dvbstick; make work
+
+work: OpenELEC
+
+#####################################################################
+#
+# Directory setup
+#
+
+./dvbstick:
+	mkdir ./dvbstick
+	ln -s ../Makefile.dvbstick ./dvbstick/Makefile
+
+##########################################################################
+#
+# install firmware for DVB-Sticks.
+#
+
+OpenELEC-git:
+	git clone git://github.com/OpenELEC/dvb-firmware.git OpenELEC-git
+	tar -cvzf OpenELEC-git.tar.gz OpenELEC-git
+	mv OpenELEC-git.tar.gz ../download
+
+OpenELEC-git/dezi.done:
+	cd OpenELEC-git; \
+	sudo ./install; \
+	touch dezi.done
+	
+OpenELEC: OpenELEC-git OpenELEC-git/dezi.done
+

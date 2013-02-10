@@ -4,3 +4,6 @@
 #
 local
 download
+dvbstick
+ffmpeg-win32
+ffmpeg-local
