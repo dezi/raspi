@@ -22,6 +22,7 @@ fontconfig_version 			= git
 libcddb_version				= 1.3.2
 libdvdcss_version 			= 1.2.12
 fribidi_version 			= 0.19.5
+rtmpdump_version 			= trunk
 
 libcdio_version				= 0.90
 libgsm_version 				= 1.0.13-4
@@ -35,11 +36,17 @@ libvpx_version 				= git
 libaacplus_version 			= 2.0.2
 libcaca_version 			= git
 
+opus_version				= 1.0.2
+openjpeg_version			= 1.5.1
 x264_version 				= git
 xvidcore_version			= 1.3.2
+orc_version 				= 0.4.16
+schroedinger_version 		= 1.0.11
 
 cd-discid_version			= git
 libcdio-paranoia_version	= 10.2+0.90
+abcde_version				= 2.5.4
+atomicparsley_version		= git
 mp4v2_version 				= svn
 
 
@@ -49,19 +56,12 @@ vo-amrwbenc_version			= 0.1.2
 vo-aacenc_version			= 0.1.2
 xavs_version				= trunk
 utvideo_version				= 11.1.1
-opus_version				= 1.0.2
-openjpeg_version			= 1.5.1
 speex_version 				= 1.2rc1
-orc_version 				= 0.4.16
-schroedinger_version 		= 1.0.11
 lame_version 				= 3.99.5
 faad2_version 				= 2.7
 faac_version 				= 1.28
 opencore-amr_version 		= 0.1.3
 gpac_version 				= trunk
-rtmpdump_version 			= trunk
-abcde_version				= 2.5.4
-atomicparsley_version		= trunk
 
 #####################################################################
 
@@ -129,18 +129,18 @@ work: tools helpers codecs utilities
 
 tools: gmp yasm cmake gperf expat zlib bzip2 nettle gnutls
 
-helpers: sdl alsa freetype fontconfig libcddb libdvdcss fribidi # rtmpdump
+helpers: sdl alsa freetype fontconfig libcddb libdvdcss fribidi rtmpdump
 
 codecs: \
-	libcdio libgsm libmad libass xvidcore \
+	libcdio libgsm libmad libass \
 	libogg libvorbis libtheora libbluray libvpx \
 	libaacplus libcaca \
-	x264 \
-	#xavs utvideo opus openjpeg speex \
-	lame faac faad2 opencore-amr orc schroedinger \
+	opus openjpeg xvidcore x264 \
+	orc schroedinger #xavs utvideo speex \
+	lame faac faad2 opencore-amr \
 	frei0r fdk-aac vo-amrwbenc vo-aacenc \
 
-utilities: cd-discid libcdio-paranoia mp4v2 # gpac abcde atomicparsley
+utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 # gpac
 
 #####################################################################
 #
@@ -465,6 +465,28 @@ fribidi: $(fribidi) $(fribidi)/dezi.done
 
 #####################################################################
 #
+# rtmpdump
+#
+
+$(rtmpdump): 
+	git clone git://git.ffmpeg.org/rtmpdump $(rtmpdump)
+	tar -cvzf $(rtmpdump).tar.gz $(rtmpdump)
+	mv -f $(rtmpdump).tar.gz ../download
+
+$(rtmpdump)/dezi.done:
+	cd $(rtmpdump); \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+rtmpdump: $(rtmpdump) $(rtmpdump)/dezi.done
+
+#####################################################################
+#
 # libcdio
 #
 
@@ -682,6 +704,44 @@ libcaca: $(libcaca) $(libcaca)/dezi.done
 
 #####################################################################
 #
+# opus
+#
+
+$(opus): 
+	wget http://downloads.xiph.org/releases/opus/$(opus).tar.gz
+	tar -xvzf $(opus).tar.gz 
+	mv -f $(opus).tar.gz ../download
+
+$(opus)/dezi.done:
+	cd $(opus); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+opus: $(opus) $(opus)/dezi.done
+
+#####################################################################
+#
+# openjpeg
+#
+
+$(openjpeg): 
+	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(openjpeg).tar.xz
+	tar -xvJf $(openjpeg).tar.xz 
+	mv -f $(openjpeg).tar.xz ../download
+
+$(openjpeg)/dezi.done:
+	cd $(openjpeg); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+openjpeg: $(openjpeg) $(openjpeg)/dezi.done
+
+#####################################################################
+#
 # x264
 #
 
@@ -701,6 +761,45 @@ $(x264)/dezi.done:
 	touch dezi.done
 
 x264: $(x264) $(x264)/dezi.done
+
+#####################################################################
+#
+# orc => schroedinger
+#
+
+$(orc): 
+	wget http://code.entropywave.com/download/orc/$(orc).tar.gz
+	tar -xvzf $(orc).tar.gz
+	mv -f $(orc).tar.gz ../download
+
+$(orc)/dezi.done:
+	cd $(orc); \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+orc: $(orc) $(orc)/dezi.done
+
+#####################################################################
+#
+# schroedinger
+#
+
+$(schroedinger): 
+	wget http://diracvideo.org/download/schroedinger/$(schroedinger).tar.gz
+	tar -xvzf $(schroedinger).tar.gz
+	mv -f $(schroedinger).tar.gz ../download
+
+$(schroedinger)/dezi.done:
+	cd $(schroedinger); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	./configure --enable-static --enable-shared; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+schroedinger: $(schroedinger) $(schroedinger)/dezi.done
 
 #####################################################################
 #
@@ -760,6 +859,45 @@ $(cd-discid)/dezi.done:
 	touch dezi.done
 
 cd-discid: $(cd-discid) $(cd-discid)/dezi.done
+
+#####################################################################
+#
+# atomicparsley
+#
+
+$(atomicparsley):
+	git clone https://github.com/beatgammit/atomicparsley.git $(atomicparsley)
+	tar -cvzf $(atomicparsley).tar.gz $(atomicparsley)
+	mv -f $(atomicparsley).tar.gz ../download
+
+$(atomicparsley)/dezi.done:
+	cd $(atomicparsley); \
+	./autogen.sh; \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+atomicparsley: $(atomicparsley) $(atomicparsley)/dezi.done
+
+#####################################################################
+#
+# abcde
+#
+
+$(abcde): 
+	wget http://abcde.googlecode.com/files/$(abcde).tar.gz
+	tar -xvzf $(abcde).tar.gz
+	mv -f $(abcde).tar.gz ../download
+
+$(abcde)/dezi.done:
+	cd $(abcde); \
+	sed -i "s/DESTDIR}\/usr/DESTDIR}\/usr\/local/g" Makefile; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+abcde: $(abcde) $(abcde)/dezi.done
 
 #####################################################################
 #
@@ -851,41 +989,6 @@ vo-aacenc: $(vo-aacenc).tar.gz $(vo-aacenc)/Makefile
 
 #####################################################################
 #
-# orc => schroedinger
-#
-
-$(orc).tar.gz: 
-	wget http://code.entropywave.com/download/orc/$(orc).tar.gz
-
-$(orc)/Makefile:
-	tar -xvzf $(orc).tar.gz
-	cd $(orc); \
-	./configure --enable-static --enable-shared; \
-	make; \
-	sudo make install
-
-orc: $(orc).tar.gz $(orc)/Makefile
-
-#####################################################################
-#
-# schroedinger
-#
-
-$(schroedinger).tar.gz: 
-	wget http://diracvideo.org/download/schroedinger/$(schroedinger).tar.gz
-
-$(schroedinger)/Makefile:
-	tar -xvzf $(schroedinger).tar.gz
-	cd $(schroedinger); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
-	./configure --enable-static --enable-shared; \
-	make; \
-	sudo make install
-
-schroedinger: $(schroedinger).tar.gz $(schroedinger)/Makefile
-
-#####################################################################
-#
 # lame
 #
 
@@ -956,23 +1059,6 @@ opencore-amr: $(opencore-amr).tar.gz $(opencore-amr)/Makefile
 
 #####################################################################
 #
-# openjpeg
-#
-
-$(openjpeg).tar.xz: 
-	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(openjpeg).tar.xz
-
-$(openjpeg)/Makefile:
-	tar -xvJf $(openjpeg).tar.xz 
-	cd $(openjpeg); \
-	./configure; \
-	make; \
-	sudo make install
-
-openjpeg: $(openjpeg).tar.xz $(openjpeg)/Makefile
-
-#####################################################################
-#
 # utvideo
 #
 
@@ -991,23 +1077,6 @@ utvideo: $(utvideo).zip $(utvideo)/Makefile
 
 #####################################################################
 #
-# opus
-#
-
-$(opus).tar.gz: 
-	wget http://downloads.xiph.org/releases/opus/$(opus).tar.gz
-
-$(opus)/Makefile:
-	tar -xvzf $(opus).tar.gz 
-	cd $(opus); \
-	./configure; \
-	make; \
-	sudo make install
-
-opus: $(opus).tar.gz $(opus)/Makefile
-
-#####################################################################
-#
 # speex
 #
 
@@ -1022,25 +1091,6 @@ $(speex)/Makefile:
 	sudo make install
 
 speex: $(speex).tar.gz $(speex)/Makefile
-
-#####################################################################
-#
-# rtmpdump
-#
-
-$(rtmpdump): 
-	git clone git://git.ffmpeg.org/rtmpdump $(rtmpdump)
-
-$(rtmpdump)/rtmpdump:
-	cd $(rtmpdump); \
-	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' Makefile; \
-	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
-	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
-	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
-	make; \
-	sudo make install
-
-rtmpdump: $(rtmpdump) $(rtmpdump)/rtmpdump
 #####################################################################
 #
 # xavs
@@ -1072,41 +1122,6 @@ $(gpac)/config.mak:
 	sudo make install
 
 gpac: $(gpac) $(gpac)/config.mak
-
-#####################################################################
-#
-# atomicparsley
-#
-
-$(atomicparsley):
-	git clone https://github.com/beatgammit/atomicparsley.git $(atomicparsley)
-
-$(atomicparsley)/AtomicParsley:
-	cd $(atomicparsley); \
-	./autogen.sh; \
-	./configure; \
-	make; \
-	sudo make install
-
-atomicparsley: $(atomicparsley) $(atomicparsley)/AtomicParsley
-
-#####################################################################
-#
-# abcde
-#
-
-$(abcde).tar.gz: 
-	wget http://abcde.googlecode.com/files/$(abcde).tar.gz
-
-$(abcde)/done:
-	tar -xvzf $(abcde).tar.gz
-	cd $(abcde); \
-	sed -i "s/DESTDIR}\/usr/DESTDIR}\/usr\/local/g" Makefile; \
-	make; \
-	sudo make install; \
-	touch done
-
-abcde: $(abcde).tar.gz $(abcde)/done
 
 #####################################################################
 #

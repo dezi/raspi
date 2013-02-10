@@ -3,7 +3,7 @@
 # Dezi's Raspberry Pi mock ups.
 #
 
-all: daemons developer
+all: daemons developer utilities
 allxx: update daemons
 
 daemons: proftpd samba
@@ -83,4 +83,15 @@ developer: \
 	/usr/bin/libtool \
 	/usr/bin/autoconf \
 	/usr/bin/apt-file \
-	
+
+##########################################################################
+#
+# Utility packages
+#
+
+/bin/ntfs-3g:
+	sudo apt-get install -y ntfs-3g ntfsprogs
+
+utilities: \
+	/bin/ntfs-3g \
+
