@@ -1,0 +1,33 @@
+##########################################################################
+#
+# Dezi's Raspberry Pi private stuff
+#
+
+all: usb-disks
+
+##########################################################################
+#
+# Register UUID and mount points for my USB-Disks.
+#
+
+/media/iTunes:
+	sudo mkdir /media/iTunes
+
+/media/iVideo:
+	sudo mkdir /media/iVideo
+
+usb-disks: /media/iTunes /media/iVideo
+	HAVE_UUID=`fgrep -o "UUID mounts" /etc/fstab`; \
+	if test "$$HAVE_UUID" != "UUID mounts"; then \
+		sudo sed -i '$$ a\#' /etc/fstab; \
+		sudo sed -i '$$ a\# UUID mounts' /etc/fstab; \
+		sudo sed -i '$$ a\#' /etc/fstab; \
+	fi; \
+	HAVE_ITUNES=`fgrep -o iTunes /etc/fstab`; \
+	if test "$$HAVE_ITUNES" != "iTunes"; then \
+		sudo sed -i '$$ a\UUID=CC082DF4082DDE68 \/media\/iTunes ntfs rw' /etc/fstab; \
+	fi; \
+	HAVE_IVIDEO=`fgrep -o iVideo /etc/fstab`; \
+	if test "$$HAVE_IVIDEO" != "iVideo"; then \
+		sudo sed -i '$$ a\UUID=F474B7AA74B76DCC \/media\/iVideo ntfs rw' /etc/fstab; \
+	fi; \
