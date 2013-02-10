@@ -60,7 +60,6 @@ ffmpeg-common = \
 	--enable-libbluray \
 	--enable-libschroedinger \
 	--enable-libutvideo \
-	--enable-libcdio \
 	--enable-fontconfig \
 	--enable-frei0r \
 	--enable-filter=frei0r \
@@ -73,6 +72,7 @@ ffmpeg-static = \
 	--extra-libs="-lm" \
 	--extra-libs="-ldl" \
 	--extra-libs="-lrt" \
+	--extra-libs="-lbz2" \
 	--extra-libs="-lexpat" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
@@ -96,6 +96,7 @@ ffmpeg-shared = \
 	--extra-libs="-lcdio_paranoia" \
 	
 ffmpeg-moreoptions-dont-work:
+	--enable-libcdio \
 
 ffmpeg-moreoptions-dont-want:
 	--disable-mmx \
@@ -129,4 +130,4 @@ ffmpeg-git/config.shared.done:
 	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
 	touch config.shared.done
 	
-ffmpeg: ffmpeg-git ffmpeg-git/config.static.done ffmpeg-git/config.shared.done 
+ffmpeg: ffmpeg-git ffmpeg-git/config.shared.done ffmpeg-git/config.static.done 

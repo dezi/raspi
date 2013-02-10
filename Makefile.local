@@ -284,6 +284,8 @@ $(bzip2)/dezi.done:
 	sed -i 's/CC=gcc/CC=gcc -fPIC/g' Makefile; \
 	make; \
 	sudo make install; \
+	make -f Makefile-libbz2_so; \
+	sudo mv libbz2.so.* /usr/local/lib; \
 	touch dezi.done
 
 bzip2: $(bzip2) $(bzip2)/dezi.done
@@ -1166,6 +1168,7 @@ $(tvheadend):
 
 $(tvheadend)/dezi.done:
 	cd $(tvheadend); \
+	export CC=gcc-4.7; \
 	./configure || exit; \
 	make; \
 	sudo make install; \

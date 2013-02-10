@@ -64,6 +64,9 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/bin/gperf:
 	sudo apt-get install -y gperf
 
+/usr/bin/gcc-4.7:
+	sudo apt-get install -y gcc-4.7
+
 /usr/bin/dvbscan:
 	sudo apt-get install -y dvb-apps
 	
@@ -90,6 +93,7 @@ developer: \
 	/usr/bin/bison \
 	/usr/bin/gperf \
 	/usr/bin/libtool \
+	/usr/bin/gcc-4.7 \
 	/usr/bin/dvbscan \
 	/usr/bin/autoconf \
 	/usr/bin/apt-file \
