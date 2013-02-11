@@ -1136,8 +1136,15 @@ $(gpac):
 
 $(gpac)/dezi.done:
 	cd $(gpac); \
-	./configure --static-mp4box; \
-	make; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	sed -i "s/LINKFLAGS+=-lgpac_static/LINKFLAGS+=-static -lgpac_static/g" applications/mp4box/Makefile; \
+	./configure \
+		--static-mp4box \
+		--use-xvid=no \
+		--use-ffmpeg=no \
+		--extra-libs="-L/usr/local/lib -lz -lm" \
+		|| exit; \
+	make || exit; \
 	sudo make install; \
 	touch dezi.done
 

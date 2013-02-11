@@ -70,6 +70,7 @@ ffmpeg-static = \
 	--enable-static \
 	--extra-cflags=--static	\
 	--extra-libs="-lm" \
+	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
 	--extra-libs="-lrt" \
 	--extra-libs="-lbz2" \
@@ -103,33 +104,33 @@ ffmpeg-moreoptions-dont-want:
 	--enable-libfaac \
 	--disable-w32threads \
 	
-ffmpeg-git/config.static.done:
+ffmpeg-git/dezi.static.done:
 	cd ffmpeg-git; \
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
-	./configure $(ffmpeg-static) $(ffmpeg-common); \
+	./configure $(ffmpeg-static) $(ffmpeg-common) || exit; \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \
 	sudo mv -f /usr/local/bin/ffplay  /usr/local/bin/ffplay-static; \
 	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
-	touch config.static.done
+	touch dezi.static.done
 	
-ffmpeg-git/config.shared.done:
+ffmpeg-git/dezi.shared.done:
 	cd ffmpeg-git; \
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
-	./configure $(ffmpeg-shared) $(ffmpeg-common); \
+	./configure $(ffmpeg-shared) $(ffmpeg-common); || exit \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
 	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared; \
 	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared; \
 	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
-	touch config.shared.done
+	touch dezi.shared.done
 	
-ffmpeg: ffmpeg-git ffmpeg-git/config.shared.done ffmpeg-git/config.static.done 
+ffmpeg: ffmpeg-git ffmpeg-git/dezi.shared.done ffmpeg-git/dezi.static.done 

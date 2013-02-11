@@ -14,3 +14,6 @@ raspberrypi:
 
 centos:
 	make -f Makefile.centos
+
+local:
+	make -f Makefile.local
