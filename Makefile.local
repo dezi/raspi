@@ -327,7 +327,7 @@ $(gnutls):
 
 $(gnutls)/dezi.done:
 	cd $(gnutls); \
-	./configure --enable-static; \
+	./configure --enable-static --enable-shared; \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -1202,7 +1202,7 @@ $(v8)/dezi.done:
 	fi; \
 	make dependencies; \
 	if test "$$ARCH" = "armv6l"; then \
-		make hardfp=on arm || exit; \
+		make vfp3=off hardfp=on arm || exit; \
 	else \
 		make ia32 || exit; \
 	fi; \

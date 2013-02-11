@@ -108,6 +108,7 @@ ffmpeg-git/config.static.done:
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	./configure $(ffmpeg-static) $(ffmpeg-common); \
 	make || exit; \
 	sudo make install; \
@@ -121,6 +122,7 @@ ffmpeg-git/config.shared.done:
 	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	./configure $(ffmpeg-shared) $(ffmpeg-common); \
 	make || exit; \
 	sudo make install; \
