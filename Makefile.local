@@ -22,7 +22,7 @@ fontconfig_version 			= git
 libcddb_version				= 1.3.2
 libdvdcss_version 			= 1.2.12
 fribidi_version 			= 0.19.5
-rtmpdump_version 			= trunk
+rtmpdump_version 			= git
 
 libcdio_version				= 0.90
 libgsm_version 				= 1.0.13-4
@@ -62,6 +62,7 @@ mp4v2_version 				= svn
 gpac_version 				= svn
 tvheadend_version 			= git
 v8_version 					= git
+xbmc_version 				= git
 
 #####################################################################
 
@@ -118,6 +119,7 @@ abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
 tvheadend = tvheadend-$(tvheadend_version)
 v8 = v8-$(v8_version)
+xbmc = xbmc-$(xbmc_version)
 
 ######################################################################
 #
@@ -143,7 +145,9 @@ codecs: \
 	orc schroedinger xavs utvideo speex \
 	frei0r \
 
-utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac tvheadend
+utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
+
+special: v8 tvheadend xbmc
 
 #####################################################################
 #
@@ -1170,7 +1174,9 @@ $(tvheadend):
 
 $(tvheadend)/dezi.done:
 	cd $(tvheadend); \
-	export CC=gcc-4.7; \
+	if [ -f "/usr/bin/gcc-4.7" ]; then \
+		export CC=gcc-4.7; \
+	fi; \
 	./configure || exit; \
 	make; \
 	sudo make install; \
@@ -1190,10 +1196,40 @@ $(v8):
 
 $(v8)/dezi.done:
 	cd $(v8); \
-	export CC=gcc-4.7; \
+	ARCH=`arch`; \
+	if [ -f "/usr/bin/gcc-4.7" ]; then \
+		export CC=gcc-4.7; \
+	fi; \
 	make dependencies; \
-	make native hardfp=on; \
+	if test "$$ARCH" = "armv6l"; then \
+		make hardfp=on arm || exit; \
+	else \
+		make ia32 || exit; \
+	fi; \
 	sudo make install; \
 	touch dezi.done
 
 v8: $(v8) $(v8)/dezi.done
+
+#####################################################################
+#
+# xbmc
+#
+
+$(xbmc): 
+	git clone git://github.com/xbmc/xbmc.git $(xbmc)
+	tar -cvzf $(xbmc).tar.gz $(xbmc)
+	mv -f $(xbmc).tar.gz ../download
+
+$(xbmc)/dezi.done:
+	cd $(xbmc); \
+	if [ -f "/usr/bin/gcc-4.7" ]; then \
+		export CC=gcc-4.7; \
+	fi; \
+	./bootstrap || exit; \
+	./configure --enable-external-libraries || exit; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+xbmc: $(xbmc) $(xbmc)/dezi.done
