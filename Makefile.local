@@ -147,7 +147,7 @@ codecs: \
 
 utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
-special: v8 tvheadend xbmc
+special: tvheadend v8 xbmc
 
 #####################################################################
 #

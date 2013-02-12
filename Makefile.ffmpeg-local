@@ -110,6 +110,7 @@ ffmpeg-git/dezi.static.done:
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
+	make clean; \
 	./configure $(ffmpeg-static) $(ffmpeg-common) || exit; \
 	make || exit; \
 	sudo make install; \
@@ -124,6 +125,7 @@ ffmpeg-git/dezi.shared.done:
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
+	make clean; \
 	./configure $(ffmpeg-shared) $(ffmpeg-common) || exit; \
 	make || exit; \
 	sudo make install; \
@@ -133,4 +135,4 @@ ffmpeg-git/dezi.shared.done:
 	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
 	touch dezi.shared.done
 	
-ffmpeg: ffmpeg-git ffmpeg-git/dezi.shared.done ffmpeg-git/dezi.static.done 
+ffmpeg: ffmpeg-git ffmpeg-git/dezi.static.done ffmpeg-git/dezi.shared.done 
