@@ -124,7 +124,7 @@ ffmpeg-git/dezi.shared.done:
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
-	./configure $(ffmpeg-shared) $(ffmpeg-common); || exit \
+	./configure $(ffmpeg-shared) $(ffmpeg-common) || exit; \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
