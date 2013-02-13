@@ -5,6 +5,9 @@
 # Dennis Zierahn
 #
 
+ffmpeg_version = git
+ffmpeg = ffmpeg-$(ffmpeg_version)
+
 all: ./ffmpeg-local
 	cd ./ffmpeg-local; make work
 
@@ -24,10 +27,22 @@ work: ffmpeg
 # ffmpeg
 #
 
-ffmpeg-git: 
-	git clone git://source.ffmpeg.org/ffmpeg ffmpeg-git
-	tar -cvzf ffmpeg-git.tar.gz ffmpeg-git
+$(ffmpeg): 
+	git clone git://source.ffmpeg.org/ffmpeg $(ffmpeg)
+	tar -cvzf ffmpeg-git.tar.gz $(ffmpeg)
 	mv -f ffmpeg-git.tar.gz ../download
+
+$(ffmpeg)/libavfilter/vf_logo.c:
+	cd $(ffmpeg)/libavfilter; \
+	cp ../../../filters/vf_logo.c .; \
+	HAVE_VFLOGO=`fgrep -o "REGISTER_FILTER(LOGO" allfilters.c`; \
+	if test "x$$HAVE_VFLOGO" = "x"; then \
+		sed -i '/initialized = 1;/ a\\n\tREGISTER_FILTER(LOGO,\t\t\tlogo,\t\t\tvf);' allfilters.c; \
+	fi; \
+	HAVE_VFLOGO=`fgrep -o "CONFIG_LOGO_FILTER" Makefile`; \
+	if test "x$$HAVE_VFLOGO" = "x"; then \
+		sed -i '$$ a\\nOBJS-$$(CONFIG_LOGO_FILTER) += vf_logo.o' Makefile; \
+	fi; \
 	
 ffmpeg-common = \
 	--enable-gpl \
@@ -104,9 +119,8 @@ ffmpeg-moreoptions-dont-want:
 	--enable-libfaac \
 	--disable-w32threads \
 	
-ffmpeg-git/dezi.static.done:
-	cd ffmpeg-git; \
-	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+$(ffmpeg)/dezi.static.done:
+	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
@@ -119,9 +133,8 @@ ffmpeg-git/dezi.static.done:
 	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
 	touch dezi.static.done
 	
-ffmpeg-git/dezi.shared.done:
-	cd ffmpeg-git; \
-	sed -i "s/if HAVE_CDIO_PARANOIA_H/if 1/g" libavdevice/libcdio.c; \
+$(ffmpeg)/dezi.shared.done:
+	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
@@ -135,4 +148,9 @@ ffmpeg-git/dezi.shared.done:
 	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
 	touch dezi.shared.done
 	
-ffmpeg: ffmpeg-git ffmpeg-git/dezi.static.done ffmpeg-git/dezi.shared.done 
+ffmpeg: \
+	$(ffmpeg) \
+	$(ffmpeg)/libavfilter/vf_logo.c \
+	$(ffmpeg)/dezi.static.done \
+	$(ffmpeg)/dezi.shared.done 
+

@@ -13,5 +13,9 @@ daemons:
 #
 
 update:
-	sudo yum update
-	sudo yum upgrade
+	#sudo yum update
+	#sudo yum upgrade
+	sudo yum install -y \
+		flex \
+		bison \
+		subversion \

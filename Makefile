@@ -17,3 +17,9 @@ centos:
 
 local:
 	make -f Makefile.local
+
+dezi:
+	make -f Makefile.dezi
+
+spon:
+	make -f Makefile.spon
