@@ -1209,7 +1209,7 @@ $(v8)/dezi.done:
 	fi; \
 	make dependencies; \
 	if test "$$ARCH" = "armv6l"; then \
-		make vfp3=off hardfp=on arm || exit; \
+		make hardfp=on vfp3=off arm || exit; \
 	else \
 		make ia32 || exit; \
 	fi; \

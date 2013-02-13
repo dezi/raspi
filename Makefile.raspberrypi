@@ -55,6 +55,9 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/bin/flex:
 	sudo apt-get install -y flex
 
+/usr/bin/swig:
+	sudo apt-get install -y swig
+
 /usr/bin/eject:
 	sudo apt-get install -y eject
 
@@ -67,11 +70,17 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/bin/gcc-4.7:
 	sudo apt-get install -y gcc-4.7
 
+/usr/bin/doxygen:
+	sudo apt-get install -y doxygen
+
 /usr/bin/dvbscan:
 	sudo apt-get install -y dvb-apps
 	
 /usr/bin/autoconf:
 	sudo apt-get install -y autoconf
+
+/usr/bin/autopoint:
+	sudo apt-get install -y autopoint
 
 /usr/bin/libtool:
 	sudo apt-get install -y libtool
@@ -89,13 +98,16 @@ developer: \
 	/usr/bin/cvs \
 	/usr/bin/svn \
 	/usr/bin/flex \
+	/usr/bin/swig \
 	/usr/bin/eject \
 	/usr/bin/bison \
 	/usr/bin/gperf \
 	/usr/bin/libtool \
 	/usr/bin/gcc-4.7 \
+	/usr/bin/doxygen \
 	/usr/bin/dvbscan \
 	/usr/bin/autoconf \
+	/usr/bin/autopoint \
 	/usr/bin/apt-file \
 	/usr/include/jpeglib.h \
 	/usr/share/doc-base/libcurl4-openssl-dev
