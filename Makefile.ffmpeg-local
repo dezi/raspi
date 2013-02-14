@@ -74,7 +74,6 @@ ffmpeg-common = \
 	--enable-libx264 \
 	--enable-libbluray \
 	--enable-libschroedinger \
-	--enable-libutvideo \
 	--enable-fontconfig \
 	--enable-frei0r \
 	--enable-filter=frei0r \
@@ -113,6 +112,7 @@ ffmpeg-shared = \
 	
 ffmpeg-moreoptions-dont-work:
 	--enable-libcdio \
+	--enable-libutvideo \
 
 ffmpeg-moreoptions-dont-want:
 	--disable-mmx \
@@ -133,13 +133,17 @@ $(ffmpeg)/dezi.static.done:
 	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
 	touch dezi.static.done
 	
-$(ffmpeg)/dezi.shared.done:
+$(ffmpeg)/dezi.shared.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	make clean; \
 	./configure $(ffmpeg-shared) $(ffmpeg-common) || exit; \
+	touch dezi.shared.conf
+	
+$(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
+	cd $(ffmpeg); \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
@@ -151,6 +155,6 @@ $(ffmpeg)/dezi.shared.done:
 ffmpeg: \
 	$(ffmpeg) \
 	$(ffmpeg)/libavfilter/vf_logo.c \
+	$(ffmpeg)/dezi.shared.done \
 	$(ffmpeg)/dezi.static.done \
-	$(ffmpeg)/dezi.shared.done 
 

@@ -20,6 +20,7 @@ alsa_version 				= 1.0.25
 freetype_version 			= 2.4.11
 fontconfig_version 			= git
 libcddb_version				= 1.3.2
+taglib_version				= 1.8
 libdvdcss_version 			= 1.2.12
 fribidi_version 			= 0.19.5
 rtmpdump_version 			= git
@@ -67,6 +68,7 @@ xbmc_version 				= git
 #####################################################################
 
 cd-discid = cd-discid-$(cd-discid_version)
+taglib = taglib-$(taglib_version)
 libcddb = libcddb-$(libcddb_version)
 libcdio = libcdio-$(libcdio_version)
 libcdio-paranoia = libcdio-paranoia-$(libcdio-paranoia_version)
@@ -133,7 +135,7 @@ work: tools helpers codecs utilities
 
 tools: gmp yasm cmake gperf expat zlib bzip2 nettle gnutls
 
-helpers: sdl alsa freetype fontconfig libcddb libdvdcss fribidi rtmpdump
+helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
 
 codecs: \
 	libcdio libgsm libmad libass \
@@ -414,6 +416,25 @@ $(fontconfig)/dezi.done:
 	touch dezi.done
 
 fontconfig: $(fontconfig) $(fontconfig)/dezi.done
+
+#####################################################################
+#
+# taglib
+#
+
+$(taglib): 
+	wget http://taglib.github.com/releases/$(taglib).tar.gz
+	tar -xvzf $(taglib).tar.gz
+	mv -f $(taglib).tar.gz ../download
+
+$(taglib)/dezi.done:
+	cd $(taglib); \
+	cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_RELEASE_TYPE=Release .; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+taglib: $(taglib) $(taglib)/dezi.done
 
 #####################################################################
 #
@@ -1228,15 +1249,34 @@ $(xbmc):
 	tar -cvzf $(xbmc).tar.gz $(xbmc)
 	mv -f $(xbmc).tar.gz ../download
 
+$(xbmc)/dezi.conf:
+	cd $(xbmc); \
+	if [ -f "/usr/bin/gcc-4.7" ]; then \
+		export CC=gcc-4.7; \
+	fi; \
+	export LDFLAGS="-L/opt/vc/lib"; \
+	./bootstrap || exit; \
+	./configure \
+		--prefix=/usr --build=arm-linux-gnueabihf --host=arm-linux-gnueabihf \
+		--localstatedir=/var/lib --with-platform=raspberry-pi --disable-gl --enable-gles \
+		--disable-x11 --disable-sdl --enable-ccache --enable-optimizations \
+		--enable-external-libraries --disable-goom --disable-hal --disable-pulse \
+		--disable-vaapi --disable-vdpau --disable-xrandr --disable-airplay \
+		--disable-alsa --enable-avahi --disable-libbluray --disable-dvdcss \
+		--disable-debug --disable-joystick --enable-mid --disable-nfs --disable-profiling \
+		--disable-projectm --enable-rsxs --enable-rtmp --disable-vaapi \
+		--disable-vdadecoder --disable-external-ffmpeg  --disable-optical-drive \
+		|| exit; \
+	touch dezi.conf
+
 $(xbmc)/dezi.done:
 	cd $(xbmc); \
 	if [ -f "/usr/bin/gcc-4.7" ]; then \
 		export CC=gcc-4.7; \
 	fi; \
-	./bootstrap || exit; \
-	./configure --enable-external-libraries || exit; \
+	export LDFLAGS="-L/opt/vc/lib"; \
 	make; \
 	sudo make install; \
 	touch dezi.done
 
-xbmc: $(xbmc) $(xbmc)/dezi.done
+xbmc: $(xbmc) $(xbmc)/dezi.conf $(xbmc)/dezi.done
