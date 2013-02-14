@@ -18,6 +18,14 @@ centos:
 local:
 	make -f Makefile.local
 
+ffmpeg: ffmpeg-win32 ffmpeg-local
+
+ffmpeg-local:
+	make -f Makefile.ffmpeg-local
+
+ffmpeg-win32:
+	make -f Makefile.ffmpeg-win32
+
 dezi:
 	make -f Makefile.dezi
 

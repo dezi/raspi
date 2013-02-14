@@ -1,0 +1,44 @@
+##########################################################################
+#
+# Dezi's spon stuff
+#
+
+all: everything sponexecs ffmpeg ffprobe MP4Box
+
+everything:
+	make -f Makefile.centos
+	make -f Makefile.local
+
+##########################################################################
+#
+# SPON executables.
+# 
+
+sponexecs:
+	mkdir sponexecs
+
+sponexecs/exec.ffmpeg.centos.static: /usr/local/bin/ffmpeg-static
+	cp -p /usr/local/bin/ffmpeg-static sponexecs/exec.ffmpeg.centos.static
+
+sponexecs/exec.ffmpeg.win32.static.exe: ffmpeg-win32/sandbox/win32/ffmpeg_git/ffmpeg.exe
+	cp -p ffmpeg-win32/sandbox/win32/ffmpeg_git/ffmpeg.exe sponexecs/exec.ffmpeg.win32.static.exe
+
+ffmpeg: \
+	sponexecs/exec.ffmpeg.centos.static \
+	sponexecs/exec.ffmpeg.win32.static.exe \
+
+sponexecs/exec.ffprobe.centos.static: /usr/local/bin/ffprobe-static
+	cp -p /usr/local/bin/ffprobe-static sponexecs/exec.ffprobe.centos.static
+
+sponexecs/exec.ffprobe.win32.static.exe: ffmpeg-win32/sandbox/win32/ffmpeg_git/ffprobe.exe
+	cp -p ffmpeg-win32/sandbox/win32/ffmpeg_git/ffprobe.exe sponexecs/exec.ffprobe.win32.static.exe
+
+ffprobe: \
+	sponexecs/exec.ffprobe.centos.static \
+	sponexecs/exec.ffprobe.win32.static.exe \
+
+sponexecs/exec.MP4Box.centos.static: /usr/local/bin/MP4Box
+	cp -p /usr/local/bin/MP4Box sponexecs/exec.MP4Box.centos.static
+
+MP4Box: \
+	sponexecs/exec.MP4Box.centos.static \
