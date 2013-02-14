@@ -5,6 +5,9 @@
 # Dennis Zierahn
 #
 
+xz_version					= 5.1.2alpha
+tar_version					= 1.26
+wget_version				= 1.14
 gmp_version					= 5.0.5
 yasm_version 				= 1.2.0
 cmake_version				= 2.8.10.2
@@ -67,6 +70,9 @@ xbmc_version 				= git
 
 #####################################################################
 
+xz = xz-$(xz_version)
+tar = tar-$(tar_version)
+wget = wget-$(wget_version)
 cd-discid = cd-discid-$(cd-discid_version)
 taglib = taglib-$(taglib_version)
 libcddb = libcddb-$(libcddb_version)
@@ -131,9 +137,11 @@ xbmc = xbmc-$(xbmc_version)
 all: ./local ./download
 	cd ./local; make work
 
-work: tools helpers codecs utilities
+work: bootstrap tools helpers codecs utilities
 
-tools: gmp yasm cmake gperf expat zlib bzip2 nettle gnutls
+bootstrap: xz tar gmp nettle gnutls wget
+
+tools: yasm cmake gperf expat zlib bzip2
 
 helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
 
@@ -165,11 +173,68 @@ special: tvheadend v8 xbmc
 
 #####################################################################
 #
+# xz
+#
+
+$(xz): 
+	curl http://tukaani.org/xz/$(xz).tar.gz -o $(xz).tar.gz
+	tar -xvzf $(xz).tar.gz
+	mv $(xz).tar.gz ../download
+
+$(xz)/dezi.done:
+	cd $(xz); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+xz: $(xz) $(xz)/dezi.done
+
+#####################################################################
+#
+# tar
+#
+
+$(tar): 
+	curl http://ftp.gnu.org/gnu/tar/$(tar).tar.gz -o $(tar).tar.gz
+	tar -xvzf $(tar).tar.gz
+	mv $(tar).tar.gz ../download
+
+$(tar)/dezi.done:
+	cd $(tar); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+tar: $(tar) $(tar)/dezi.done
+
+#####################################################################
+#
+# wget
+#
+
+$(wget): 
+	curl http://ftp.gnu.org/gnu/wget/$(wget).tar.gz -o $(wget).tar.gz
+	tar -xvzf $(wget).tar.gz
+	mv $(wget).tar.gz ../download
+
+$(wget)/dezi.done:
+	cd $(wget); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+wget: $(wget) $(wget)/dezi.done
+
+#####################################################################
+#
 # gmp => nettle
 #
 
 $(gmp): 
-	wget ftp://ftp.gnu.org/gnu/gmp/$(gmp).tar.bz2
+	curl ftp://ftp.gnu.org/gnu/gmp/$(gmp).tar.bz2 -o $(gmp).tar.bz2
 	tar -xvjf $(gmp).tar.bz2
 	mv $(gmp).tar.bz2 ../download
 
@@ -304,7 +369,7 @@ bzip2: $(bzip2) $(bzip2)/dezi.done
 #
 
 $(nettle): 
-	wget http://www.lysator.liu.se/~nisse/archive/$(nettle).tar.gz
+	curl http://www.lysator.liu.se/~nisse/archive/$(nettle).tar.gz -o $(nettle).tar.gz
 	tar -xvzf $(nettle).tar.gz
 	mv -f $(nettle).tar.gz ../download
 
@@ -323,7 +388,7 @@ nettle: $(nettle) $(nettle)/dezi.done
 #
 
 $(gnutls): 
-	wget ftp://ftp.gnu.org/gnu/gnutls/$(gnutls).tar.xz
+	curl ftp://ftp.gnu.org/gnu/gnutls/$(gnutls).tar.xz -o $(gnutls).tar.xz
 	tar -xvJf $(gnutls).tar.xz
 	mv -f $(gnutls).tar.xz ../download
 
