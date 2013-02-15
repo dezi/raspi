@@ -78,6 +78,29 @@ ffmpeg-common = \
 	--enable-frei0r \
 	--enable-filter=frei0r \
 	
+ffmpeg-darwin = \
+	--disable-ffserver \
+	--disable-shared \
+	--enable-static \
+	--extra-cflags=--static	\
+	--extra-libs="-lm" \
+	--extra-libs="-lz" \
+	--extra-libs="-ldl" \
+	--extra-libs="/usr/local/lib/libbz2.a" \
+	--extra-libs="/usr/local/lib/libexpat.a" \
+	--extra-libs="/usr/local/lib/libfreetype.a" \
+	--extra-libs="/usr/local/lib/libfontconfig.a" \
+	--extra-libs="/usr/local/lib/libfribidi.a" \
+	--extra-libs="/usr/local/lib/liborc-0.4.a" \
+	--extra-libs="/usr/local/lib/libgmp.a" \
+	--extra-libs="/usr/local/lib/libhogweed.a" \
+	--extra-libs="/usr/local/lib/libnettle.a" \
+	--extra-libs="/usr/local/lib/libgnutls.a" \
+	--extra-libs="/usr/local/lib/libjpeg.a" \
+	--extra-libs="/usr/local/lib/libcdio.a" \
+	--extra-libs="/usr/local/lib/libcdio_cdda.a" \
+	--extra-libs="/usr/local/lib/libcdio_paranoia.a" \
+	
 ffmpeg-static = \
 	--disable-ffserver \
 	--disable-shared \
@@ -125,7 +148,7 @@ $(ffmpeg)/dezi.static.done:
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	make clean; \
-	./configure $(ffmpeg-static) $(ffmpeg-common) || exit; \
+	./configure $(ffmpeg-darwin) $(ffmpeg-common) || exit; \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \

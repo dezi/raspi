@@ -143,11 +143,11 @@ xbmc = xbmc-$(xbmc_version)
 all: ./local ./download
 	cd ./local; make work
 
-work: bootstrap tools helpers codecs utilities
+work: tools helpers codecs utilities
 
-bootstrap: xz tar sed gmp nettle gnutls wget pkg-config
+darwin: xz tar sed gmp nettle gnutls wget pkg-config
 
-tools: yasm cmake gperf expat zlib bzip2
+tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
 helpers: jpeg sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
 
@@ -640,7 +640,7 @@ $(rtmpdump)/dezi.done:
 	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
 	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
 	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
-	make; \
+	make || make SYS=darwin || exit; \
 	sudo make install; \
 	touch dezi.done
 
@@ -718,6 +718,7 @@ $(libass):
 
 $(libass)/dezi.done:
 	cd $(libass); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./configure; \
 	make; \
 	sudo make install; \
@@ -1075,6 +1076,7 @@ $(schroedinger)/dezi.done:
 	cd $(schroedinger); \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./configure --enable-static --enable-shared; \
+	sed -i 's/testsuite//' Makefile; \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -1093,7 +1095,7 @@ $(xavs):
 
 $(xavs)/dezi.done:
 	cd $(xavs); \
-	./configure --enable-pic --enable-shared --disable-asm; \
+	./configure --enable-pic --disable-asm; \
 	make; \
 	sudo make install; \
 	touch dezi.done
