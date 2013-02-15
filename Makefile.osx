@@ -1,0 +1,43 @@
+##########################################################################
+#
+# Dezi's OSX mock ups.
+#
+
+all: update tools daemons
+
+tools: curl-ca-bundle automake autoconf libtool pkgconfig jpeg
+
+daemons: 
+
+##########################################################################
+#
+# Update and upgrade system
+#
+
+update:
+	sudo port selfupdate
+
+##########################################################################
+#
+# Developer tools
+#
+
+automake:
+	sudo port install automake
+
+autoconf:
+	sudo port install autoconf
+
+pkgconfig:
+	sudo port install pkgconfig
+
+libtool:
+	sudo port install libtool
+	sudo ln -f -s glibtool /opt/local/bin/libtool
+	sudo ln -f -s glibtoolize /opt/local/bin/libtoolize
+
+curl-ca-bundle:
+	sudo port install curl-ca-bundle
+
+jpeg:
+	sudo port install jpeg

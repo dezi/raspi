@@ -20,6 +20,7 @@ nettle_version				= 2.5
 gnutls_version				= 3.0.22
 pkg-config_version			= 0.28
 
+jpeg_version				= v9
 sdl_version					= 1.2.15
 alsa_version 				= 1.0.25
 freetype_version 			= 2.4.11
@@ -82,6 +83,7 @@ libcddb = libcddb-$(libcddb_version)
 libcdio = libcdio-$(libcdio_version)
 libcdio-paranoia = libcdio-paranoia-$(libcdio-paranoia_version)
 cmake = cmake-$(cmake_version)
+jpeg = jpegsrc.$(jpeg_version)
 sdl = SDL-$(sdl_version)
 frei0r = frei0r-$(frei0r_version)
 fdk-aac = fdk-aac-$(fdk-aac_version)
@@ -147,7 +149,7 @@ bootstrap: xz tar sed gmp nettle gnutls wget pkg-config
 
 tools: yasm cmake gperf expat zlib bzip2
 
-helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
+helpers: jpeg sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
 
 codecs: \
 	libcdio libgsm libmad libass \
@@ -445,6 +447,27 @@ gnutls: $(gnutls) $(gnutls)/dezi.done
 
 #####################################################################
 #
+# jpeg
+#
+
+$(jpeg): 
+	curl http://www.ijg.org/files/$(jpeg).tar.gz -o $(jpeg).tar.gz
+	rm -rf jpeg-9
+	tar -xvzf $(jpeg).tar.gz
+	mv jpeg-9 $(jpeg)
+	mv -f $(jpeg).tar.gz ../download
+
+$(jpeg)/dezi.done:
+	cd $(jpeg); \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+jpeg: $(jpeg) $(jpeg)/dezi.done
+
+#####################################################################
+#
 # sdl
 #
 
@@ -516,6 +539,7 @@ $(fontconfig):
 
 $(fontconfig)/dezi.done:
 	cd $(fontconfig); \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./autogen.sh; \
 	./configure -disable-docs; \
 	make; \
@@ -1168,7 +1192,7 @@ $(libcdio-paranoia):
 $(libcdio-paranoia)/dezi.done:
 	cd $(libcdio-paranoia); \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
-	./configure; \
+	./configure --without-versioned-libs; \
 	make; \
 	sudo make install; \
 	touch dezi.done
