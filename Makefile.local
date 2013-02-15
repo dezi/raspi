@@ -1388,6 +1388,8 @@ $(xbmc)/dezi.conf:
 		export CC=gcc-4.7; \
 	fi; \
 	export LDFLAGS="-L/opt/vc/lib"; \
+	export INCLUDES="-I/opt/vc/include"; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
 	./bootstrap || exit; \
 	./configure \
 		--prefix=/usr --build=arm-linux-gnueabihf --host=arm-linux-gnueabihf \
@@ -1408,8 +1410,10 @@ $(xbmc)/dezi.done:
 		export CC=gcc-4.7; \
 	fi; \
 	export LDFLAGS="-L/opt/vc/lib"; \
-	make; \
-	sudo make install; \
+	export INCLUDES="-I/opt/vc/include"; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
+	make || exit; \
+	sudo make install || exit; \
 	touch dezi.done
 
 xbmc: $(xbmc) $(xbmc)/dezi.conf $(xbmc)/dezi.done

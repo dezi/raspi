@@ -185,5 +185,8 @@ XBMC-DEV:
 	x11proto-record-dev x11proto-render-dev x11proto-scrnsaver-dev \
 	x11proto-xext-dev x11proto-xf86vidmode-dev x11proto-xinerama-dev xtrans-dev \
 	zlib1g-dev:armhf
-	sudo apt-get install libgpg-error-dev
+	sudo apt-get install sqlite3
 	sudo apt-get clean
+	sudo ln -f -s pthreads/vcos_platform.h /opt/vc/include/interface/vcos/vcos_platform.h
+	sudo ln -f -s pthreads/vcos_platform_types.h /opt/vc/include/interface/vcos/vcos_platform_types.h
+	sudo ln -f -s pthreads/vcos_futex_mutex.h /opt/vc/include/interface/vcos/vcos_futex_mutex.h
