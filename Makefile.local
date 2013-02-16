@@ -501,7 +501,7 @@ jpeg: $(jpeg) $(jpeg)/dezi.done
 #
 
 $(sdl): 
-	wget http://www.libsdl.org/release/sdl-$(sdl_version).tar.gz -o $(sdl).tar.gz
+	wget http://www.libsdl.org/release/$(sdl).tar.gz
 	tar -xvzf $(sdl).tar.gz
 	mv -f $(sdl).tar.gz ../download
 

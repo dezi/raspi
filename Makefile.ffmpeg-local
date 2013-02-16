@@ -79,16 +79,17 @@ ffmpeg-common = \
 	--enable-filter=frei0r \
 	
 ffmpeg-darwin = \
-	--disable-ffserver \
 	--disable-shared \
-	--disable-vda \
 	--enable-static \
+	--disable-vda \
 	--extra-cflags=--static	\
 	--extra-ldflags="-L/usr/local/libstatic" \
 	--extra-libs="-lm" \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
 	--extra-libs="-lbz2" \
+	--extra-libs="-lSDLmain" \
+	--extra-libs="-lSDL" \
 	--extra-libs="-lexpat" \
 	--extra-libs="-liconv" \
 	--extra-libs="-lfreetype" \
@@ -104,48 +105,6 @@ ffmpeg-darwin = \
 	--extra-libs="-lcdio_cdda" \
 	--extra-libs="-lcdio_paranoia" \
 	
-ffmpeg-darwinx = \
-	--disable-ffserver \
-	--disable-shared \
-	--disable-vda \
-	--enable-static \
-	--extra-cflags=--static	\
-	--extra-ldflags="/usr/local/lib/libz.a" \
-	--extra-ldflags="/usr/local/lib/libbz2.a" \
-	--extra-ldflags="/usr/local/lib/libexpat.a" \
-	--extra-ldflags="/usr/local/lib/libfreetype.a" \
-	--extra-ldflags="/usr/local/lib/libfontconfig.a" \
-	--extra-ldflags="/usr/local/lib/libfribidi.a" \
-	--extra-ldflags="/usr/local/lib/liborc-0.4.a" \
-	--extra-ldflags="/usr/local/lib/libschroedinger-1.0.a" \
-	--extra-ldflags="/usr/local/lib/libgmp.a" \
-	--extra-ldflags="/usr/local/lib/libhogweed.a" \
-	--extra-ldflags="/usr/local/lib/libnettle.a" \
-	--extra-ldflags="/usr/local/lib/libgnutls-openssl.a" \
-	--extra-ldflags="/usr/local/lib/libgnutlsxx.a" \
-	--extra-ldflags="/usr/local/lib/libgnutls.a" \
-	--extra-ldflags="/usr/local/lib/libjpeg.a" \
-	--extra-ldflags="/usr/local/lib/libcdio.a" \
-	--extra-ldflags="/usr/local/lib/libcdio_cdda.a" \
-	--extra-ldflags="/usr/local/lib/libcdio_paranoia.a" \
-	--extra-ldflags="/usr/local/lib/libopenjpeg.a" \
-	--extra-ldflags="/usr/local/lib/libopus.a" \
-	--extra-ldflags="/usr/local/lib/libbluray.a" \
-	--extra-ldflags="/usr/local/lib/libspeex.a" \
-	--extra-ldflags="/usr/local/lib/libtheoraenc.a" \
-	--extra-ldflags="/usr/local/lib/libtheoradec.a" \
-	--extra-ldflags="/usr/local/lib/libtheora.a" \
-	--extra-ldflags="/usr/local/lib/libvo-aacenc.a" \
-	--extra-ldflags="/usr/local/lib/libvo-amrwbenc.a" \
-	--extra-ldflags="/usr/local/lib/libvorbis.a" \
-	--extra-ldflags="/usr/local/lib/libmp3lame.a" \
-	--extra-ldflags="/usr/local/lib/libfdk-aac.a" \
-	--extra-ldflags="/usr/local/lib/librtmp.a" \
-	--extra-ldflags="/usr/local/lib/libiconv.a" \
-	--extra-ldflags="/usr/local/lib/libass.a" \
-	--extra-ldflags="/usr/local/lib/libopencore-amrnb.a" \
-	--extra-ldflags="/usr/local/lib/libopencore-amrwb.a" \
-	
 ffmpeg-static = \
 	--disable-ffserver \
 	--disable-shared \
@@ -156,6 +115,8 @@ ffmpeg-static = \
 	--extra-libs="-ldl" \
 	--extra-libs="-lrt" \
 	--extra-libs="-lbz2" \
+	--extra-libs="-lSDLmain" \
+	--extra-libs="-lSDL" \
 	--extra-libs="-lexpat" \
 	--extra-libs="-liconv" \
 	--extra-libs="-lfreetype" \
@@ -192,21 +153,28 @@ $(ffmpeg)/dezi.static.done:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
+	export PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
 	make clean; \
 	./configure $(ffmpeg-common)  $(ffmpeg-darwin) || exit; \
 	make || exit; \
 	sudo make install; \
-	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \
-	sudo mv -f /usr/local/bin/ffplay  /usr/local/bin/ffplay-static; \
-	sudo mv -f /usr/local/bin/ffprobe /usr/local/bin/ffprobe-static; \
+	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-static; \
+	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-static; \
+	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-static; \
+	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-static; \
 	touch dezi.static.done
 	
 $(ffmpeg)/dezi.shared.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
+	export PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
 	make clean; \
 	./configure $(ffmpeg-common) $(ffmpeg-shared) || exit; \
 	touch dezi.shared.conf
