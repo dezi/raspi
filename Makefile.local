@@ -16,6 +16,7 @@ gperf_version 				= 3.0.4
 expat_version 				= 2.1.0
 zlib_version 				= 1.2.7
 bzip2_version 				= 1.0.6
+libiconv_version 			= 1.14
 nettle_version				= 2.5
 gnutls_version				= 3.0.22
 pkg-config_version			= 0.28
@@ -82,6 +83,7 @@ taglib = taglib-$(taglib_version)
 libcddb = libcddb-$(libcddb_version)
 libcdio = libcdio-$(libcdio_version)
 libcdio-paranoia = libcdio-paranoia-$(libcdio-paranoia_version)
+libiconv = libiconv-$(libiconv_version)
 cmake = cmake-$(cmake_version)
 jpeg = jpegsrc.$(jpeg_version)
 sdl = SDL-$(sdl_version)
@@ -149,7 +151,7 @@ darwin: xz tar sed gmp nettle gnutls wget pkg-config
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
-helpers: jpeg sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump
+helpers: jpeg sdl alsa freetype fontconfig taglib libiconv libcddb libdvdcss fribidi rtmpdump
 
 codecs: \
 	libcdio libgsm libmad libass \
@@ -409,6 +411,25 @@ bzip2: $(bzip2) $(bzip2)/dezi.done
 
 #####################################################################
 #
+# libiconv
+#
+
+$(libiconv): 
+	wget http://ftp.gnu.org/pub/gnu/libiconv/$(libiconv).tar.gz
+	tar -xvzf $(libiconv).tar.gz
+	mv -f $(libiconv).tar.gz ../download
+
+$(libiconv)/dezi.done:
+	cd $(libiconv); \
+	./configure --enable-static; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+libiconv: $(libiconv) $(libiconv)/dezi.done
+
+#####################################################################
+#
 # nettle => gnutls
 #
 
@@ -438,6 +459,7 @@ $(gnutls):
 
 $(gnutls)/dezi.done:
 	cd $(gnutls); \
+	sed -i "s/^void \*_gnutls_file_mutex;/void *_gnutls_file_mutex = 0;/" lib/verify-tofu.c; \
 	./configure --enable-static --enable-shared; \
 	make; \
 	sudo make install; \
@@ -472,7 +494,7 @@ jpeg: $(jpeg) $(jpeg)/dezi.done
 #
 
 $(sdl): 
-	wget http://www.libsdl.org/release/SDL-$(sdl_version).tar.gz -O $(sdl).tar.gz
+	wget http://www.libsdl.org/release/sdl-$(sdl_version).tar.gz -o $(sdl).tar.gz
 	tar -xvzf $(sdl).tar.gz
 	mv -f $(sdl).tar.gz ../download
 
@@ -539,7 +561,7 @@ $(fontconfig):
 
 $(fontconfig)/dezi.done:
 	cd $(fontconfig); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	export pkg_config_path="/usr/local/lib/pkgconfig"; \
 	./autogen.sh; \
 	./configure -disable-docs; \
 	make; \
@@ -560,7 +582,7 @@ $(taglib):
 
 $(taglib)/dezi.done:
 	cd $(taglib); \
-	cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_RELEASE_TYPE=Release .; \
+	cmake -dcmake_install_prefix=/usr/local -dcmake_release_type=release .; \
 	make || exit; \
 	sudo make install; \
 	touch dezi.done
@@ -636,11 +658,11 @@ $(rtmpdump):
 
 $(rtmpdump)/dezi.done:
 	cd $(rtmpdump); \
-	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' Makefile; \
-	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
-	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
-	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
-	make || make SYS=darwin || exit; \
+	sed -i 's/crypto=openssl/#crypto=openssl/g' makefile; \
+	sed -i 's/#crypto=gnutls/crypto=gnutls/g' makefile; \
+	sed -i 's/crypto=openssl/#crypto=openssl/g' librtmp/makefile; \
+	sed -i 's/#crypto=gnutls/crypto=gnutls/g' librtmp/makefile; \
+	make || make sys=darwin || exit; \
 	sudo make install; \
 	touch dezi.done
 
@@ -672,14 +694,14 @@ libcdio: $(libcdio) $(libcdio)/dezi.done
 
 $(libgsm): 
 	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(libgsm).tar.xz
-	tar -xvJf $(libgsm).tar.xz
+	tar -xvjf $(libgsm).tar.xz
 	mv -f $(libgsm).tar.xz ../download
 
 $(libgsm)/dezi.done:
 	cd $(libgsm); \
-	sed -i 's/INSTALL_ROOT\t=/INSTALL_ROOT\t= \/usr\/local/g' Makefile; \
-	sed -i 's/GSM_INSTALL_ROOT)\/inc/GSM_INSTALL_ROOT)\/include/g' Makefile; \
-	sed -i 's/-c -O2/-fPIC -c -O2/g' Makefile; \
+	sed -i 's/install_root\t=/install_root\t= \/usr\/local/g' makefile; \
+	sed -i 's/gsm_install_root)\/inc/gsm_install_root)\/include/g' makefile; \
+	sed -i 's/-c -o2/-fpic -c -o2/g' makefile; \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -713,12 +735,12 @@ libmad: $(libmad) $(libmad)/dezi.done
 
 $(libass): 
 	wget http://libass.googlecode.com/files/$(libass).tar.xz
-	tar -xvJf $(libass).tar.xz
+	tar -xvjf $(libass).tar.xz
 	mv -f $(libass).tar.xz ../download
 
 $(libass)/dezi.done:
 	cd $(libass); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	export pkg_config_path="/usr/local/lib/pkgconfig"; \
 	./configure; \
 	make; \
 	sudo make install; \
@@ -890,7 +912,7 @@ opus: $(opus) $(opus)/dezi.done
 
 $(openjpeg): 
 	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(openjpeg).tar.xz
-	tar -xvJf $(openjpeg).tar.xz 
+	tar -xvjf $(openjpeg).tar.xz 
 	mv -f $(openjpeg).tar.xz ../download
 
 $(openjpeg)/dezi.done:
@@ -954,7 +976,7 @@ $(faac):
 	tar -xvzf $(faac).tar.gz 
 	mv -f $(faac).tar.gz ../download
 	cd $(faac); \
-	patch -Np1 -i ../faac-$(faac_version)-glibc_fixes-1.patch; \
+	patch -np1 -i ../faac-$(faac_version)-glibc_fixes-1.patch; \
 	cd ..;\
 	mv -f faac-$(faac_version)-glibc_fixes-1.patch ../download
 
@@ -1074,9 +1096,12 @@ $(schroedinger):
 
 $(schroedinger)/dezi.done:
 	cd $(schroedinger); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	export pkg_config_path="/usr/local/lib/pkgconfig"; \
 	./configure --enable-static --enable-shared; \
-	sed -i 's/testsuite//' Makefile; \
+	sed -i "s/testsuite//" makefile; \
+	sed -i "s/-export-symbols-regex '^schro_'/-export-symbols-regex '^.*schro_'/" schroedinger/makefile; \
+	sed -i "s/^int _schro_decode_prediction_only;/int _schro_decode_prediction_only = 0;/" schroedinger/schrodecoder.c; \
+	sed -i "s/^int _schro_telemetry;/int _schro_telemetry = 0;/" schroedinger/schrodecoder.c; \
 	make; \
 	sudo make install; \
 	touch dezi.done

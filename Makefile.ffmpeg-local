@@ -81,25 +81,70 @@ ffmpeg-common = \
 ffmpeg-darwin = \
 	--disable-ffserver \
 	--disable-shared \
+	--disable-vda \
 	--enable-static \
 	--extra-cflags=--static	\
+	--extra-ldflags="-L/usr/local/libstatic" \
 	--extra-libs="-lm" \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
-	--extra-libs="/usr/local/lib/libbz2.a" \
-	--extra-libs="/usr/local/lib/libexpat.a" \
-	--extra-libs="/usr/local/lib/libfreetype.a" \
-	--extra-libs="/usr/local/lib/libfontconfig.a" \
-	--extra-libs="/usr/local/lib/libfribidi.a" \
-	--extra-libs="/usr/local/lib/liborc-0.4.a" \
-	--extra-libs="/usr/local/lib/libgmp.a" \
-	--extra-libs="/usr/local/lib/libhogweed.a" \
-	--extra-libs="/usr/local/lib/libnettle.a" \
-	--extra-libs="/usr/local/lib/libgnutls.a" \
-	--extra-libs="/usr/local/lib/libjpeg.a" \
-	--extra-libs="/usr/local/lib/libcdio.a" \
-	--extra-libs="/usr/local/lib/libcdio_cdda.a" \
-	--extra-libs="/usr/local/lib/libcdio_paranoia.a" \
+	--extra-libs="-lbz2" \
+	--extra-libs="-lexpat" \
+	--extra-libs="-liconv" \
+	--extra-libs="-lfreetype" \
+	--extra-libs="-lfontconfig" \
+	--extra-libs="-lfribidi" \
+	--extra-libs="-lorc-0.4" \
+	--extra-libs="-lgmp" \
+	--extra-libs="-lhogweed" \
+	--extra-libs="-lnettle" \
+	--extra-libs="-lgnutls" \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	
+ffmpeg-darwinx = \
+	--disable-ffserver \
+	--disable-shared \
+	--disable-vda \
+	--enable-static \
+	--extra-cflags=--static	\
+	--extra-ldflags="/usr/local/lib/libz.a" \
+	--extra-ldflags="/usr/local/lib/libbz2.a" \
+	--extra-ldflags="/usr/local/lib/libexpat.a" \
+	--extra-ldflags="/usr/local/lib/libfreetype.a" \
+	--extra-ldflags="/usr/local/lib/libfontconfig.a" \
+	--extra-ldflags="/usr/local/lib/libfribidi.a" \
+	--extra-ldflags="/usr/local/lib/liborc-0.4.a" \
+	--extra-ldflags="/usr/local/lib/libschroedinger-1.0.a" \
+	--extra-ldflags="/usr/local/lib/libgmp.a" \
+	--extra-ldflags="/usr/local/lib/libhogweed.a" \
+	--extra-ldflags="/usr/local/lib/libnettle.a" \
+	--extra-ldflags="/usr/local/lib/libgnutls-openssl.a" \
+	--extra-ldflags="/usr/local/lib/libgnutlsxx.a" \
+	--extra-ldflags="/usr/local/lib/libgnutls.a" \
+	--extra-ldflags="/usr/local/lib/libjpeg.a" \
+	--extra-ldflags="/usr/local/lib/libcdio.a" \
+	--extra-ldflags="/usr/local/lib/libcdio_cdda.a" \
+	--extra-ldflags="/usr/local/lib/libcdio_paranoia.a" \
+	--extra-ldflags="/usr/local/lib/libopenjpeg.a" \
+	--extra-ldflags="/usr/local/lib/libopus.a" \
+	--extra-ldflags="/usr/local/lib/libbluray.a" \
+	--extra-ldflags="/usr/local/lib/libspeex.a" \
+	--extra-ldflags="/usr/local/lib/libtheoraenc.a" \
+	--extra-ldflags="/usr/local/lib/libtheoradec.a" \
+	--extra-ldflags="/usr/local/lib/libtheora.a" \
+	--extra-ldflags="/usr/local/lib/libvo-aacenc.a" \
+	--extra-ldflags="/usr/local/lib/libvo-amrwbenc.a" \
+	--extra-ldflags="/usr/local/lib/libvorbis.a" \
+	--extra-ldflags="/usr/local/lib/libmp3lame.a" \
+	--extra-ldflags="/usr/local/lib/libfdk-aac.a" \
+	--extra-ldflags="/usr/local/lib/librtmp.a" \
+	--extra-ldflags="/usr/local/lib/libiconv.a" \
+	--extra-ldflags="/usr/local/lib/libass.a" \
+	--extra-ldflags="/usr/local/lib/libopencore-amrnb.a" \
+	--extra-ldflags="/usr/local/lib/libopencore-amrwb.a" \
 	
 ffmpeg-static = \
 	--disable-ffserver \
@@ -112,6 +157,7 @@ ffmpeg-static = \
 	--extra-libs="-lrt" \
 	--extra-libs="-lbz2" \
 	--extra-libs="-lexpat" \
+	--extra-libs="-liconv" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
 	--extra-libs="-lfribidi" \
@@ -148,7 +194,7 @@ $(ffmpeg)/dezi.static.done:
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	make clean; \
-	./configure $(ffmpeg-darwin) $(ffmpeg-common) || exit; \
+	./configure $(ffmpeg-common)  $(ffmpeg-darwin) || exit; \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg  /usr/local/bin/ffmpeg-static; \
@@ -162,7 +208,7 @@ $(ffmpeg)/dezi.shared.conf:
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"; \
 	make clean; \
-	./configure $(ffmpeg-shared) $(ffmpeg-common) || exit; \
+	./configure $(ffmpeg-common) $(ffmpeg-shared) || exit; \
 	touch dezi.shared.conf
 	
 $(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
