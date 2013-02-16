@@ -81,7 +81,6 @@ ffmpeg-common = \
 ffmpeg-darwin = \
 	--disable-shared \
 	--enable-static \
-	--disable-vda \
 	--extra-cflags=--static	\
 	--extra-ldflags="-L/usr/local/libstatic" \
 	--extra-libs="-lm" \
