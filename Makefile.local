@@ -561,7 +561,7 @@ $(fontconfig):
 
 $(fontconfig)/dezi.done:
 	cd $(fontconfig); \
-	export pkg_config_path="/usr/local/lib/pkgconfig"; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./autogen.sh; \
 	./configure -disable-docs; \
 	make; \
@@ -740,7 +740,7 @@ $(libass):
 
 $(libass)/dezi.done:
 	cd $(libass); \
-	export pkg_config_path="/usr/local/lib/pkgconfig"; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./configure; \
 	make; \
 	sudo make install; \
@@ -1096,7 +1096,7 @@ $(schroedinger):
 
 $(schroedinger)/dezi.done:
 	cd $(schroedinger); \
-	export pkg_config_path="/usr/local/lib/pkgconfig"; \
+	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	./configure --enable-static --enable-shared; \
 	sed -i "s/testsuite//" makefile; \
 	sed -i "s/-export-symbols-regex '^schro_'/-export-symbols-regex '^.*schro_'/" schroedinger/makefile; \

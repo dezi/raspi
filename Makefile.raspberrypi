@@ -91,6 +91,9 @@ samba: /usr/sbin/smbd /usr/bin/smbpasswd
 /usr/include/jpeglib.h:
 	sudo apt-get install -y libjpeg8 libjpeg8-dbg libjpeg8-dev
 
+/usr/share/doc/texinfo:
+	sudo apt-get install -y texinfo
+	
 /usr/share/doc/python-dev:
 	sudo apt-get install -y python-dev
 
@@ -122,6 +125,7 @@ developer: \
 	/usr/bin/autopoint \
 	/usr/bin/apt-file \
 	/usr/include/jpeglib.h \
+	/usr/share/doc/texinfo \
 	/usr/share/doc/python-dev \
 	/usr/share/doc/libglew-dev \
 	/usr/share/doc/libboost-dev \
