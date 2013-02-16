@@ -145,9 +145,7 @@ xbmc = xbmc-$(xbmc_version)
 all: ./local ./download
 	cd ./local; make work
 
-work: tools helpers codecs utilities
-
-darwin: xz tar sed gmp nettle gnutls wget pkg-config
+work: darwin tools helpers codecs utilities
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
@@ -178,6 +176,15 @@ special: tvheadend v8 xbmc
 
 ./download:
 	mkdir ./download
+
+#####################################################################
+#
+# OSX Darwin bootstrapping setup
+#
+
+/usr/bin/xz: xz tar sed gmp nettle gnutls wget pkg-config
+
+darwin: /usr/bin/xz
 
 #####################################################################
 #
