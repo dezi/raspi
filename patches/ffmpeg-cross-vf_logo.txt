@@ -1,0 +1,13 @@
+  cd libavfilter
+  cp ../../../../../filters/vf_logo.c .
+  local HAVE_VFLOGO=`fgrep -o "REGISTER_FILTER(LOGO" allfilters.c`
+  if [[ "x$HAVE_VFLOGO" = "x" ]]; then
+     sed -i '/initialized = 1;/ a\\n\tREGISTER_FILTER(LOGO,\t\t\tlogo,\t\t\tvf);' allfilters.c
+  fi
+  local HAVE_VFLOGO=`fgrep -o "CONFIG_LOGO_FILTER" Makefile`
+  if [[ "x$HAVE_VFLOGO" = "x" ]]; then
+    sed -i '$ a\\nOBJS-$(CONFIG_LOGO_FILTER) += vf_logo.o' Makefile; \
+  fi
+  cd ..
+
+  
