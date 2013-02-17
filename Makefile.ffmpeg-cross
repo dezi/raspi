@@ -95,7 +95,7 @@ cross_compile_ffmpeg.sh:
 
 cross_compile_ffmpeg_dezi.sh: cross_compile_ffmpeg.sh
 	cp -p cross_compile_ffmpeg.sh cross_compile_ffmpeg_dezi.sh
-	sed -i 's/install_cross_compiler/#install_cross_compiler/g' cross_compile_ffmpeg_dezi.sh
+	sed -i 's/install_cross_compiler #/#install_cross_compiler #/g' cross_compile_ffmpeg_dezi.sh
 	sed -i 's/build_ffmpeg shared/#build_ffmpeg shared/g' cross_compile_ffmpeg_dezi.sh
 	sed -i \
 		-e '/build_ffmpeg()/{' \
