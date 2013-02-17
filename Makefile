@@ -18,13 +18,18 @@ centos:
 local:
 	make -f Makefile.local
 
-ffmpeg: ffmpeg-win32 ffmpeg-local
+ffmpeg: ffmpeg-cross ffmpeg-local
+
+ffmpeg-cross: ffmpeg-win32-doit ffmpeg-win64-doit
+
+ffmpeg-win32-doit:
+	make -f Makefile.ffmpeg-cross ffmpeg-win32-doit 
+
+ffmpeg-win64-doit:
+	make -f Makefile.ffmpeg-cross ffmpeg-win64-doit
 
 ffmpeg-local:
 	make -f Makefile.ffmpeg-local
-
-ffmpeg-win32:
-	make -f Makefile.ffmpeg-win32
 
 dezi:
 	make -f Makefile.dezi

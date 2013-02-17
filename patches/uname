@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case $1 in
+  -a ) echo "Linux kappa-ux-vm1 2.6.32-279.19.1.el6.x86_64 #1 SMP Wed Dec 19 07:05:20 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux";;
+  -v ) echo "#1 SMP Wed Dec 19 07:05:20 UTC 2012";;
+  -r ) echo "2.6.32-279.19.1.el6.x86_64";;
+  -m ) echo "x86_64";;
+  -s ) echo "Linux";;
+  *  ) echo "Linux";;
+esac
+

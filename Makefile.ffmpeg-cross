@@ -5,24 +5,30 @@
 # Dennis Zierahn
 #
 
-all: ./ffmpeg-win32
-	if [ -d "../ffmpeg-win32" ]; then \
-		make work; \
-	else \
-		cd ./ffmpeg-win32; make work
-	fi; \
-
-work: ffmpeg
+all:
+	echo "pupsi....."
 
 #####################################################################
 #
 # Local setup
 #
 
-./ffmpeg-win32:
+ffmpeg-win32-doit:
 	if ! [ -d "../ffmpeg-win32" ]; then \
-		mkdir ./ffmpeg-win32
-		ln -s ../Makefile.ffmpeg-win32 ./ffmpeg-win32/Makefile
+		if ! [ -d "./ffmpeg-win32" ]; then \
+			mkdir ffmpeg-win32; \
+			ln -s ../Makefile.ffmpeg-cross ffmpeg-win32/Makefile; \
+		fi; \
+		cd ./ffmpeg-win32; make ffmpeg-win32-work; \
+	fi; \
+
+ffmpeg-win64-doit:
+	if ! [ -d "../ffmpeg-win64" ]; then \
+		if ! [ -d "./ffmpeg-win64" ]; then \
+			mkdir ffmpeg-win64; \
+			ln -s ../Makefile.ffmpeg-cross ffmpeg-win64/Makefile; \
+		fi; \
+		cd ./ffmpeg-win64; make ffmpeg-win64-work; \
 	fi; \
 
 #####################################################################
@@ -35,10 +41,27 @@ patches:
 	cp ../patches/uname patches
 	chmod a+x patches/uname
 
-ffmpeg: patches cross_compile_ffmpeg_dezi.sh sandbox/mingw-w64-build-3.1.0
-	cd sandbox; ./mingw-w64-build-3.1.0 --cpu-count=2 --build-type=multi --mingw-w64-ver=svn --disable-nls --disable-shared --default-configure --clean-build --threads=pthreads-w32 || exit 1
+dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
+	#cd sandbox; ./mingw-w64-build-3.1.0 --cpu-count=2 --build-type=win32 --mingw-w64-ver=svn --disable-nls --disable-shared --default-configure --clean-build --threads=pthreads-w32 || exit 1
+	touch dezi.build32.done
+
+dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
+	#cd sandbox; ./mingw-w64-build-3.1.0 --cpu-count=2 --build-type=win64 --mingw-w64-ver=svn --disable-nls --disable-shared --default-configure --clean-build --threads=pthreads-w32 || exit 1
+	touch dezi.build64.done
+
+dezi.ffmpeg32.done: cross_compile_ffmpeg_dezi.sh
 	export PATH="$$PWD/patches:$$PATH"; \
-	#./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y
+	./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
+	touch dezi.ffmpeg32.done
+
+dezi.ffmpeg64.done: cross_compile_ffmpeg_dezi.sh
+	export PATH="$$PWD/patches:$$PATH"; \
+	./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
+	touch dezi.ffmpeg64.done
+
+ffmpeg-win32-work: dezi.build32.done dezi.ffmpeg32.done
+
+ffmpeg-win64-work: dezi.build64.done dezi.ffmpeg64.done
 	
 #####################################################################
 #
@@ -61,7 +84,7 @@ sandbox/mingw-w64-build-3.1.0: sandbox
 
 cross_compile_ffmpeg.sh:
 	wget https://raw.github.com/rdp/ffmpeg-windows-build-helpers/master/cross_compile_ffmpeg.sh
-	sed -i 's/grep -c processor \/proc\/cpuinfo/grep -s -c processor \/proc\/cpuinfo || echo 1/g' cross_compile_ffmpeg.sh
+	sed -i 's/grep -c processor \/proc\/cpuinfo/grep -s -c processor \/proc\/cpuinfo || echo 2/g' cross_compile_ffmpeg.sh
 	chmod a+x cross_compile_ffmpeg.sh
 
 #####################################################################
@@ -72,7 +95,8 @@ cross_compile_ffmpeg.sh:
 
 cross_compile_ffmpeg_dezi.sh: cross_compile_ffmpeg.sh
 	cp -p cross_compile_ffmpeg.sh cross_compile_ffmpeg_dezi.sh
-	sed -i 's/mingw-w64-build-3.1.0 --mingw-w64-ver=svn/mingw-w64-build-3.1.0 --cpu-count=$$cpu_count --build-type=win32 --mingw-w64-ver=svn/g' cross_compile_ffmpeg_dezi.sh
+	sed -i 's/install_cross_compiler/#install_cross_compiler/g' cross_compile_ffmpeg_dezi.sh
+	sed -i 's/build_ffmpeg shared/#build_ffmpeg shared/g' cross_compile_ffmpeg_dezi.sh
 	sed -i \
 		-e '/build_ffmpeg()/{' \
 		-e 'h' \

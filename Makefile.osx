@@ -5,7 +5,7 @@
 
 all: update tools daemons
 
-tools: curl-ca-bundle automake autoconf libtool pkgconfig jpeg
+tools: curl-ca-bundle automake autoconf libtool pkgconfig jpeg coreutils
 
 daemons: 
 
@@ -41,3 +41,7 @@ curl-ca-bundle:
 
 jpeg:
 	sudo port install jpeg
+
+coreutils:
+	sudo port install coreutils
+	sudo ln -f -s gmd5sum /opt/local/bin/md5sum
