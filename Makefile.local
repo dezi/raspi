@@ -701,7 +701,7 @@ libcdio: $(libcdio) $(libcdio)/dezi.done
 
 $(libgsm): 
 	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(libgsm).tar.xz
-	tar -xvjf $(libgsm).tar.xz
+	tar -xvJf $(libgsm).tar.xz
 	mv -f $(libgsm).tar.xz ../download
 
 $(libgsm)/dezi.done:
@@ -742,7 +742,7 @@ libmad: $(libmad) $(libmad)/dezi.done
 
 $(libass): 
 	wget http://libass.googlecode.com/files/$(libass).tar.xz
-	tar -xvjf $(libass).tar.xz
+	tar -xvJf $(libass).tar.xz
 	mv -f $(libass).tar.xz ../download
 
 $(libass)/dezi.done:
@@ -919,7 +919,7 @@ opus: $(opus) $(opus)/dezi.done
 
 $(openjpeg): 
 	wget http://ffmpeg.zeranoe.com/builds/source/external_libraries/$(openjpeg).tar.xz
-	tar -xvjf $(openjpeg).tar.xz 
+	tar -xvJf $(openjpeg).tar.xz 
 	mv -f $(openjpeg).tar.xz ../download
 
 $(openjpeg)/dezi.done:
