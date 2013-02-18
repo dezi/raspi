@@ -88,7 +88,6 @@ ffmpeg-darwin = \
 	--extra-libs="-ldl" \
 	--extra-libs="-lbz2" \
 	--extra-libs="-lexpat" \
-	--extra-libs="-liconv" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
 	--extra-libs="-lfribidi" \
@@ -101,6 +100,7 @@ ffmpeg-darwin = \
 	--extra-libs="-lcdio" \
 	--extra-libs="-lcdio_cdda" \
 	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-liconv" \
 	
 ffmpeg-static = \
 	--disable-ffserver \
@@ -113,7 +113,6 @@ ffmpeg-static = \
 	--extra-libs="-lrt" \
 	--extra-libs="-lbz2" \
 	--extra-libs="-lexpat" \
-	--extra-libs="-liconv" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
 	--extra-libs="-lfribidi" \
@@ -126,6 +125,7 @@ ffmpeg-static = \
 	--extra-libs="-lcdio" \
 	--extra-libs="-lcdio_cdda" \
 	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-liconv" \
 	--extra-libs="-static" \
 	
 ffmpeg-shared = \
