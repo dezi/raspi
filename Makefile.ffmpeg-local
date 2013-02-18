@@ -134,6 +134,7 @@ ffmpeg-shared = \
 	--extra-libs="-lcdio" \
 	--extra-libs="-lcdio_cdda" \
 	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-liconv" \
 	
 ffmpeg-moreoptions-dont-work:
 	--enable-libcdio \

@@ -665,10 +665,10 @@ $(rtmpdump):
 
 $(rtmpdump)/dezi.done:
 	cd $(rtmpdump); \
-	sed -i 's/crypto=openssl/#crypto=openssl/g' makefile; \
-	sed -i 's/#crypto=gnutls/crypto=gnutls/g' makefile; \
-	sed -i 's/crypto=openssl/#crypto=openssl/g' librtmp/makefile; \
-	sed -i 's/#crypto=gnutls/crypto=gnutls/g' librtmp/makefile; \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
+	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
+	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
 	make || make sys=darwin || exit; \
 	sudo make install; \
 	touch dezi.done
