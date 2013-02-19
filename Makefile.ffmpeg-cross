@@ -50,6 +50,7 @@ dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
 	touch dezi.build32.done
 
 dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
+	echo "will dat 32"
 	cd sandbox; ./mingw-w64-build-3.1.0 \
 		--cpu-count=2 --build-type=win64 \
 		--mingw-w64-ver=svn --disable-nls \
