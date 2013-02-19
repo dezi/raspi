@@ -182,9 +182,10 @@ special: tvheadend v8 xbmc
 # OSX Darwin bootstrapping setup
 #
 
-/usr/bin/xz: xz tar sed gmp nettle gnutls wget pkg-config
-
-darwin: /usr/bin/xz
+darwin:
+	if ! [ -f "/usr/bin/xz" ]; then \
+ 		make xz tar sed gmp nettle gnutls wget pkg-config; \
+	fi
 
 #####################################################################
 #
