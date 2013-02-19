@@ -82,7 +82,7 @@ ffmpeg-darwin = \
 	--disable-shared \
 	--enable-static \
 	--extra-cflags=--static	\
-	--extra-ldflags="-L/usr/local/libstatic" \
+	--extra-ldflags="-L../../static" \
 	--extra-libs="-lm" \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
