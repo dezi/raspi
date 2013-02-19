@@ -42,22 +42,30 @@ patches:
 	chmod a+x patches/uname
 
 dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
-	cd sandbox; ./mingw-w64-build-3.1.0 --cpu-count=2 --build-type=win32 --mingw-w64-ver=svn --disable-nls --disable-shared --default-configure --clean-build --threads=pthreads-w32 || exit 1
+	cd sandbox; ./mingw-w64-build-3.1.0 \
+		--cpu-count=2 --build-type=win32 \
+		--mingw-w64-ver=svn --disable-nls \
+		--disable-shared --default-configure \
+		--clean-build --threads=pthreads-w32 || exit 1
 	touch dezi.build32.done
 
 dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
-	cd sandbox; ./mingw-w64-build-3.1.0 --cpu-count=2 --build-type=win64 --mingw-w64-ver=svn --disable-nls --disable-shared --default-configure --clean-build --threads=pthreads-w32 || exit 1
+	cd sandbox; ./mingw-w64-build-3.1.0 \
+		--cpu-count=2 --build-type=win64 \
+		--mingw-w64-ver=svn --disable-nls \
+		--disable-shared --default-configure \
+		--clean-build --threads=pthreads-w32 || exit 1
 	touch dezi.build64.done
 
 dezi.ffmpeg32.done: cross_compile_ffmpeg_dezi.sh
 	export PATH="$$PWD/patches:$$PATH"; \
-	#./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
-	#touch dezi.ffmpeg32.done
+	./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
+	touch dezi.ffmpeg32.done
 
 dezi.ffmpeg64.done: cross_compile_ffmpeg_dezi.sh
 	export PATH="$$PWD/patches:$$PATH"; \
-	#./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
-	#touch dezi.ffmpeg64.done
+	./cross_compile_ffmpeg_dezi.sh --sandbox-ok=y || exit 1
+	touch dezi.ffmpeg64.done
 
 ffmpeg-win32-work: dezi.build32.done dezi.ffmpeg32.done
 
@@ -87,7 +95,7 @@ cross_compile_ffmpeg.sh:
 	wget https://raw.github.com/rdp/ffmpeg-windows-build-helpers/master/cross_compile_ffmpeg.sh
 	chmod a+x cross_compile_ffmpeg.sh
 	sed -i 's/grep -c processor \/proc\/cpuinfo/echo 2/g' cross_compile_ffmpeg.sh
-	#sed -i 's/grep -c processor \/proc\/cpuinfo/grep -s -c processor \/proc\/cpuinfo || echo 2/g' cross_compile_ffmpeg.sh
+	sed -i 's/generic_configure # unfortunately/generic_configure "--cross-prefix=$$cross_prefix" # unfortunately/g' cross_compile_ffmpeg.sh
 
 #####################################################################
 #
@@ -102,7 +110,7 @@ cross_compile_ffmpeg_dezi.sh: cross_compile_ffmpeg.sh
 	sed -i \
 		-e '/build_ffmpeg()/{' \
 		-e 'h' \
-		-e 'r ../patches/ffmpeg-win32-gpac.txt' \
+		-e 'r ../patches/ffmpeg-cross-gpac.txt' \
 		-e 'g' \
 		-e 'N' \
 		-e '}' cross_compile_ffmpeg_dezi.sh
@@ -110,7 +118,7 @@ cross_compile_ffmpeg_dezi.sh: cross_compile_ffmpeg.sh
 	sed -i \
 		-e '/config_options=\"--arch/{' \
 		-e 'h' \
-		-e 'r ../patches/ffmpeg-win32-vf_logo.txt' \
+		-e 'r ../patches/ffmpeg-cross-vf_logo.txt' \
 		-e 'g' \
 		-e 'N' \
 		-e '}' cross_compile_ffmpeg_dezi.sh
