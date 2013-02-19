@@ -390,6 +390,7 @@ $(zlib):
 $(zlib)/dezi.done:
 	cd $(zlib); \
 	./configure; \
+	sed -i 's/CC=gcc/CC=gcc -fPIC/g' Makefile; \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -1322,14 +1323,14 @@ $(gpac):
 	mv -f $(gpac).tar.gz ../download
 
 $(gpac)/dezi.done:
+	MYPWD=`pwd`; \
 	cd $(gpac); \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
-	#sed -i "s/LINKFLAGS+=-lgpac_static/LINKFLAGS+=-static -lgpac_static/g" applications/mp4box/Makefile; \
+	export LDFLAGS="-L$$MYPWD/../static"; \
 	./configure \
 		--static-mp4box \
 		--use-xvid=no \
 		--use-ffmpeg=no \
-		--extra-libs="/usr/local/lib/libz.a -lm" \
 		|| exit; \
 	cd src; make || exit; cd ..; \
 	cd applications/mp4box; make || exit; cd ../..; \
