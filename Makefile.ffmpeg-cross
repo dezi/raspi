@@ -121,6 +121,14 @@ cross_compile_ffmpeg_dezi.sh: cross_compile_ffmpeg.sh
 		-e '}' cross_compile_ffmpeg_dezi.sh
 	sed -i '/build_dependencies$$/ a\  build_gpac' cross_compile_ffmpeg_dezi.sh
 	sed -i \
+		-e '/build_ffmpeg()/{' \
+		-e 'h' \
+		-e 'r ../patches/ffmpeg-cross-libmxf.txt' \
+		-e 'g' \
+		-e 'N' \
+		-e '}' cross_compile_ffmpeg_dezi.sh
+	sed -i '/build_dependencies$$/ a\  build_libMXF' cross_compile_ffmpeg_dezi.sh
+	sed -i \
 		-e '/config_options=\"--arch/{' \
 		-e 'h' \
 		-e 'r ../patches/ffmpeg-cross-vf_logo.txt' \
