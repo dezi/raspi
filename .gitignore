@@ -4,6 +4,7 @@
 #
 stuff
 local
+static
 download
 dvbstick
 sponexecs

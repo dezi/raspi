@@ -671,8 +671,14 @@ $(rtmpdump)/dezi.done:
 	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' Makefile; \
 	sed -i 's/CRYPTO=OPENSSL/#CRYPTO=OPENSSL/g' librtmp/Makefile; \
 	sed -i 's/#CRYPTO=GNUTLS/CRYPTO=GNUTLS/g' librtmp/Makefile; \
-	make || make sys=darwin || exit; \
-	sudo make install; \
+	MYSYS=`uname`; \
+	if test "$$MYSYS" = "Darwin"; then \
+		make SYS=darwin || exit; \
+		sudo make SYS=darwin install; \
+	else \
+		make || exit; \
+		sudo make install; \
+	fi; \
 	touch dezi.done
 
 rtmpdump: $(rtmpdump) $(rtmpdump)/dezi.done
