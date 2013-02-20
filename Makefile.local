@@ -226,6 +226,7 @@ $(libMXF):
 
 $(libMXF)/dezi.done:
 	cd $(libMXF); \
+	sed -i 's/-Werror//g' libMXF/vars.mk; \
 	make; \
 	sudo make install; \
 
