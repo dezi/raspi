@@ -1336,6 +1336,7 @@ $(gpac)/dezi.done:
 	export LDFLAGS="-L$$MYPWD/../static"; \
 	./configure \
 		--static-mp4box \
+		--enable-static-bin \
 		--use-xvid=no \
 		--use-ffmpeg=no \
 		|| exit; \
