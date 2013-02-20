@@ -145,7 +145,7 @@ ffmpeg-moreoptions-dont-want:
 	--enable-libfaac \
 	--disable-w32threads \
 	
-$(ffmpeg)/dezi.static.done:
+$(ffmpeg)/dezi.static.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
@@ -155,6 +155,10 @@ $(ffmpeg)/dezi.static.done:
 	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
 	make clean; \
 	./configure $(ffmpeg-common)  $(ffmpeg-darwin) || exit; \
+	touch dezi.static.conf
+
+$(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
+	cd $(ffmpeg); \
 	make || exit; \
 	sudo make install; \
 	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-static; \
