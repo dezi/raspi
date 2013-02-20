@@ -1332,6 +1332,7 @@ $(gpac)/dezi.done:
 	MYPWD=`pwd`; \
 	cd $(gpac); \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
+	export PATH="/usr/bin:$$PATH"; \
 	export LDFLAGS="-L$$MYPWD/../static"; \
 	./configure \
 		--static-mp4box \
