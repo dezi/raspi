@@ -20,6 +20,8 @@ libiconv_version 			= 1.14
 nettle_version				= 2.5
 gnutls_version				= 3.0.22
 pkg-config_version			= 0.28
+e2fsprogs_version			= git
+libMXF_version				= 1.0.0
 
 jpeg_version				= v9
 sdl_version					= 1.2.15
@@ -136,6 +138,8 @@ atomicparsley = atomicparsley-$(atomicparsley_version)
 tvheadend = tvheadend-$(tvheadend_version)
 v8 = v8-$(v8_version)
 xbmc = xbmc-$(xbmc_version)
+e2fsprogs = e2fsprogs-$(e2fsprogs_version)
+libMXF = libMXF-src-$(libMXF_version)
 
 ######################################################################
 #
@@ -163,6 +167,8 @@ codecs: \
 
 utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
+mxf: e2fsprogs libMXF
+
 special: tvheadend v8 xbmc
 
 #####################################################################
@@ -189,12 +195,50 @@ darwin:
 
 #####################################################################
 #
+# e2fsprogs => libuuid => libMXF
+#
+
+$(e2fsprogs): 
+	git clone git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git $(e2fsprogs)
+	tar -cvzf $(e2fsprogs).tar.gz $(e2fsprogs)
+	mv $(e2fsprogs).tar.gz ../download
+
+$(e2fsprogs)/dezi.done:
+	cd $(e2fsprogs); \
+	./configure --prefix=/usr/local; \
+	cd lib/uuid; \
+	make; \
+	sudo make install; \
+	cd ../..; \
+	touch dezi.done
+
+e2fsprogs: $(e2fsprogs) $(e2fsprogs)/dezi.done
+
+#####################################################################
+#
+# libMXF => writeavidmxf
+#
+
+$(libMXF): 
+	wget http://sourceforge.net/projects/ingex/files/1.0.0/libMXF/$(libMXF).tgz
+	tar -xvzf $(libMXF).tgz 
+	mv $(libMXF).tgz ../download
+
+$(libMXF)/dezi.done:
+	cd $(libMXF); \
+	make; \
+	sudo make install; \
+
+libMXF: $(libMXF) $(libMXF)/dezi.done
+
+#####################################################################
+#
 # xz
 #
 
 $(xz): 
 	curl http://tukaani.org/xz/$(xz).tar.gz -o $(xz).tar.gz
-	tar -xvzf $(xz).tar.gz
+	tar -xvzf $(xz).tar.gz 
 	mv $(xz).tar.gz ../download
 
 $(xz)/dezi.done:
