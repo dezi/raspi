@@ -149,7 +149,7 @@ libMXF = libMXF-src-$(libMXF_version)
 all: ./local ./download
 	cd ./local; make work
 
-work: darwin tools helpers codecs utilities
+work: tools helpers codecs utilities
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
@@ -208,7 +208,7 @@ $(e2fsprogs)/dezi.done:
 	./configure --prefix=/usr/local; \
 	cd lib/uuid; \
 	make; \
-	sudo make install; \
+	# nonono => sudo make install; \
 	cd ../..; \
 	touch dezi.done
 
