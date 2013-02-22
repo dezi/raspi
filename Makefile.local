@@ -45,6 +45,7 @@ libbluray_version 			= git
 libvpx_version 				= git
 libaacplus_version 			= 2.0.2
 libcaca_version 			= git
+libilbc_version 			= git
 
 opus_version				= 1.0.2
 openjpeg_version			= 1.5.1
@@ -132,6 +133,7 @@ rtmpdump = rtmpdump-$(rtmpdump_version)
 libvpx = libvpx-$(libvpx_version)
 x264 = x264-$(x264_version)
 libcaca = libcaca-$(libcaca_version)
+libilbc = libilbc-$(libilbc_version)
 libbluray = libbluray-$(libbluray_version)
 abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
@@ -158,7 +160,7 @@ helpers: jpeg sdl alsa freetype fontconfig taglib libiconv libcddb libdvdcss fri
 codecs: \
 	libcdio libgsm libmad libass \
 	libogg libvorbis libtheora libbluray libvpx \
-	libaacplus libcaca \
+	libaacplus libcaca libilbc \
 	opus openjpeg fdk-aac xvidcore x264 \
 	lame faac faad2 opencore-amr \
 	vo-amrwbenc vo-aacenc \
@@ -225,6 +227,8 @@ $(libMXF):
 	mv $(libMXF).tgz ../download
 
 $(libMXF)/dezi.done:
+	mkdir -p $(libMXF)/libMXF/lib/include/uuid; \
+	cp $(e2fsprogs)/lib/uuid/uuid.h $(libMXF)/libMXF/lib/include/uuid/uuid.h; \
 	cd $(libMXF); \
 	sed -i 's/-Werror//g' libMXF/vars.mk; \
 	make; \
@@ -945,6 +949,26 @@ $(libcaca)/dezi.done:
 	touch dezi.done
 
 libcaca: $(libcaca) $(libcaca)/dezi.done
+
+#####################################################################
+#
+# libilbc
+#
+
+$(libilbc): 
+	git clone  https://github.com/dekkers/libilbc.git $(libilbc)
+	tar -cvzf $(libilbc).tar.gz $(libilbc)
+	mv -f $(libilbc).tar.gz ../download
+
+$(libilbc)/dezi.done: 
+	cd $(libilbc); \
+	autoreconf -fiv || exit; \
+	./configure || exit; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+libilbc: $(libilbc) $(libilbc)/dezi.done
 
 #####################################################################
 #

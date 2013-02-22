@@ -74,6 +74,7 @@ ffmpeg-common = \
 	--enable-libx264 \
 	--enable-libbluray \
 	--enable-libschroedinger \
+	--enable-libilbc \
 	--enable-fontconfig \
 	--enable-frei0r \
 	--enable-filter=frei0r \
@@ -146,6 +147,10 @@ ffmpeg-moreoptions-dont-want:
 	--disable-w32threads \
 	
 $(ffmpeg)/dezi.static.conf:
+	mkdir -p ../static;
+	ln -sf /usr/local/lib/lib*.a ../static
+	ln -sf /usr/local/lib64/lib*.a ../static
+	ln -sf /usr/local/lib77/lib*.a ../static
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \

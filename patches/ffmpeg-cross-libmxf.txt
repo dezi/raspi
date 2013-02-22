@@ -5,11 +5,13 @@ build_libMXF() {
   sed -i 's/all\:\: tst_uuid/all:: /g' lib/uuid/Makefile
   sed -i 's/gen_uuid.o \\/\\/g' lib/uuid/Makefile
   sed -i 's/\$\(srcdir\)\/gen_uuid.c \\/\\/g' lib/uuid/Makefile
-  cd lib/uuid
-  do_make_install
+  cd lib/uuid # make libuuid only. In fact, we only need the uuid.h and libuuid.a
+  do_make # do NOT make install here as it will break ffmpeg build.
   cd ../..
   cd ..
   download_and_unpack_file http://sourceforge.net/projects/ingex/files/1.0.0/libMXF/libMXF-src-1.0.0.tgz "libMXF-src-1.0.0"
+  mkdir -p libMXF-src-1.0.0/libMXF/lib/include/uuid
+  cp e2fsprogs_git/lib/uuid/uuid.h libMXF-src-1.0.0/libMXF/lib/include/uuid/uuid.h
   cd libMXF-src-1.0.0
   sed -i 's/-Werror//g' libMXF/vars.mk
   do_make "MINGW_CC_PREFIX=$cross_prefix"
