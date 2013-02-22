@@ -518,7 +518,7 @@ $(gnutls):
 $(gnutls)/dezi.done:
 	cd $(gnutls); \
 	sed -i "s/^void \*_gnutls_file_mutex;/void *_gnutls_file_mutex = 0;/" lib/verify-tofu.c; \
-	./configure --enable-static --enable-shared; \
+	./configure --enable-static --enable-shared --with-included-libtasn1; \
 	make; \
 	sudo make install; \
 	touch dezi.done
