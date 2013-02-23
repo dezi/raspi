@@ -45,7 +45,7 @@ dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
 	if ! [ -f "dezi.build32.done" ]; then \
 		cd sandbox; ./mingw-w64-build-3.1.0 \
 			--cpu-count=2 --build-type=win32 \
-			--mingw-w64-ver=svn --disable-nls \
+			--mingw-w64-ver=2.0.7 --disable-nls \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
 	fi
@@ -55,7 +55,7 @@ dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
 	if ! [ -f "dezi.build64.done" ]; then \
 		cd sandbox; ./mingw-w64-build-3.1.0 \
 			--cpu-count=2 --build-type=win64 \
-			--mingw-w64-ver=svn --disable-nls \
+			--mingw-w64-ver=2.0.7 --disable-nls \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
 	fi
