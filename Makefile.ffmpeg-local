@@ -8,10 +8,10 @@
 ffmpeg_version = git
 ffmpeg = ffmpeg-$(ffmpeg_version)
 
-all: ./ffmpeg-local
-	cd ./ffmpeg-local; make work
+all: ffmpeg
 
-work: ffmpeg
+ffmpeg-local-doit: ./ffmpeg-local
+	cd ./ffmpeg-local; make all
 
 #####################################################################
 #

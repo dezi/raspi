@@ -148,10 +148,10 @@ libMXF = libMXF-src-$(libMXF_version)
 # Build section.
 #
 
-all: ./local ./download
-	cd ./local; make work
+all: tools helpers codecs utilities
 
-work: tools helpers codecs utilities
+local-doit: ./local ./download
+	cd ./local; make all
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
