@@ -79,11 +79,17 @@ ffmpeg-common = \
 	--enable-frei0r \
 	--enable-filter=frei0r \
 	
-ffmpeg-darwin = \
+ffmpeg-shared = \
+	--disable-static \
+	--enable-shared \
+	
+ffmpeg-static = \
 	--disable-shared \
 	--enable-static \
 	--extra-cflags=--static	\
 	--extra-ldflags="-L../../static" \
+
+ffmpeg-libs = \
 	--extra-libs="-lm" \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
@@ -103,48 +109,9 @@ ffmpeg-darwin = \
 	--extra-libs="-lcdio_paranoia" \
 	--extra-libs="-liconv" \
 	
-ffmpeg-static = \
-	--disable-ffserver \
-	--disable-shared \
-	--enable-static \
-	--extra-cflags=--static	\
-	--extra-libs="-lm" \
-	--extra-libs="-lz" \
-	--extra-libs="-ldl" \
-	--extra-libs="-lrt" \
-	--extra-libs="-lbz2" \
-	--extra-libs="-lexpat" \
-	--extra-libs="-lfreetype" \
-	--extra-libs="-lfontconfig" \
-	--extra-libs="-lfribidi" \
-	--extra-libs="-lorc-0.4" \
-	--extra-libs="-lgmp" \
-	--extra-libs="-lhogweed" \
-	--extra-libs="-lnettle" \
-	--extra-libs="-lgnutls" \
-	--extra-libs="-ljpeg" \
-	--extra-libs="-lcdio" \
-	--extra-libs="-lcdio_cdda" \
-	--extra-libs="-lcdio_paranoia" \
-	--extra-libs="-liconv" \
-	--extra-libs="-static" \
-	
-ffmpeg-shared = \
-	--enable-shared \
-	--extra-libs="-ljpeg" \
-	--extra-libs="-lcdio" \
-	--extra-libs="-lcdio_cdda" \
-	--extra-libs="-lcdio_paranoia" \
-	--extra-libs="-liconv" \
-	
-ffmpeg-moreoptions-dont-work:
+ffmpeg-moreoptions-dont-work-yet:
 	--enable-libcdio \
 	--enable-libutvideo \
-
-ffmpeg-moreoptions-dont-want:
-	--disable-mmx \
-	--enable-libfaac \
-	--disable-w32threads \
 	
 $(ffmpeg)/dezi.static.conf:
 	mkdir -p ../static;
@@ -159,7 +126,7 @@ $(ffmpeg)/dezi.static.conf:
 	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
 	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
 	make clean; \
-	./configure $(ffmpeg-common)  $(ffmpeg-darwin) || exit; \
+	./configure $(ffmpeg-common) $(ffmpeg-static) $(ffmpeg-libs) || exit; \
 	touch dezi.static.conf
 
 $(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
@@ -181,7 +148,7 @@ $(ffmpeg)/dezi.shared.conf:
 	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
 	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
 	make clean; \
-	./configure $(ffmpeg-common) $(ffmpeg-shared) || exit; \
+	./configure $(ffmpeg-common) $(ffmpeg-shared) $(ffmpeg-libs) || exit; \
 	touch dezi.shared.conf
 	
 $(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
