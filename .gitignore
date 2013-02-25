@@ -2,6 +2,7 @@
 #
 # Local working directories.
 #
+.DS_Store
 stuff
 local
 static

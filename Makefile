@@ -16,7 +16,7 @@ centos:
 	make -f Makefile.centos
 
 local:
-	make -f Makefile.local
+	make -f Makefile.local local-doit
 
 ffmpeg: ffmpeg-cross ffmpeg-local
 
@@ -29,7 +29,7 @@ ffmpeg-win64-doit:
 	make -f Makefile.ffmpeg-cross ffmpeg-win64-doit
 
 ffmpeg-local:
-	make -f Makefile.ffmpeg-local
+	make -f Makefile.ffmpeg-local ffmpeg-local-doit
 
 dezi:
 	make -f Makefile.dezi

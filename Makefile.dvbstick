@@ -11,10 +11,10 @@ all: dvbstick OpenELEC
 # Build section.
 #
 
-all: ./dvbstick 
-	cd ./dvbstick; make work
+all: OpenELEC
 
-work: OpenELEC
+dvbstick-doit: ./dvbstick 
+	cd ./dvbstick; make all
 
 #####################################################################
 #
