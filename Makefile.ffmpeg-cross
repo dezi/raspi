@@ -48,6 +48,7 @@ dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
 			--mingw-w64-ver=2.0.7 --disable-nls \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
+		cd ..; tar -cvzf dezi.build32.tar.gz sandbox; \
 	fi
 	touch dezi.build32.done
 
@@ -58,6 +59,7 @@ dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
 			--mingw-w64-ver=2.0.7 --disable-nls \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
+		cd ..; tar -cvzf dezi.build64.tar.gz sandbox; \
 	fi
 	touch dezi.build64.done
 
