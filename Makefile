@@ -36,3 +36,6 @@ dezi:
 
 spon:
 	make -f Makefile.spon
+
+collect:
+	make -f Makefile.collect

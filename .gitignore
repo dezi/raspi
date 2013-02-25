@@ -8,6 +8,7 @@ local
 static
 download
 dvbstick
+versions
 sponexecs
 ffmpeg-win32
 ffmpeg-win64
