@@ -9,11 +9,14 @@ nix:
 bashvi:
 	make -f Makefile.bashvi
 
-raspberrypi:
-	make -f Makefile.raspberrypi
+osx:
+	make -f Makefile.osx
 
 centos:
 	make -f Makefile.centos
+
+raspberrypi:
+	make -f Makefile.raspberrypi
 
 local:
 	make -f Makefile.local local-doit
