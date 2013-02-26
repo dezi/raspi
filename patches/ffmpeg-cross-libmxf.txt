@@ -14,6 +14,13 @@ build_libMXF() {
   cp e2fsprogs_git/lib/uuid/uuid.h libMXF-src-1.0.0/libMXF/lib/include/uuid/uuid.h
   cd libMXF-src-1.0.0
   sed -i 's/-Werror//g' libMXF/vars.mk
+  sed -i 's/-Werror//g' libMXF++/vars.mk
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/libMXF++/File.cpp
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/examples/ArchiveMXFReader/ArchiveMXFReader.cpp
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/examples/OPAtomReader/FixedSizeEssenceParser.cpp
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/examples/OPAtomReader/VariableSizeEssenceParser.cpp
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/examples/OPAtomReader/PCMEssenceParser.cpp
+  sed -i '/#include.*$/ a\#include <cstdio>' libMXF++/examples/OPAtomReader/OPAtomTrackReader.cpp
   do_make "MINGW_CC_PREFIX=$cross_prefix"
   cd ..
 }
