@@ -229,8 +229,10 @@ $(libMXF):
 $(libMXF)/dezi.done:
 	mkdir -p $(libMXF)/libMXF/lib/include/uuid; \
 	cp $(e2fsprogs)/lib/uuid/uuid.h $(libMXF)/libMXF/lib/include/uuid/uuid.h; \
+	cp ../patches/writeavidmxf-main.c $(libMXF)/libMXF/examples/writeavidmxf/main.c; \
 	cd $(libMXF); \
 	sed -i 's/-Werror//g' libMXF/vars.mk; \
+	sed -i 's/-Werror//g' libMXF++/vars.mk; \
 	make; \
 	sudo make install; \
 

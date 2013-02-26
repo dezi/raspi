@@ -12,6 +12,7 @@ build_libMXF() {
   download_and_unpack_file http://sourceforge.net/projects/ingex/files/1.0.0/libMXF/libMXF-src-1.0.0.tgz "libMXF-src-1.0.0"
   mkdir -p libMXF-src-1.0.0/libMXF/lib/include/uuid
   cp e2fsprogs_git/lib/uuid/uuid.h libMXF-src-1.0.0/libMXF/lib/include/uuid/uuid.h
+  cp ../../../patches/writeavidmxf-main.c libMXF-src-1.0.0/libMXF/examples/writeavidmxf/main.c; \
   cd libMXF-src-1.0.0
   sed -i 's/-Werror//g' libMXF/vars.mk
   sed -i 's/-Werror//g' libMXF++/vars.mk
