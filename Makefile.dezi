@@ -31,3 +31,11 @@ usb-disks: /media/iTunes /media/iVideo
 	if test "$$HAVE_IVIDEO" != "iVideo"; then \
 		sudo sed -i '$$ a\UUID=F474B7AA74B76DCC \/media\/iVideo ntfs rw' /etc/fstab; \
 	fi; \
+
+#
+# Dezi-Serv: 000000004a6ccb95
+# Dezi-Wohn: 00000000d277b579
+# Patrick:   00000000af15422d
+#
+# 49817
+#

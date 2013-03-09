@@ -1449,6 +1449,7 @@ $(tvheadend)/dezi.done:
 	if [ -f "/usr/bin/gcc-4.7" ]; then \
 		export CC=gcc-4.7; \
 	fi; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
 	./configure || exit; \
 	make; \
 	sudo make install; \
