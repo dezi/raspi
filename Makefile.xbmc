@@ -69,7 +69,7 @@ xbmc-git/dezi.shairport: xbmc-git
 	sudo make -C lib/libshairport install; \
 	touch dezi.shairport
 
-xbmc-git/dezi.tools: xbmc-git
+xbmc-git-env= \
 	export TARGET_SUBARCH="armv6zk"; \
 	export TARGET_CPU="arm1176jzf-s"; \
 	export TARGET_FLOAT="hard"; \
@@ -81,7 +81,10 @@ xbmc-git/dezi.tools: xbmc-git
 	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
 	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
-	export LDFLAGS="-march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"; \
+	export LDFLAGS="-march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
+
+xbmc-git/dezi.tools: xbmc-git
+	$(xbmc-git-env); \
 	cd xbmc-git; \
 	sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
 	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
@@ -92,18 +95,7 @@ xbmc-git/dezi.tools: xbmc-git
 	touch dezi.tools
 
 xbmc-git/dezi.configure: xbmc-git
-	export TARGET_SUBARCH="armv6zk"; \
-	export TARGET_CPU="arm1176jzf-s"; \
-	export TARGET_FLOAT="hard"; \
-	export TARGET_FPU="vfp"; \
-	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
-	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
-	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math  -fgnu89-inline"; \
-	export TARGET_LOPT="-s -Wl,--as-needed"; \
-	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
-	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
-	export CXXFLAGS="$$CFLAGS"; \
-	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"; \
+	$(xbmc-git-env); \
 	cd xbmc-git; \
 	./bootstrap || exit; \
 	./configure \
@@ -123,19 +115,19 @@ xbmc-git/dezi.configure: xbmc-git
 		|| exit; \
 	touch dezi.configure
 
-#--host=arm-linux-gnueabihf \
-
 xbmc-git/dezi.make: xbmc-git
 	cd xbmc-git; \
 	make; \
 
 xbmc-git-doit: \
-	xbmc-git/dezi.patch \
 	xbmc-git/dezi.taglib \
 	xbmc-git/dezi.shairport \
 	xbmc-git/dezi.tools \
 	xbmc-git/dezi.configure \
 	xbmc-git/dezi.make \
+
+xbmc-git-dontdoit: \
+	xbmc-git/dezi.patch \
 
 ##################################################################
 #

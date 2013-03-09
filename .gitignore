@@ -3,6 +3,8 @@
 # Local working directories.
 #
 .DS_Store
+xbmc
+xbian
 stuff
 local
 static
