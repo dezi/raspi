@@ -17,6 +17,10 @@ update:
 	sudo apt-get update -y
 	sudo apt-get upgrade -y
 
+bluetooth:
+	sudo apt-get install -y bluez bluez-compat
+	sudo apt-get install -y python-gobject python-dbus
+
 ##########################################################################
 #
 # ProFTPD
