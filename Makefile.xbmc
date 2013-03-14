@@ -31,8 +31,31 @@ xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
 	make; \
 	sudo make install; \
 	touch dezi.done
-	
-pvr: xbmc-pvr-addons-frodo xbmc-pvr-addons-frodo/dezi.done
+
+pvr-frodo-doit: xbmc-pvr-addons-frodo xbmc-pvr-addons-frodo/dezi.done
+
+pvr-git-doit: xbmc-pvr-addons-git xbmc-pvr-addons-git/dezi.done
+
+pvr: pvr-git-doit
+
+##################################################################
+#
+# xbmc configure environment
+#
+
+xbmc-git-env= \
+	export TARGET_SUBARCH="armv6zk"; \
+	export TARGET_CPU="arm1176jzf-s"; \
+	export TARGET_FLOAT="hard"; \
+	export TARGET_FPU="vfp"; \
+	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
+	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math  -fgnu89-inline"; \
+	export TARGET_LOPT="-s -Wl,--as-needed"; \
+	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
+	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
+	export CXXFLAGS="$$CFLAGS"; \
+	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
 ##################################################################
 #
@@ -41,6 +64,71 @@ pvr: xbmc-pvr-addons-frodo xbmc-pvr-addons-frodo/dezi.done
 
 xbmc-frodo:
 	git clone --depth 5 -b Frodo git://github.com/xbmc/xbmc.git xbmc-frodo
+
+xbmc-frodo/dezi.patch: xbmc-frodo
+	cd xbmc-frodo; \
+	wget https://raw.github.com/xbianonpi/xbian-patches/master/xbmc/patch-XBMC.sh; \
+	chmod a+x patch-XBMC.sh; \
+	sh patch-XBMC.sh 12; \
+	touch dezi.patch
+
+xbmc-frodo/dezi.taglib: xbmc-frodo
+	cd xbmc-frodo; \
+	make -C lib/taglib; \
+	sudo make -C lib/taglib install; \
+	touch dezi.taglib
+
+xbmc-frodo/dezi.shairport: xbmc-frodo
+	cd xbmc-frodo; \
+	make -C lib/libshairport; \
+	sudo make -C lib/libshairport install; \
+	touch dezi.shairport
+
+xbmc-frodo/dezi.tools: xbmc-frodo
+	$(xbmc-git-env); \
+	cd xbmc-frodo; \
+	sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
+	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
+	sh tools/rbp/setup-sdk.sh; \
+	sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/' tools/rbp/depends/xbmc/Makefile; \
+	sed -i 's/cd $$(SOURCE); $$(CONFIGURE)/#cd $$(SOURCE); $$(CONFIGURE)/' tools/rbp/depends/xbmc/Makefile; \
+	make -C tools/rbp/depends/xbmc/ || exit; \
+	touch dezi.tools
+
+xbmc-frodo/dezi.configure: xbmc-frodo
+	$(xbmc-git-env); \
+	cd xbmc-frodo; \
+	./bootstrap || exit; \
+	./configure \
+		--prefix=/usr/local \
+		--build=arm-linux-gnueabihf \
+		--localstatedir=/var/lib \
+		--with-platform=raspberry-pi \
+		--disable-gl --enable-gles --disable-x11 --disable-sdl \
+		--enable-ccache --enable-optimizations --disable-external-libraries \
+		--disable-goom --disable-hal --disable-pulse --disable-vaapi \
+		--disable-vdpau --disable-xrandr --enable-airplay --disable-alsa \
+		--enable-avahi --enable-libbluray --enable-dvdcss --disable-debug \
+		--disable-joystick --disable-mid --enable-nfs --disable-profiling \
+		--disable-projectm --enable-rsxs --enable-rtmp --disable-vaapi \
+		--disable-vdadecoder --disable-external-ffmpeg \
+		--enable-optical-drive --enable-player=omxplayer \
+		|| exit; \
+	touch dezi.configure
+
+xbmc-frodo/dezi.make: xbmc-frodo
+	cd xbmc-frodo; \
+	make; \
+
+xbmc-frodo-doit: \
+	xbmc-frodo/dezi.taglib \
+	xbmc-frodo/dezi.shairport \
+	xbmc-frodo/dezi.tools \
+	xbmc-frodo/dezi.configure \
+	xbmc-frodo/dezi.make \
+
+xbmc-frodo-dontdoit: \
+	xbmc-frodo/dezi.patch \
 
 ##################################################################
 #
@@ -68,20 +156,6 @@ xbmc-git/dezi.shairport: xbmc-git
 	make -C lib/libshairport; \
 	sudo make -C lib/libshairport install; \
 	touch dezi.shairport
-
-xbmc-git-env= \
-	export TARGET_SUBARCH="armv6zk"; \
-	export TARGET_CPU="arm1176jzf-s"; \
-	export TARGET_FLOAT="hard"; \
-	export TARGET_FPU="vfp"; \
-	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
-	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
-	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math  -fgnu89-inline"; \
-	export TARGET_LOPT="-s -Wl,--as-needed"; \
-	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
-	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
-	export CXXFLAGS="$$CFLAGS"; \
-	export LDFLAGS="-march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
 xbmc-git/dezi.tools: xbmc-git
 	$(xbmc-git-env); \
@@ -131,6 +205,14 @@ xbmc-git-dontdoit: \
 
 ##################################################################
 #
+# xbmc-fork
+#
+
+xbmc-fork:
+	git clone git@github.com:dezi/xbmc.git xbmc-fork
+
+##################################################################
+#
 # libcec
 #
 
@@ -154,7 +236,8 @@ libcec: libcec-git/dezi.done
 #
 
 updatepacks:
-	sudo apt-get install autotools-dev comerr-dev dpkg-dev libalsaplayer-dev libapt-pkg-dev:armhf libasound2-dev libass-dev:armhf libatk1.0-dev libavahi-client-dev \
+	sudo apt-get install; \
+	autotools-dev comerr-dev dpkg-dev libalsaplayer-dev libapt-pkg-dev:armhf libasound2-dev libass-dev:armhf libatk1.0-dev libavahi-client-dev \
 	libavahi-common-dev libavcodec-dev libavformat-dev libavutil-dev libbison-dev:armhf libbluray-dev:armhf libboost1.49-dev \
 	libbz2-dev:armhf libc-dev-bin libc6-dev:armhf libcaca-dev libcairo2-dev libcdio-dev libclalsadrv-dev libcrypto++-dev libcups2-dev libcurl3-gnutls-dev \
 	libdbus-1-dev libdbus-glib-1-dev libdirectfb-dev libdrm-dev libegl1-mesa-dev libelf-dev libenca-dev libept-dev libevent-dev libexpat1-dev libflac-dev:armhf \

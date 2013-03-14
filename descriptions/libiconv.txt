@@ -1,0 +1,4 @@
+GNU libiconv provides an iconv() implementation
+for use on systems which don't have one or whose
+implementation cannot convert from/to Unicode. 
+It supports all the important encodings in use today.

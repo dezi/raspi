@@ -5,7 +5,7 @@
 # Dennis Zierahn
 #
 
-afpfs-ng_version			= 0.8.1
+afpfs-ng_version			= 0.8.2
 xz_version					= 5.1.2alpha
 tar_version					= 1.26
 sed_version					= 4.2.1
@@ -175,6 +175,8 @@ mxf: e2fsprogs libMXF
 
 special: tvheadend v8 xbmc
 
+xberry: libiconv-xberry afpfs-ng-xberry
+
 #####################################################################
 #
 # Local setup
@@ -341,20 +343,36 @@ pkg-config: $(pkg-config) $(pkg-config)/dezi.done
 #
 
 $(afpfs-ng): 
-	wget http://downloads.sourceforge.net/project/afpfs-ng/afpfs-ng/$(afpfs-ng_version)/$(afpfs-ng).tar.bz2
-	tar -xvjf $(afpfs-ng).tar.bz2
+	git clone git://github.com/dezi/afpfs-ng-fork.git $(afpfs-ng)
+	tar -cvjf $(afpfs-ng).tar.bz2 $(afpfs-ng)
 	mv $(afpfs-ng).tar.bz2 ../download
 
 $(afpfs-ng)/dezi.done:
 	cd $(afpfs-ng); \
-	export LDFLAGS="-liconv"; \
-	autoreconf -fiv; \
-	./configure --prefix=/usr; \
+	./configure; \
 	make; \
 	sudo make install; \
 	touch dezi.done
 
+$(afpfs-ng)/dezi.xberry:
+	cd $(afpfs-ng); \
+	cp ../../descriptions/afpfs-ng.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/ChangeLog; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-afpfs-ng \
+		--pkgaltsource=git://github.com/dezi/afpfs-ng-fork.git \
+		make install || exit; \
+	touch dezi.xberry
+
 afpfs-ng: $(afpfs-ng) $(afpfs-ng)/dezi.done
+
+afpfs-ng-xberry: $(afpfs-ng) $(afpfs-ng)/dezi.done $(afpfs-ng)/dezi.xberry
 
 #####################################################################
 #
@@ -509,7 +527,25 @@ $(libiconv)/dezi.done:
 	sudo make install; \
 	touch dezi.done
 
+$(libiconv)/dezi.xberry:
+	cd $(libiconv); \
+	cp ../../descriptions/libiconv.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/ChangeLog; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-libiconv \
+		--pkgaltsource=http://ftp.gnu.org/pub/gnu/libiconv/$(libiconv).tar.gz \
+		make install || exit; \
+	touch dezi.xberry
+
 libiconv: $(libiconv) $(libiconv)/dezi.done
+
+libiconv-xberry: $(libiconv) $(libiconv)/dezi.done $(libiconv)/dezi.xberry
 
 #####################################################################
 #
