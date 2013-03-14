@@ -1,0 +1,50 @@
+From 15b9c9e7e46b7c27830a2c02d059c2677445d716 Mon Sep 17 00:00:00 2001
+From: dezi <dezi@kappa-mm.de>
+Date: Sun, 10 Mar 2013 14:23:37 +0000
+Subject: [PATCH] Added "Part of Compilation" flag support for
+ MusicInfoScanner.
+
+---
+ xbmc/music/infoscanner/MusicInfoScanner.cpp | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/xbmc/music/infoscanner/MusicInfoScanner.cpp b/xbmc/music/infoscanner/MusicInfoScanner.cpp
+index 789dd96..e91297d 100644
+--- a/xbmc/music/infoscanner/MusicInfoScanner.cpp
++++ b/xbmc/music/infoscanner/MusicInfoScanner.cpp
+@@ -660,6 +660,7 @@ void CMusicInfoScanner::CategoriseAlbums(VECSONGS &songsToCheck, VECALBUMS &albu
+     // map the songs to their primary artists
+     bool tracksOverlap = false;
+     bool hasAlbumArtist = false;
++    bool isCompilation = true;
+ 
+     map<string, vector<CSong *> > artists;
+     for (vector<CSong *>::iterator j = songs.begin(); j != songs.end(); ++j)
+@@ -669,6 +670,9 @@ void CMusicInfoScanner::CategoriseAlbums(VECSONGS &songsToCheck, VECALBUMS &albu
+       if (j != songs.begin() && song->iTrack == (*(j-1))->iTrack)
+         tracksOverlap = true;
+ 
++      if (! song->bCompilation)
++        isCompilation = false;
++
+       // get primary artist
+       string primary;
+       if (!song->albumArtist.empty())
+@@ -686,11 +690,12 @@ void CMusicInfoScanner::CategoriseAlbums(VECSONGS &songsToCheck, VECALBUMS &albu
+     /*
+      We have a compilation if
+      1. album name is non-empty AND
+-     2. no tracks overlap AND
++     2a. no tracks overlap OR
++     2b. all tracks are marked as part of compilation AND
+      3a. a unique primary artist is specified as "various" or "various artists" OR
+      3b. we have at least two primary artists and no album artist specified.
+      */
+-    bool compilation = !i->first.empty() && !tracksOverlap; // 1+2
++    bool compilation = !i->first.empty() && (isCompilation || !tracksOverlap); // 1+2b+2a
+     if (artists.size() == 1)
+     {
+       string artist = artists.begin()->first; StringUtils::ToLower(artist);
+-- 
+1.8.1.5
+
