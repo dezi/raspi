@@ -5,6 +5,7 @@
 # Dennis Zierahn
 #
 
+afpfs-ng_version			= 0.8.1
 xz_version					= 5.1.2alpha
 tar_version					= 1.26
 sed_version					= 4.2.1
@@ -77,6 +78,7 @@ xbmc_version 				= git
 
 #####################################################################
 
+afpfs-ng = afpfs-ng-$(afpfs-ng_version)
 xz = xz-$(xz_version)
 tar = tar-$(tar_version)
 sed = sed-$(sed_version)
@@ -332,6 +334,27 @@ $(pkg-config)/dezi.done:
 	touch dezi.done
 
 pkg-config: $(pkg-config) $(pkg-config)/dezi.done
+
+#####################################################################
+#
+# afps-ng
+#
+
+$(afpfs-ng): 
+	wget http://downloads.sourceforge.net/project/afpfs-ng/afpfs-ng/$(afpfs-ng_version)/$(afpfs-ng).tar.bz2
+	tar -xvjf $(afpfs-ng).tar.bz2
+	mv $(afpfs-ng).tar.bz2 ../download
+
+$(afpfs-ng)/dezi.done:
+	cd $(afpfs-ng); \
+	export LDFLAGS="-liconv"; \
+	autoreconf -fiv; \
+	./configure --prefix=/usr; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+afpfs-ng: $(afpfs-ng) $(afpfs-ng)/dezi.done
 
 #####################################################################
 #
