@@ -349,6 +349,7 @@ $(afpfs-ng):
 
 $(afpfs-ng)/dezi.done:
 	cd $(afpfs-ng); \
+	autoreconv -fiv; \
 	./configure; \
 	make; \
 	sudo make install; \
@@ -358,7 +359,7 @@ $(afpfs-ng)/dezi.xberry:
 	cd $(afpfs-ng); \
 	cp ../../descriptions/afpfs-ng.txt description-pak; \
 	mkdir -p doc-pak; \
-	cp ChangeLog doc-pak/ChangeLog; \
+	cp ChangeLog doc-pak/CHANGELOG; \
 	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
 	sudo checkinstall \
 		--install=no \
@@ -367,6 +368,7 @@ $(afpfs-ng)/dezi.xberry:
 		--pkggroup=xberry \
 		--pkgname=xberry-afpfs-ng \
 		--pkgaltsource=git://github.com/dezi/afpfs-ng-fork.git \
+		--requires xberry-libiconv \
 		make install || exit; \
 	touch dezi.xberry
 
@@ -531,7 +533,7 @@ $(libiconv)/dezi.xberry:
 	cd $(libiconv); \
 	cp ../../descriptions/libiconv.txt description-pak; \
 	mkdir -p doc-pak; \
-	cp ChangeLog doc-pak/ChangeLog; \
+	cp ChangeLog doc-pak/CHANGELOG; \
 	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
 	sudo checkinstall \
 		--install=no \
