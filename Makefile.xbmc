@@ -237,7 +237,7 @@ libcec: libcec-git/dezi.done
 #
 
 updatepacks:
-	sudo apt-get install; \
+	sudo apt-get install \
 	autotools-dev comerr-dev dpkg-dev libalsaplayer-dev libapt-pkg-dev:armhf libasound2-dev libass-dev:armhf libatk1.0-dev libavahi-client-dev \
 	libavahi-common-dev libavcodec-dev libavformat-dev libavutil-dev libbison-dev:armhf libbluray-dev:armhf libboost1.49-dev \
 	libbz2-dev:armhf libc-dev-bin libc6-dev:armhf libcaca-dev libcairo2-dev libcdio-dev libclalsadrv-dev libcrypto++-dev libcups2-dev libcurl3-gnutls-dev \
