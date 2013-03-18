@@ -55,7 +55,8 @@ xbmc-git-env= \
 	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
 	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
-	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
+	export CPPFLAGS="-I/home/pi/raspi/xbmc/xbmc-git/xbmc"; \
+	export LDFLAGS="-liconv -L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
 ##################################################################
 #

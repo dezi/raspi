@@ -1,0 +1,12 @@
+diff --git a/xbmc/cores/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoRenderers/LinuxRendererGLES.cpp
+index 85f4446..3574a27 100644
+--- a/xbmc/cores/VideoRenderers/LinuxRendererGLES.cpp
++++ b/xbmc/cores/VideoRenderers/LinuxRendererGLES.cpp
+@@ -47,6 +47,7 @@
+ #include "RenderCapture.h"
+ #include "RenderFormats.h"
+ #include "xbmc/Application.h"
++#include "cores/IPlayer.h"
+ 
+ #if defined(__ARM_NEON__)
+ #include "yuv2rgb.neon.h"
