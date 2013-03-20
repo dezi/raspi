@@ -3,7 +3,7 @@
 # XBMC make.
 #
 
-all: libcec xbmc-git-doit
+all: libcec xbmc-git-doit pvr-git-doit
 
 xbmc-doit: ./xbmc
 	cd ./xbmc; make all
@@ -19,14 +19,11 @@ xbmc-doit: ./xbmc
 
 ##################################################################
 #
-# PVR Addons
+# PVR Addons Frodo
 #
 
 xbmc-pvr-addons-frodo:
 	git clone --depth 5 -b frodo git://github.com/opdenkamp/xbmc-pvr-addons.git xbmc-pvr-addons-frodo
-
-xbmc-pvr-addons-git:
-	git clone --depth 5 git://github.com/opdenkamp/xbmc-pvr-addons.git xbmc-pvr-addons-git
 
 xbmc-pvr-addons-frodo/dezi.done: xbmc-pvr-addons-frodo
 	cd xbmc-pvr-addons-frodo; \
@@ -36,6 +33,16 @@ xbmc-pvr-addons-frodo/dezi.done: xbmc-pvr-addons-frodo
 	sudo make install; \
 	touch dezi.done
 
+pvr-frodo-doit: xbmc-pvr-addons-frodo xbmc-pvr-addons-frodo/dezi.done
+
+##################################################################
+#
+# PVR Addons HEAD
+#
+
+xbmc-pvr-addons-git:
+	git clone --depth 5 git://github.com/opdenkamp/xbmc-pvr-addons.git xbmc-pvr-addons-git
+
 xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
 	cd xbmc-pvr-addons-git; \
 	./bootstrap; \
@@ -44,15 +51,11 @@ xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
 	sudo make install; \
 	touch dezi.done
 
-pvr-frodo-doit: xbmc-pvr-addons-frodo xbmc-pvr-addons-frodo/dezi.done
-
 pvr-git-doit: xbmc-pvr-addons-git xbmc-pvr-addons-git/dezi.done
-
-pvr: pvr-git-doit
 
 ##################################################################
 #
-# xbmc configure environment
+# XBMC configure environment
 #
 
 xbmc-git-env= \
@@ -153,10 +156,7 @@ xbmc-git:
 
 xbmc-git/dezi.patch: xbmc-git
 	cd xbmc-git; \
-	wget https://raw.github.com/xbianonpi/xbian-patches/master/xbmc/patch-XBMC.sh; \
-	chmod a+x patch-XBMC.sh; \
-	sh patch-XBMC.sh 13; \
-	touch dezi.patch
+	#touch dezi.patch
 
 xbmc-git/dezi.taglib: xbmc-git
 	cd xbmc-git; \
@@ -173,7 +173,7 @@ xbmc-git/dezi.shairport: xbmc-git
 xbmc-git/dezi.tools: xbmc-git
 	$(xbmc-git-env); \
 	cd xbmc-git; \
-	sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
+	#sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
 	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
 	sh tools/rbp/setup-sdk.sh; \
 	sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/' tools/rbp/depends/xbmc/Makefile; \
@@ -207,14 +207,12 @@ xbmc-git/dezi.make: xbmc-git
 	make; \
 
 xbmc-git-doit: \
+	xbmc-git/dezi.patch \
 	xbmc-git/dezi.taglib \
 	xbmc-git/dezi.shairport \
 	xbmc-git/dezi.tools \
 	xbmc-git/dezi.configure \
 	xbmc-git/dezi.make \
-
-xbmc-git-dontdoit: \
-	xbmc-git/dezi.patch \
 
 ##################################################################
 #
