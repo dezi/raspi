@@ -3,10 +3,9 @@
 # Dezi's Raspberry Pi mock ups.
 #
 
-all: daemons developer utilities
-allxx: update daemons
+all: update upgrade daemons utilities
 
-daemons: proftpd samba
+daemons: proftpd samba bluetooth
 
 ##########################################################################
 #
@@ -15,11 +14,10 @@ daemons: proftpd samba
 
 update:
 	sudo apt-get update -y
-	sudo apt-get upgrade -y
 
-bluetooth:
-	sudo apt-get install -y bluez bluez-compat
-	sudo apt-get install -y python-gobject python-dbus
+upgrade:
+	sudo apt-get upgrade -y
+	sudo apt-get dist-upgrade -y
 
 ##########################################################################
 #
@@ -44,6 +42,16 @@ proftpd: /etc/proftpd/proftpd.conf
 	smbpasswd
 
 samba: /usr/sbin/smbd /usr/bin/smbpasswd
+
+##########################################################################
+#
+# Bluetooth
+
+/usr/sbin/bluetoothd:
+	sudo apt-get install -y bluez bluez-compat
+	sudo apt-get install -y python-gobject python-dbus
+
+bluetooth: /usr/sbin/bluetoothd
 
 ##########################################################################
 #
