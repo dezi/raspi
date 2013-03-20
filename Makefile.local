@@ -5,6 +5,7 @@
 # Dennis Zierahn
 #
 
+noip_version				= 2.1.9-1
 afpfs-ng_version			= 0.8.2
 xz_version					= 5.1.2alpha
 tar_version					= 1.26
@@ -78,6 +79,7 @@ xbmc_version 				= git
 
 #####################################################################
 
+noip = noip-$(noip_version)
 afpfs-ng = afpfs-ng-$(afpfs-ng_version)
 xz = xz-$(xz_version)
 tar = tar-$(tar_version)
@@ -260,6 +262,25 @@ $(xz)/dezi.done:
 	touch dezi.done
 
 xz: $(xz) $(xz)/dezi.done
+
+#####################################################################
+#
+# noip
+#
+
+$(noip): 
+	curl https://www.noip.com/client/linux/noip-duc-linux.tar.gz -o $(noip).tar.gz
+	tar -xvzf $(noip).tar.gz
+	rm -rf ._$(noip)
+	mv $(noip).tar.gz ../download
+
+$(noip)/dezi.done:
+	cd $(noip); \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+noip: $(noip) $(noip)/dezi.done
 
 #####################################################################
 #

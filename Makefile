@@ -24,6 +24,9 @@ raspberrypi:
 local:
 	make -f Makefile.local local-doit
 
+xbmc:
+	make -f Makefile.xbmc xbmc-doit
+
 ffmpeg: ffmpeg-cross ffmpeg-local
 
 ffmpeg-cross: ffmpeg-win32-doit ffmpeg-win64-doit
