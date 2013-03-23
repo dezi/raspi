@@ -11,14 +11,18 @@ all: mockup.bash mockup.vi local
 #
 
 ~/.bashrc.orig:
+	if [ -f "~/.bashrc.orig" ]; then exit; fi
 	touch ~/.bashrc
 	cp ~/.bashrc ~/.bashrc.orig
-	sed -i "s/#alias ll='ls -l'/alias ll='ls -Al'/" ~/.bashrc
+	echo "alias ll='ls -al'" >> ~/.bashrc
+	echo "alias du='du -h'" >> ~/.bashrc
+	echo "alias df='df -h'" >> ~/.bashrc
 	echo "alias psg='ps -eaf | grep -v grep | grep'" >> ~/.bashrc
 
 mockup.bash: ~/.bashrc.orig
 
 ~/.vimrc.orig:
+	if [ -f "~/.vimrc.orig" ]; then exit; fi
 	touch ~/.vimrc
 	cp ~/.vimrc ~/.vimrc.orig
 	echo "set tabstop=4" >> ~/.vimrc
