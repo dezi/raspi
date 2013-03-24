@@ -75,7 +75,6 @@ mp4v2_version 				= svn
 gpac_version 				= svn
 tvheadend_version 			= git
 v8_version 					= git
-xbmc_version 				= git
 
 #####################################################################
 
@@ -143,7 +142,6 @@ abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
 tvheadend = tvheadend-$(tvheadend_version)
 v8 = v8-$(v8_version)
-xbmc = xbmc-$(xbmc_version)
 e2fsprogs = e2fsprogs-$(e2fsprogs_version)
 libMXF = libMXF-src-$(libMXF_version)
 
@@ -175,7 +173,7 @@ utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
 mxf: e2fsprogs libMXF
 
-special: tvheadend v8 xbmc
+special: tvheadend v8
 
 xberry: libiconv-xberry afpfs-ng-xberry
 
@@ -1567,49 +1565,3 @@ $(v8)/dezi.done:
 	touch dezi.done
 
 v8: $(v8) $(v8)/dezi.done
-
-#####################################################################
-#
-# xbmc
-#
-
-$(xbmc): 
-	git clone git://github.com/xbmc/xbmc.git $(xbmc)
-	tar -cvzf $(xbmc).tar.gz $(xbmc)
-	mv -f $(xbmc).tar.gz ../download
-
-$(xbmc)/dezi.conf:
-	cd $(xbmc); \
-	if [ -f "/usr/bin/gcc-4.7" ]; then \
-		export CC=gcc-4.7; \
-	fi; \
-	export LDFLAGS="-L/opt/vc/lib"; \
-	export INCLUDES="-I/opt/vc/include"; \
-	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
-	./bootstrap || exit; \
-	./configure \
-		--prefix=/usr --build=arm-linux-gnueabihf --host=arm-linux-gnueabihf \
-		--localstatedir=/var/lib --with-platform=raspberry-pi --disable-gl --enable-gles \
-		--disable-x11 --disable-sdl --enable-ccache --enable-optimizations \
-		--enable-external-libraries --disable-goom --disable-hal --disable-pulse \
-		--disable-vaapi --disable-vdpau --disable-xrandr --disable-airplay \
-		--disable-alsa --enable-avahi --disable-libbluray --disable-dvdcss \
-		--disable-debug --disable-joystick --enable-mid --disable-nfs --disable-profiling \
-		--disable-projectm --enable-rsxs --enable-rtmp --disable-vaapi \
-		--disable-vdadecoder --disable-external-ffmpeg  --disable-optical-drive \
-		|| exit; \
-	touch dezi.conf
-
-$(xbmc)/dezi.done:
-	cd $(xbmc); \
-	if [ -f "/usr/bin/gcc-4.7" ]; then \
-		export CC=gcc-4.7; \
-	fi; \
-	export LDFLAGS="-L/opt/vc/lib"; \
-	export INCLUDES="-I/opt/vc/include"; \
-	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
-	make || exit; \
-	sudo make install || exit; \
-	touch dezi.done
-
-xbmc: $(xbmc) $(xbmc)/dezi.conf $(xbmc)/dezi.done
