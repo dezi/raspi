@@ -1,27 +1,25 @@
-From 10b273cc7bacd1282261ed1ec883748cd59af6f6 Mon Sep 17 00:00:00 2001
+From 2da77839fbf972e8c6f09c56d25f8c7bf999f3fa Mon Sep 17 00:00:00 2001
 From: dezi <dezi@kappa-mm.de>
-Date: Thu, 14 Mar 2013 07:01:27 +0000
+Date: Mon, 18 Mar 2013 12:29:27 +0000
 Subject: [PATCH] Added hotplug support for Linux input devices.
 
 ---
- xbmc/input/linux/LinuxInputDevices.cpp | 84 +++++++++++++++++++++++++++++++++-
- xbmc/input/linux/LinuxInputDevices.h   |  8 +++-
- 2 files changed, 89 insertions(+), 3 deletions(-)
+ xbmc/input/linux/LinuxInputDevices.cpp | 80 ++++++++++++++++++++++++++++++++++
+ xbmc/input/linux/LinuxInputDevices.h   |  6 +++
+ 2 files changed, 86 insertions(+)
 
 diff --git a/xbmc/input/linux/LinuxInputDevices.cpp b/xbmc/input/linux/LinuxInputDevices.cpp
-index 9d253bb..ca85719 100644
+index 9d253bb..1d3d315 100644
 --- a/xbmc/input/linux/LinuxInputDevices.cpp
 +++ b/xbmc/input/linux/LinuxInputDevices.cpp
-@@ -338,7 +338,8 @@
+@@ -338,6 +338,7 @@
    m_deviceMinKeyCode = 0;
    m_deviceMaxKeyCode = 0;
    m_deviceMaxAxis = 0;
--
 +  m_bUnplugged = false;
-+  
+ 
    Open();
  }
- 
 @@ -744,7 +745,15 @@ XBMC_Event CLinuxInputDevice::ReadEvent()
      readlen = read(m_fd, &levt, sizeof(levt));
  
@@ -32,7 +30,7 @@ index 9d253bb..ca85719 100644
 +        CLog::Log(LOGINFO,"input device was unplugged %s",m_deviceName);
 +        m_bUnplugged = true;
 +      }
-+      
++
        break;
 +    }
  
@@ -66,7 +64,7 @@ index 9d253bb..ca85719 100644
 +  CSingleLock lock(m_devicesListLock);
 +
 +  int deviceId = m_devices.size();
-+  
++
 +  /* No devices specified. Try to guess some. */
 +  for (int i = 0; i < MAX_LINUX_INPUT_DEVICES; i++)
 +  {
@@ -97,17 +95,17 @@ index 9d253bb..ca85719 100644
   * Open the device, fill out information about it,
   * allocate and fill private data, start input thread.
   */
-@@ -1078,6 +1132,9 @@ bool CLinuxInputDevice::Open()
-       m_vt_fd = open("/dev/tty0", O_RDWR | O_NOCTTY);
- 
+@@ -1076,6 +1130,9 @@ bool CLinuxInputDevice::Open()
+   {
      if (m_vt_fd < 0)
-+      m_vt_fd = open("/dev/tty1", O_RDWR | O_NOCTTY);
+       m_vt_fd = open("/dev/tty0", O_RDWR | O_NOCTTY);
 +
 +    if (m_vt_fd < 0)
-       CLog::Log(LOGWARNING, "no keymap support (requires /dev/tty0 - CONFIG_VT)");
-   }
++      m_vt_fd = open("/dev/tty1", O_RDWR | O_NOCTTY);
  
-@@ -1195,11 +1252,28 @@ void CLinuxInputDevice::Close()
+     if (m_vt_fd < 0)
+       CLog::Log(LOGWARNING, "no keymap support (requires /dev/tty0 - CONFIG_VT)");
+@@ -1195,6 +1252,23 @@ void CLinuxInputDevice::Close()
  
  XBMC_Event CLinuxInputDevices::ReadEvent()
  {
@@ -127,16 +125,10 @@ index 9d253bb..ca85719 100644
 +      m_lastHotplugCheck = now;
 +    }
 +  }
-+  
++
    CSingleLock lock(m_devicesListLock);
  
    XBMC_Event event;
-   event.type = XBMC_NOEVENT;
--
-+  
-   for (size_t i = 0; i < m_devices.size(); i++)
-   {
-     event = m_devices[i]->ReadEvent();
 @@ -1207,6 +1281,12 @@ XBMC_Event CLinuxInputDevices::ReadEvent()
      {
        break;
@@ -151,20 +143,18 @@ index 9d253bb..ca85719 100644
  
    return event;
 diff --git a/xbmc/input/linux/LinuxInputDevices.h b/xbmc/input/linux/LinuxInputDevices.h
-index 18224a9..8fb9571 100644
+index 18224a9..b7626f4 100644
 --- a/xbmc/input/linux/LinuxInputDevices.h
 +++ b/xbmc/input/linux/LinuxInputDevices.h
-@@ -41,7 +41,9 @@ class CLinuxInputDevice
+@@ -41,6 +41,8 @@ class CLinuxInputDevice
    CLinuxInputDevice(const std::string fileName, int index);
    ~CLinuxInputDevice();
    XBMC_Event ReadEvent();
-- 
 +  char* GetDeviceName();
 +  bool IsUnplugged();
-+  
+  
  private:
    void SetupKeyboardAutoRepeat(int fd);
-   XBMCKey TranslateKey(unsigned short code);
 @@ -76,12 +78,14 @@ class CLinuxInputDevice
    int m_deviceMaxKeyCode;
    int m_deviceMaxAxis;

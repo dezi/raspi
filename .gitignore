@@ -12,6 +12,8 @@ download
 dvbstick
 versions
 packages
+firmware
+raspbian
 sponexecs
 ffmpeg-win32
 ffmpeg-win64
