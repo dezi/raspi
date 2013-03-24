@@ -68,8 +68,8 @@ xbmc-git:
 xbmc-git/dezi.patch: xbmc-git
 	cd xbmc-git; \
 	git apply --index ../../patches/xbmc.hotplug.patch || echo "Alread applied..."; \
-	git apply --index ../../patches/xbmc.nfc.patch || echo "Alread applied..."; \
-	#touch dezi.patch
+	git apply --index ../../patches/xbmc.nfc.patch     || echo "Alread applied..."; \
+	touch dezi.patch
 
 xbmc-git/dezi.taglib: xbmc-git
 	cd xbmc-git; \
