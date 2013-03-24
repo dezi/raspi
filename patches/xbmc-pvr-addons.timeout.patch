@@ -1,0 +1,13 @@
+diff --git a/addons/pvr.hts/src/HTSPConnection.cpp b/addons/pvr.hts/src/HTSPConnection.cpp
+index 22ccfbc..d61e8d3 100644
+--- a/addons/pvr.hts/src/HTSPConnection.cpp
++++ b/addons/pvr.hts/src/HTSPConnection.cpp
+@@ -629,7 +630,7 @@ void* CHTSPConnection::Process(void)
+       {
+         {
+           CLockObject lock(m_mutex);
+-          msg = ReadMessage(5);
++          msg = ReadMessage(5,g_iConnectTimeout * 1000);
+         }
+         if(msg == NULL || msg->hm_data == NULL)
+         {
