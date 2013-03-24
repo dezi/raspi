@@ -703,10 +703,26 @@ $(taglib):
 
 $(taglib)/dezi.done:
 	cd $(taglib); \
-	cmake -dcmake_install_prefix=/usr/local -dcmake_release_type=release .; \
+	cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_STATIC=1 .; \
 	make || exit; \
 	sudo make install; \
 	touch dezi.done
+
+$(taglib)/dezi.xberry:
+	cd $(taglib); \
+	cp ../../descriptions/taglib.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-taglib \
+		--pkgaltsource=http://taglib.github.com/releases/$(taglib).tar.gz \
+		make install || exit; \
+	touch dezi.xberry
 
 taglib: $(taglib) $(taglib)/dezi.done
 
