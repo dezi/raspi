@@ -7,7 +7,10 @@ nix:
 	@echo "Please give target..."
 
 bashvi:
-	make -f Makefile.bashvi
+	make -f Makefile.bashvi all
+
+upgrade:
+	make -f Makefile.raspberrypi upgrade
 
 osx:
 	make -f Makefile.osx
@@ -20,6 +23,9 @@ raspberrypi:
 
 local:
 	make -f Makefile.local local-doit
+
+xbmc:
+	make -f Makefile.xbmc xbmc-doit
 
 ffmpeg: ffmpeg-cross ffmpeg-local
 
