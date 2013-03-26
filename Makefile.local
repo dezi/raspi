@@ -5,6 +5,7 @@
 # Dennis Zierahn
 #
 
+libcec_version				= git
 noip_version				= 2.1.9-1
 afpfs-ng_version			= 0.8.2
 xz_version					= 5.1.2alpha
@@ -78,6 +79,7 @@ v8_version 					= git
 
 #####################################################################
 
+libcec = libcec-$(libcec_version)
 noip = noip-$(noip_version)
 afpfs-ng = afpfs-ng-$(afpfs-ng_version)
 xz = xz-$(xz_version)
@@ -157,7 +159,7 @@ local-doit: ./local ./download
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
-helpers: jpeg sdl alsa freetype fontconfig taglib libiconv libcddb libdvdcss fribidi rtmpdump
+helpers: jpeg sdl alsa freetype fontconfig taglib libiconv libcddb libdvdcss fribidi rtmpdump libcec
 
 codecs: \
 	libcdio libgsm libmad libass \
@@ -260,6 +262,27 @@ $(xz)/dezi.done:
 	touch dezi.done
 
 xz: $(xz) $(xz)/dezi.done
+
+##################################################################
+#
+# libcec
+#
+
+libcec-git:
+	git clone --depth 5 https://github.com/Pulse-Eight/libcec.git $(libcec)
+	tar -cvzf $(libcec).tar.gz $(libcec)
+	mv $(libcec).tar.gz ../download
+
+$(libcec)/dezi.done: libcec-git
+	cd $(libcec); \
+	export LDFLAGS="-L/opt/vc/lib"; \
+	./bootstrap || exit; \
+	./configure --prefix=/usr/local --enable-rpi --with-rpi-include-path="/opt/vc/include" --with-rpi-lib-path="/opt/vc/lib/libbcm_host.so" || exit; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+libcec: libcec-git/dezi.done
 
 ### dyndns
 #wget http://downloads.sourceforge.net/project/ddclient/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz
