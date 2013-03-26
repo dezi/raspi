@@ -25,6 +25,11 @@ xbmc-doit: ./xbmc
 xbmc-pvr-addons-git:
 	git clone --depth 5 git://github.com/opdenkamp/xbmc-pvr-addons.git xbmc-pvr-addons-git
 
+xbmc-pvr-addons-git/dezi.patch: xbmc-git
+	cd xbmc-pvr-addons-git; \
+	git apply --index ../../patches/xbmc-pvr-addons.timeout.patch || echo "Alread applied..."; \
+	touch dezi.patch
+
 xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
 	cd xbmc-pvr-addons-git; \
 	./bootstrap; \
@@ -33,7 +38,7 @@ xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
 	sudo make install; \
 	touch dezi.done
 
-pvr-git-doit: xbmc-pvr-addons-git xbmc-pvr-addons-git/dezi.done
+pvr-git-doit: xbmc-pvr-addons-git xbmc-pvr-addons-git/dezi.patch xbmc-pvr-addons-git/dezi.done
 
 ##################################################################
 #

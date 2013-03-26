@@ -175,7 +175,7 @@ mxf: e2fsprogs libMXF
 
 special: tvheadend v8
 
-xberry: libiconv-xberry afpfs-ng-xberry
+xberry: afpfs-ng-xberry
 
 #####################################################################
 #
@@ -260,6 +260,10 @@ $(xz)/dezi.done:
 	touch dezi.done
 
 xz: $(xz) $(xz)/dezi.done
+
+### dyndns
+#wget http://downloads.sourceforge.net/project/ddclient/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz
+##sudo apt-get install libio-socket-ssl-perl
 
 #####################################################################
 #
@@ -387,7 +391,6 @@ $(afpfs-ng)/dezi.xberry:
 		--pkggroup=xberry \
 		--pkgname=xberry-afpfs-ng \
 		--pkgaltsource=git://github.com/dezi/afpfs-ng-fork.git \
-		--requires xberry-libiconv \
 		make install || exit; \
 	touch dezi.xberry
 
@@ -548,25 +551,7 @@ $(libiconv)/dezi.done:
 	sudo make install; \
 	touch dezi.done
 
-$(libiconv)/dezi.xberry:
-	cd $(libiconv); \
-	cp ../../descriptions/libiconv.txt description-pak; \
-	mkdir -p doc-pak; \
-	cp ChangeLog doc-pak/CHANGELOG; \
-	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
-	sudo checkinstall \
-		--install=no \
-		--maintainer dezi@kappa-mm.de \
-		--pakdir=../../packages \
-		--pkggroup=xberry \
-		--pkgname=xberry-libiconv \
-		--pkgaltsource=http://ftp.gnu.org/pub/gnu/libiconv/$(libiconv).tar.gz \
-		make install || exit; \
-	touch dezi.xberry
-
 libiconv: $(libiconv) $(libiconv)/dezi.done
-
-libiconv-xberry: $(libiconv) $(libiconv)/dezi.done $(libiconv)/dezi.xberry
 
 #####################################################################
 #
@@ -726,22 +711,6 @@ $(taglib)/dezi.done:
 	make || exit; \
 	sudo make install; \
 	touch dezi.done
-
-$(taglib)/dezi.xberry:
-	cd $(taglib); \
-	cp ../../descriptions/taglib.txt description-pak; \
-	mkdir -p doc-pak; \
-	cp ChangeLog doc-pak/CHANGELOG; \
-	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
-	sudo checkinstall \
-		--install=no \
-		--maintainer dezi@kappa-mm.de \
-		--pakdir=../../packages \
-		--pkggroup=xberry \
-		--pkgname=xberry-taglib \
-		--pkgaltsource=http://taglib.github.com/releases/$(taglib).tar.gz \
-		make install || exit; \
-	touch dezi.xberry
 
 taglib: $(taglib) $(taglib)/dezi.done
 
