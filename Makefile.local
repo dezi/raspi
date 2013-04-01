@@ -1545,7 +1545,25 @@ $(tvheadend)/dezi.done:
 	sudo make install; \
 	touch dezi.done
 
+$(tvheadend)/dezi.xberry:
+	cd $(tvheadend); \
+	cp ../../descriptions/tvheadend.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-tvheadend \
+		--pkgaltsource=git://github.com/tvheadend/tvheadend.git \
+		make install || exit; \
+	touch dezi.xberry
+
 tvheadend: $(tvheadend) $(tvheadend)/dezi.done
+
+tvheadend-xberry: $(tvheadend) $(tvheadend)/dezi.done $(tvheadend)/dezi.xberry
 
 #####################################################################
 #
