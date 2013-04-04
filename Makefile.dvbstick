@@ -5,7 +5,6 @@
 
 all: dvbstick OpenELEC
 
-
 ######################################################################
 #
 # Build section.
@@ -39,6 +38,23 @@ OpenELEC-git/dezi.done:
 	cd OpenELEC-git; \
 	sudo ./install; \
 	touch dezi.done
+
+OpenELEC-git/dezi.xberry:
+	cd OpenELEC-git; \
+	cp ../../descriptions/dvb-firmware.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgversion=1.0.0 \
+		--pkgname=xberry-dvb-firmware \
+		--pkgaltsource=git://github.com/OpenELEC/dvb-firmware.git \
+		./install || exit; \
+	touch dezi.xberry
 	
 OpenELEC: OpenELEC-git OpenELEC-git/dezi.done
 
