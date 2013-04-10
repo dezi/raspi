@@ -3,14 +3,12 @@
 # Dezi's DVB-Sticks firmware.
 #
 
-doit: dvbstick OpenELEC
+all: OpenELEC
 
 ######################################################################
 #
 # Build section.
 #
-
-all: OpenELEC
 
 dvbstick-doit: ./dvbstick 
 	cd ./dvbstick; make all

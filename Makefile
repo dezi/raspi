@@ -21,6 +21,9 @@ centos:
 raspberrypi:
 	make -f Makefile.raspberrypi
 
+dvbstick:
+	make -f Makefile.dvbstick dvbstick-doit
+
 local:
 	make -f Makefile.local local-doit
 
