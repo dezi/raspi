@@ -3,7 +3,7 @@
 # Dezi's DVB-Sticks firmware.
 #
 
-all: dvbstick OpenELEC
+doit: dvbstick OpenELEC
 
 ######################################################################
 #

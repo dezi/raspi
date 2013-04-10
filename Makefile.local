@@ -1557,6 +1557,7 @@ $(tvheadend)/dezi.xberry:
 		--pakdir=../../packages \
 		--pkggroup=xberry \
 		--pkgname=xberry-tvheadend \
+		--pkgversion=3.5.72 \
 		--pkgaltsource=git://github.com/tvheadend/tvheadend.git \
 		make install || exit; \
 	touch dezi.xberry
