@@ -72,7 +72,7 @@ xbmc-git:
 
 xbmc-git/dezi.patch: xbmc-git
 	cd xbmc-git; \
-	git apply --index ../../patches/xbmc.hotplug.patch || echo "Alread applied..."; \
+	#git apply --index ../../patches/xbmc.hotplug.patch || echo "Alread applied..."; \
 	git apply --index ../../patches/xbmc.nfc.patch     || echo "Alread applied..."; \
 	touch dezi.patch
 
