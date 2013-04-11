@@ -1,0 +1,134 @@
+diff --git a/xbmc/cores/omxplayer/OMXPlayer.cpp b/xbmc/cores/omxplayer/OMXPlayer.cpp
+index 4420da2..4c2595a 100644
+--- a/xbmc/cores/omxplayer/OMXPlayer.cpp
++++ b/xbmc/cores/omxplayer/OMXPlayer.cpp
+@@ -52,6 +52,7 @@
+ 
+ #include "utils/LangCodeExpander.h"
+ #include "guilib/LocalizeStrings.h"
++#include "guilib/Key.h"
+ 
+ #include "storage/MediaManager.h"
+ #include "GUIUserMessages.h"
+@@ -400,13 +401,15 @@ COMXPlayer::COMXPlayer(IPlayerCallback &callback)
+       m_player_teletext(),
+       m_ready(true)
+ {
+-  m_bAbortRequest     = false;
+-  m_pDemuxer          = NULL;
+-  m_pSubtitleDemuxer  = NULL;
+-  m_pInputStream      = NULL;
+-  m_UpdateApplication = 0;
+-  m_caching           = CACHESTATE_DONE;
+-  m_playSpeed         = DVD_PLAYSPEED_NORMAL;
++  m_bWaitForSequence    = false;
++  m_fAspectFromSequence = 0.0f;
++  m_bAbortRequest       = false;
++  m_pDemuxer            = NULL;
++  m_pSubtitleDemuxer    = NULL;
++  m_pInputStream        = NULL;
++  m_UpdateApplication   = 0;
++  m_caching             = CACHESTATE_DONE;
++  m_playSpeed           = DVD_PLAYSPEED_NORMAL;
+ 
+   m_State.Clear();
+   m_dvd.Clear();
+@@ -680,7 +683,10 @@ bool COMXPlayer::OpenDemuxStream()
+   int64_t len = m_pInputStream->GetLength();
+   int64_t tim = m_pDemuxer->GetStreamLength();
+   if(len > 0 && tim > 0)
+-    m_pInputStream->SetReadRate(len * 1000 / tim);
++    m_pInputStream->SetReadRate(2 * len * 1000 / tim);
++
++  m_bWaitForSequence    = true;
++  m_fAspectFromSequence = 0.0f;
+ 
+   return true;
+ }
+@@ -1286,6 +1292,40 @@ void COMXPlayer::ProcessPacket(CDemuxStream* pStream, DemuxPacket* pPacket)
+     /* process packet if it belongs to selected stream. for dvd's don't allow automatic opening of streams*/
+     OMXStreamLock lock(this);
+ 
++    if (m_bWaitForSequence)
++    {
++      if (pPacket->iStreamId == m_CurrentVideo.id && pStream->source == m_CurrentVideo.source && pStream->type == STREAM_VIDEO)
++      {
++        if ((pPacket->iSize >= 8) 
++		&& (pPacket->pData[ 0 ] == 0x00)
++		&& (pPacket->pData[ 1 ] == 0x00)
++		&& (pPacket->pData[ 2 ] == 0x01)
++		&& (pPacket->pData[ 3 ] == 0xb3))
++        {
++           float aspect = 0.0f;
++           switch (pPacket->pData[ 7 ] >> 4)
++           {
++             case 1: aspect = 1.0f; break;
++             case 2: aspect = 1.33333f; break;
++             case 3: aspect = 1.77778f; break;
++             case 4: aspect = 2.21f; break;
++           }
++
++           if (aspect != 0.0)
++             m_fAspectFromSequence = aspect;
++
++           CLog::Log(LOGNOTICE, "%s - Sequence found - enable outputs aspect=%f", __FUNCTION__,aspect);
++           m_bWaitForSequence = false; 
++        }
++      }
++
++      if (m_bWaitForSequence)
++      {
++        CDVDDemuxUtils::FreeDemuxPacket(pPacket);
++        return;
++      }
++    }
++
+     try
+     {
+       if (pPacket->iStreamId == m_CurrentAudio.id && pStream->source == m_CurrentAudio.source && pStream->type == STREAM_AUDIO)
+@@ -1536,8 +1576,8 @@ void COMXPlayer::HandlePlaySpeed()
+   {
+     bool bGotAudio(m_pDemuxer->GetNrOfAudioStreams() > 0);
+     bool bGotVideo(m_pDemuxer->GetNrOfVideoStreams() > 0);
+-    bool bAudioLevelOk(m_player_audio.GetLevel() > g_advancedSettings.m_iPVRMinAudioCacheLevel);
+-    bool bVideoLevelOk(m_player_video.GetLevel() > g_advancedSettings.m_iPVRMinVideoCacheLevel);
++    bool bAudioLevelOk(m_player_audio.GetLevel() > 50); //g_advancedSettings.m_iPVRMinAudioCacheLevel);
++    bool bVideoLevelOk(m_player_video.GetLevel() > 50); //g_advancedSettings.m_iPVRMinVideoCacheLevel);
+     bool bAudioFull(!m_player_audio.AcceptsData());
+     bool bVideoFull(!m_player_video.AcceptsData());
+ 
+@@ -1631,7 +1671,7 @@ bool COMXPlayer::CheckStartCaching(COMXCurrentStream& current)
+     if (CachePVRStream())
+     {
+       if ((current.type == STREAM_AUDIO && current.started && m_player_audio.GetLevel() == 0) ||
+-         (current.type == STREAM_VIDEO && current.started && m_player_video.GetLevel() == 0))
++          (current.type == STREAM_VIDEO && current.started && m_player_video.GetLevel() == 0))
+       {
+         CLog::Log(LOGDEBUG, "%s stream stalled. start buffering", current.type == STREAM_AUDIO ? "audio" : "video");
+         SetCaching(CACHESTATE_PVR);
+@@ -2899,6 +2939,12 @@ bool COMXPlayer::OpenVideoStream(int iStream, int source, bool reset)
+     hint.software = true;
+   }
+ 
++  if (m_fAspectFromSequence > 0.0f)
++  {
++    hint.aspect = m_fAspectFromSequence;
++    hint.forced_aspect = true;
++  }
++
+   boost::shared_ptr<CPVRClient> client;
+   if(m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER) &&
+      pStream->type == STREAM_VIDEO &&
+diff --git a/xbmc/cores/omxplayer/OMXPlayer.h b/xbmc/cores/omxplayer/OMXPlayer.h
+index 40d9a05..072c301 100644
+--- a/xbmc/cores/omxplayer/OMXPlayer.h
++++ b/xbmc/cores/omxplayer/OMXPlayer.h
+@@ -458,6 +458,8 @@ private:
+ 
+   bool                    m_paused;
+   bool                    m_bAbortRequest;
++  bool                    m_bWaitForSequence;
++  float                   m_fAspectFromSequence;
+   CFileItem               m_item;
+   CPlayerOptions          m_PlayerOptions;
+   unsigned int            m_iChannelEntryTimeOut;
