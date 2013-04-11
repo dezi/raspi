@@ -53,7 +53,7 @@ index 4420da2..4c2595a 100644
 +    {
 +      if (pPacket->iStreamId == m_CurrentVideo.id && pStream->source == m_CurrentVideo.source && pStream->type == STREAM_VIDEO)
 +      {
-+        if ((pPacket->iSize >= 8) 
++        if ((pPacket->iSize >= 8)
 +		&& (pPacket->pData[ 0 ] == 0x00)
 +		&& (pPacket->pData[ 1 ] == 0x00)
 +		&& (pPacket->pData[ 2 ] == 0x01)
@@ -72,7 +72,7 @@ index 4420da2..4c2595a 100644
 +             m_fAspectFromSequence = aspect;
 +
 +           CLog::Log(LOGNOTICE, "%s - Sequence found - enable outputs aspect=%f", __FUNCTION__,aspect);
-+           m_bWaitForSequence = false; 
++           m_bWaitForSequence = false;
 +        }
 +      }
 +
