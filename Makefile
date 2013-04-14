@@ -27,6 +27,9 @@ dvbstick:
 local:
 	make -f Makefile.local local-doit
 
+xberry:
+	make -f Makefile.xberry xberry-doit
+
 xbmc:
 	make -f Makefile.xbmc xbmc-doit
 

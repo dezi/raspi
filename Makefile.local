@@ -991,10 +991,10 @@ $(libvpx):
 
 $(libvpx)/dezi.done: 
 	cd $(libvpx); \
-	./configure --enable-static --disable-shared; \
+	./configure --enable-vp8 --enable-vp9 --enable-static --disable-shared; \
 	make; \
 	sudo make install; \
-	./configure --enable-shared --disable-static; \
+	./configure --enable-vp8 --enable-vp9 --enable-shared --disable-static; \
 	make; \
 	sudo make install; \
 	touch dezi.done
