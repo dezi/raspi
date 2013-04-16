@@ -107,6 +107,8 @@ ffmpeg-libs = \
 	--extra-libs="-lcdio" \
 	--extra-libs="-lcdio_cdda" \
 	--extra-libs="-lcdio_paranoia" \
+
+ffmpeg-darwin:
 	--extra-libs="-liconv" \
 	
 ffmpeg-moreoptions-dont-work-yet:

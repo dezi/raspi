@@ -1,0 +1,367 @@
+##################################################################
+#
+# XBMC make.
+#
+
+all: \
+	OpenELEC-dvb \
+	OpenELEC-wlan \
+	tvheadend \
+	mplayer \
+	xbmc
+
+packs: \
+	OpenELEC-dvb-pack \
+	OpenELEC-wlan-pack \
+	tvheadend-pack \
+	mplayer-pack \
+
+xbmc-doit: ./xbmc
+	cd ./xbmc; make all
+
+#####################################################################
+#
+# Setup target architecture and host system.
+#
+
+xtarget=$(shell if [ -f /usr/local/bin/raspi-config ]; then echo -n "xberry"; else echo -n "xodroid"; fi)
+
+#####################################################################
+#
+# XBMC setup
+#
+
+./xbmc:
+	mkdir ./xbmc
+	ln -s ../Makefile.xbmc ./xbmc/Makefile
+	
+#####################################################################
+#
+# mplayer
+#
+
+mplayer-svn: 
+	svn checkout svn://svn.mplayerhq.hu/mplayer/trunk mplayer-svn
+	cd mplayer-svn; git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git ffmpeg
+	tar -cvzf mplayer-svn.tar.gz mplayer-svn
+	mv -f mplayer-svn.tar.gz ../download
+	
+mplayer-svn/dezi.configure:
+	mkdir -p ../static;
+	ln -sf /usr/local/lib/lib*.a ../static
+	ln -sf /usr/local/lib64/lib*.a ../static
+	ln -sf /usr/local/lib77/lib*.a ../static
+	cd mplayer-svn; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
+	./configure	--extra-ldflags="-L../../static" || exit; \
+	touch dezi.configure
+	
+mplayer-svn/dezi.done:
+	cd mplayer-svn; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+	
+mplayer-svn/dezi.$(xtarget):
+	cd mplayer-svn; \
+	cp ../../descriptions/mplayer.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp Changelog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	mkdir -p debian; touch debian/control; rm debian/substvars; \
+	dpkg-shlibdeps -e/usr/local/bin/mplayer -e/usr/local/bin/mencoder; \
+	sed -i 's/shlibs:Depends=//' debian/substvars; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=$(xtarget) \
+		--pkgname=$(xtarget)-mplayer \
+		--pkgversion=4.6 \
+		--pkgaltsource=svn://svn.mplayerhq.hu/mplayer/trunk \
+		--requires='`cat debian/substvars`' \
+		make install || exit; \
+	touch dezi.$(xtarget)
+
+mplayer-svn-doit: mplayer-svn mplayer-svn/dezi.configure mplayer-svn/dezi.done
+
+mplayer-pack: mplayer-svn-doit mplayer-svn/dezi.$(xtarget)
+
+mplayer: mplayer-svn-doit
+	
+#####################################################################
+#
+# tvheadend
+#
+
+tvheadend-git: 
+	git clone git://github.com/tvheadend/tvheadend.git tvheadend-git
+	tar -cvzf tvheadend-git.tar.gz tvheadend-git
+	mv -f tvheadend-git.tar.gz ../download
+
+tvheadend-git/dezi.done:
+	cd tvheadend-git; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
+	./configure || exit; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+tvheadend-git/dezi.$(xtarget):
+	cd tvheadend-git; \
+	cp ../../descriptions/tvheadend.txt description-pak; \
+	mkdir -p doc-pak; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	mkdir -p debian; touch debian/control; rm debian/substvars; \
+	dpkg-shlibdeps -e/usr/local/bin/tvheadend; \
+	sed -i 's/shlibs:Depends=//' debian/substvars; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=$(xtarget) \
+		--pkgname=$(xtarget)-tvheadend \
+		--pkgversion=3.5.101 \
+		--pkgaltsource=git://github.com/tvheadend/tvheadend.git \
+		--requires='`cat debian/substvars`' \
+		make install || exit; \
+	touch dezi.$(xtarget)
+
+tvheadend-git-doit: tvheadend-git tvheadend-git/dezi.done
+
+tvheadend-pack: tvheadend-git-doit tvheadend-git/dezi.$(xtarget)
+
+tvheadend: tvheadend-git-doit
+
+##################################################################
+#
+# XBMC PVR Addons
+#
+
+xbmc-pvr-addons-git:
+	git clone --depth 5 git://github.com/opdenkamp/xbmc-pvr-addons.git xbmc-pvr-addons-git
+
+xbmc-pvr-addons-git/dezi.patch: xbmc-pvr-addons-git
+	cd xbmc-pvr-addons-git; \
+	git apply --index ../../patches/xbmc-pvr-addons.timeout.patch || echo "Alread applied..."; \
+	touch dezi.patch
+
+xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
+	cd xbmc-pvr-addons-git; \
+	./bootstrap; \
+	./configure --prefix=/usr/local --enable-addons-with-dependencies; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+xbmc-pvr-git-doit: xbmc-pvr-addons-git xbmc-pvr-addons-git/dezi.patch xbmc-pvr-addons-git/dezi.done
+
+xbmc-pvr: xbmc-pvr-git-doit
+
+##################################################################
+#
+# XBMC configure environment
+#
+
+xbmc-git-env= \
+	export TARGET_SUBARCH="armv6zk"; \
+	export TARGET_CPU="arm1176jzf-s"; \
+	export TARGET_FLOAT="hard"; \
+	export TARGET_FPU="vfp"; \
+	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
+	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math  -fgnu89-inline"; \
+	export TARGET_LOPT="-s -Wl,--as-needed"; \
+	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
+	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
+	export CXXFLAGS="$$CFLAGS"; \
+	export CPPFLAGS="-I/home/pi/raspi/xbmc/xbmc-git/xbmc"; \
+	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
+
+##################################################################
+#
+# xbmc-git
+#
+
+xbmc-git:
+	git clone --depth 5 git://github.com/xbmc/xbmc.git xbmc-git
+
+xbmc-git/dezi.patch: xbmc-git
+	cd xbmc-git; \
+	#git apply --index ../../patches/xbmc.nfc.patch       || echo "Alread applied..."; \
+	#git apply --index ../../patches/xbmc.omxplayer.patch || echo "Alread applied..."; \
+	touch dezi.patch
+
+xbmc-git/dezi.taglib: xbmc-git
+	cd xbmc-git; \
+	make -C lib/taglib; \
+	sudo make -C lib/taglib install; \
+	touch dezi.taglib
+
+xbmc-git/dezi.shairport: xbmc-git
+	cd xbmc-git; \
+	make -C lib/libshairport; \
+	sudo make -C lib/libshairport install; \
+	touch dezi.shairport
+
+xbmc-git/dezi.odroid: xbmc-git
+	cd xbmc-git; \
+	sudo mkdir -p /opt/xbmc-depends; \
+	sudo chmod a+w  /opt/xbmc-depends; \
+	cd tools/depends; \
+	./bootstrap; \
+	./configure --prefix=/opt/xbmc-depends; || exit\
+	make || exit; \
+	cd ../..; \
+	make -C tools/depends/target/xbmc || exit; \
+	touch dezi.odroid
+
+xbmc-git/dezi.raspi:	
+	$(xbmc-git-env); \
+	cd xbmc-git; \
+	#sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
+	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
+	sh tools/rbp/setup-sdk.sh; \
+	sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/' tools/rbp/depends/xbmc/Makefile; \
+	sed -i 's/cd $$(SOURCE); $$(CONFIGURE)/#cd $$(SOURCE); $$(CONFIGURE)/' tools/rbp/depends/xbmc/Makefile; \
+	make -C tools/rbp/depends/xbmc/ || exit; \
+	touch dezi.raspi
+
+xbmc-git/dezi.configure: xbmc-git
+	$(xbmc-git-env); \
+	cd xbmc-git; \
+	./bootstrap || exit; \
+	./configure \
+		--prefix=/usr/local \
+		--build=arm-linux-gnueabihf \
+		--localstatedir=/var/lib \
+		--with-platform=raspberry-pi \
+		--disable-gl \
+		--enable-gles \
+		--disable-x11 \
+		--disable-sdl \
+		--enable-ccache \
+		--enable-optimizations \
+		--disable-external-libraries \
+		--disable-goom \
+		--disable-hal \
+		--disable-pulse \
+		--disable-vaapi \
+		--disable-vdpau \
+		--disable-xrandr \
+		--enable-airplay \
+		--disable-alsa \
+		--enable-avahi \
+		--enable-libbluray \
+		--enable-dvdcss \
+		--disable-debug \
+		--disable-joystick \
+		--disable-mid \
+		--enable-nfs \
+		--disable-profiling \
+		--disable-projectm \
+		--enable-rsxs \
+		--enable-rtmp \
+		--disable-vaapi \
+		--disable-vdadecoder \
+		--disable-external-ffmpeg \
+		--enable-optical-drive \
+		--enable-player=omxplayer \
+		|| exit; \
+	touch dezi.configure
+
+xbmc-git/dezi.make: xbmc-git
+	cd xbmc-git; \
+	make; \
+
+xbmc-git-doit: \
+	xbmc-git/dezi.patch \
+	xbmc-git/dezi.taglib \
+	xbmc-git/dezi.shairport \
+	xbmc-git/dezi.tools \
+	xbmc-git/dezi.configure \
+	xbmc-git/dezi.make \
+
+##################################################################
+#
+# xbmc-fork
+#
+
+xbmc-fork:
+	git clone git@github.com:dezi/xbmc.git xbmc-fork
+
+##########################################################################
+#
+# OpenELEC firmware for WLAN-Sticks.
+#
+
+OpenELEC-wlan-git:
+	git clone git://github.com/OpenELEC/wlan-firmware.git OpenELEC-wlan-git
+	tar -cvzf OpenELEC-wlan-git.tar.gz OpenELEC-wlan-git
+	mv OpenELEC-wlan-git.tar.gz ../download
+
+OpenELEC-wlan-git/dezi.done:
+	cd OpenELEC-wlan-git; \
+	sudo ./install; \
+	touch dezi.done
+
+OpenELEC-wlan-git/dezi.$(xtarget):
+	cd OpenELEC-wlan-git; \
+	cp ../../descriptions/wlan-firmware.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=$(xtarget) \
+		--pkgversion=1.0.0 \
+		--pkgname=$(xtarget)-firmware-wlan \
+		--pkgaltsource=git://github.com/OpenELEC/wlan-firmware.git \
+		./install || exit; \
+	touch dezi.$(xtarget)
+	
+OpenELEC-wlan-doit: OpenELEC-wlan-git OpenELEC-wlan-git/dezi.done
+
+OpenELEC-wlan-pack: OpenELEC-wlan-doit OpenELEC-wlan-git/dezi.$(xtarget)
+
+OpenELEC-wlan: OpenELEC-wlan-doit
+
+##########################################################################
+#
+# OpenELEC firmware for DVB-Sticks.
+#
+
+OpenELEC-dvb-git:
+	git clone git://github.com/OpenELEC/dvb-firmware.git OpenELEC-dvb-git
+	tar -cvzf OpenELEC-dvb-git.tar.gz OpenELEC-dvb-git
+	mv OpenELEC-dvb-git.tar.gz ../download
+
+OpenELEC-dvb-git/dezi.done:
+	cd OpenELEC-dvb-git; \
+	sudo ./install; \
+	touch dezi.done
+
+OpenELEC-dvb-git/dezi.$(xtarget):
+	cd OpenELEC-dvb-git; \
+	cp ../../descriptions/dvb-firmware.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=$(xtarget) \
+		--pkgversion=1.0.0 \
+		--pkgname=$(xtarget)-firmware-dvb \
+		--pkgaltsource=git://github.com/OpenELEC/dvb-firmware.git \
+		./install || exit; \
+	touch dezi.$(xtarget)
+	
+OpenELEC-dvb-doit: OpenELEC-dvb-git OpenELEC-dvb-git/dezi.done
+
+OpenELEC-dvb-pack: OpenELEC-dvb-doit OpenELEC-dvb-git/dezi.$(xtarget)
+
+OpenELEC-dvb: OpenELEC-dvb-doit
