@@ -279,8 +279,10 @@ xbmc-git-config-xberry= \
 
 xbmc-git/dezi.config.xberry: xbmc-git
 	cd xbmc-git; \
-	export CFLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
+	export CFLAGS="-Wno-psabi -Wa,-mno-warn-deprecated $$INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
+	export LDFLAGS="-L/opt/vc/lib"; \
 	./bootstrap || exit; \
 	./configure \
 		$(xbmc-git-config-common) \
