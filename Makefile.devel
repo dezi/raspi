@@ -36,6 +36,7 @@ updatepacks-xodroid:
 	sudo apt-get update
 	sudo apt-get install \
 	libjbig2dec0-dev:armhf \
+	libboost-dev libboost-thread-dev \
 	java-common openjdk-7-jre-lib \
 	glmark2-es2 \
 
@@ -43,8 +44,8 @@ updatepacks-common:
 	sudo apt-get update
 	sudo apt-get install \
 	libao-common libao-dev libao4 libavfilter-dev libbluetooth-dev \
-	libboost-date-time1.46-dev libboost-date-time1.46.1 libboost-dev \
-	libboost-serialization1.46-dev libboost-thread-dev libboost-thread1.46-dev \
+	libboost-date-time1.46-dev libboost-date-time1.46.1  \
+	libboost-serialization1.46-dev libboost-thread1.46-dev \
 	libboost-thread1.46.1 libboost1.46-dev libcec-dev libcwiid-dev libcwiid1 \
 	libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev libhal-storage-dev \
 	libmikmod2-dev libpostproc-dev libsdl-mixer1.2-dev libshairport-dev libswscale-dev \
