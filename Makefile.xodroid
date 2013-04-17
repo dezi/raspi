@@ -268,6 +268,7 @@ xbmc-git-config-common= \
 xbmc-git-config-xodroid= \
 		--with-platform=odroid-u2 \
 		--disable-vdpau \
+		--disable-vaapi \
 		
 xbmc-git-config-xberry= \
 		--with-platform=raspberry-pi \

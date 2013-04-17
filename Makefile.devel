@@ -17,12 +17,13 @@ xtarget=$(shell if [ -f /usr/local/bin/raspi-config ]; then echo -n "xberry"; el
 # Package lists.
 #
 
-updatepacks: updatepacks-common updatepacks-$(xtarget)
+updatepacks: updatepacks-$(xtarget) updatepacks-common
 
 updatepacks-xberry:
 	sudo apt-get update
 	sudo apt-get install \
 	libboost1.49-dev \
+	libboost-thread1.49-dev \
 	libgl1-mesa-dev \
 	libgles2-mesa-dev \
 	libglew-dev:armhf \
