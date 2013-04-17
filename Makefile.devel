@@ -22,6 +22,8 @@ updatepacks: updatepacks-$(xtarget) updatepacks-common
 updatepacks-xberry:
 	sudo apt-get update
 	sudo apt-get install \
+	libboost-dev \
+	libboost-thread-dev \
 	libboost1.49-dev \
 	libboost-thread1.49-dev \
 	libboost-serialization1.49-dev \
@@ -33,25 +35,29 @@ updatepacks-xberry:
 	libjbig-dev:armhf \
 	libegl1-mesa-dev \
 	java-package \
-	libboost-dev \
-	libboost-thread-dev \
 	python-imaging \
   
 updatepacks-xodroid:
 	sudo apt-get update
 	sudo apt-get install \
+	libboost-dev \
+	libboost-thread-dev \
+	libboost1.46-dev \
+	libboost-thread1.46.1 \
+	libboost-thread1.46-dev \
+	libboost-date-time1.46.1 \
+	libboost-date-time1.46-dev \
+	libboost-serialization1.46-dev \
 	libjbig2dec0-dev:armhf \
-	libboost-dev libboost-thread-dev \
-	java-common openjdk-7-jre-lib \
+	java-common \
+	openjdk-7-jre-lib \
 	glmark2-es2 \
 
 updatepacks-common:
 	sudo apt-get update
 	sudo apt-get install \
 	libao-common libao-dev libao4 libavfilter-dev libbluetooth-dev \
-	libboost-date-time1.46-dev libboost-date-time1.46.1  \
-	libboost-serialization1.46-dev libboost-thread1.46-dev \
-	libboost-thread1.46.1 libboost1.46-dev libcec-dev libcwiid-dev libcwiid1 \
+	libcec-dev libcwiid-dev libcwiid1 \
 	libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev libhal-storage-dev \
 	libmikmod2-dev libpostproc-dev libsdl-mixer1.2-dev libshairport-dev libswscale-dev \
 	autotools-dev comerr-dev dpkg-dev libalsaplayer-dev libapt-pkg-dev:armhf \
