@@ -24,8 +24,8 @@ xbmc-doit: ./xbmc
 # Setup target architecture and host system.
 #
 
-xtarget=$(shell if [ -f /usr/local/bin/raspi-config ]; then echo -n "xberry"; else echo -n "xodroid"; fi)
-xplatform=$(shell if [ -f /usr/local/bin/raspi-config ]; then echo -n "raspberry-pi"; else echo -n "odroid-u2"; fi)
+xtarget=$(shell if [ -f /usr/bin/raspi-config ]; then echo -n "xberry"; else echo -n "xodroid"; fi)
+xplatform=$(shell if [ -f /usr/bin/raspi-config ]; then echo -n "raspberry-pi"; else echo -n "odroid-u2"; fi)
 
 #####################################################################
 #
