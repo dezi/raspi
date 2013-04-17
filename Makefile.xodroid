@@ -303,7 +303,7 @@ xbmc-git/dezi.make.xberry: xbmc-git
 	
 xbmc-git/dezi.make.xodroid: xbmc-git
 	cd xbmc-git; \
-	make; \
+	make -j3; \
 
 xbmc-git-doit: \
 	xbmc-git \
