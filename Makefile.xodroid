@@ -267,6 +267,7 @@ xbmc-git-config-common= \
 		
 xbmc-git-config-xodroid= \
 		--with-platform=odroid-u2 \
+		--disable-vdpau \
 		
 xbmc-git-config-xberry= \
 		--with-platform=raspberry-pi \
@@ -276,6 +277,8 @@ xbmc-git-config-xberry= \
 
 xbmc-git/dezi.config.xberry: xbmc-git
 	cd xbmc-git; \
+	export CFLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export CXXFLAGS="$$CFLAGS"; \
 	./bootstrap || exit; \
 	./configure \
 		$(xbmc-git-config-common) \
@@ -285,17 +288,21 @@ xbmc-git/dezi.config.xberry: xbmc-git
 	
 xbmc-git/dezi.config.xodroid: xbmc-git
 	cd xbmc-git; \
-	export DEZICONFIGOPS="$(xbmc-git-config-common) $(xbmc-git-config-xodroid)"; \
-	make -C tools/depends/target/xbmc || exit; \
+	export CFLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export CXXFLAGS="$$CFLAGS"; \
+	./bootstrap || exit; \
+	./configure \
+		$(xbmc-git-config-xodroid) \
+		|| exit; \
 	touch dezi.config.xodroid
 
 xbmc-git/dezi.make.xberry: xbmc-git
 	cd xbmc-git; \
-	make -j 1; \
+	make; \
 	
 xbmc-git/dezi.make.xodroid: xbmc-git
 	cd xbmc-git; \
-	make -j 4; \
+	make; \
 
 xbmc-git-doit: \
 	xbmc-git \

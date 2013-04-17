@@ -28,6 +28,9 @@ updatepacks-xberry:
 	libglew-dev:armhf \
 	libglewmx-dev:armhf \
 	libjbig-dev:armhf \
+	libglew1.7-dev \
+	libglewmx1.7-dev \
+	libegl1-mesa-dev \
 	java-package \
 
 updatepacks-xodroid:
@@ -35,6 +38,7 @@ updatepacks-xodroid:
 	sudo apt-get install \
 	libjbig2dec0-dev:armhf \
 	java-common openjdk-7-jre-lib \
+	glmark2-es2 \
 
 updatepacks-common:
 	sudo apt-get update
@@ -43,7 +47,6 @@ updatepacks-common:
 	libboost-date-time1.46-dev libboost-date-time1.46.1 libboost-dev \
 	libboost-serialization1.46-dev libboost-thread-dev libboost-thread1.46-dev \
 	libboost-thread1.46.1 libboost1.46-dev libcec-dev libcwiid-dev libcwiid1 \
-	libglew1.6 libglew1.6-dev \
 	libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev libhal-storage-dev \
 	libmikmod2-dev libpostproc-dev libsdl-mixer1.2-dev libshairport-dev libswscale-dev \
 	autotools-dev comerr-dev dpkg-dev libalsaplayer-dev libapt-pkg-dev:armhf \
@@ -87,7 +90,7 @@ updatepacks-common:
 	libafpclient-dev liblockdev1-dev autoconf automake libtool gcc udev openjdk-6-jre \
 	cmake g++ libudev-dev build-essential autoconf ccache doxygen autopoint \
 	gawk gperf mesa-utils zip unzip curl checkinstall subversion yasm \
-	cpufrequtils glmark2-es2
+	cpufrequtils 
 	
 remove:
 	libgles2-mesa-dev libglew1.7-dev libglewmx1.7-dev libegl1-mesa-dev
