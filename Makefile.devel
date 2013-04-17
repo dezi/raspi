@@ -29,8 +29,6 @@ updatepacks-xberry:
 	libglew-dev:armhf \
 	libglewmx-dev:armhf \
 	libjbig-dev:armhf \
-	libglew1.7-dev \
-	libglewmx1.7-dev \
 	libegl1-mesa-dev \
 	java-package \
 
