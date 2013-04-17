@@ -173,7 +173,7 @@ local-doit: ./local ./download
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
-helpers: jpeg sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump libcec
+helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump libcec
 
 codecs: \
 	libcdio libgsm libmad libass \

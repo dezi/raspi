@@ -263,18 +263,19 @@ xbmc-git-config-common= \
 		--disable-vdadecoder \
 		--disable-external-ffmpeg \
 		--enable-optical-drive \
-		--enable-libcec \
 		
 xbmc-git-config-xodroid= \
 		--with-platform=odroid-u2 \
 		--disable-vdpau \
 		--disable-vaapi \
+		--disable-libcec \
 		
 xbmc-git-config-xberry= \
 		--with-platform=raspberry-pi \
 		--build=arm-linux-gnueabihf \
 		--localstatedir=/var/lib \
 		--enable-player=omxplayer \
+		--enable-libcec \
 
 xbmc-git/dezi.config.xberry: xbmc-git
 	cd xbmc-git; \
