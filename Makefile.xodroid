@@ -216,7 +216,7 @@ xbmc-git/dezi.tools.odroid: xbmc-git
 	sudo chmod a+w  /opt/xbmc-depends; \
 	cd tools/depends; \
 	./bootstrap; \
-	./configure --prefix=/opt/xbmc-depends; || exit\
+	./configure --prefix=/opt/xbmc-depends || exit; \
 	make -j 4 || exit; \
 	cd ../..; \
 	touch dezi.tools.odroid
@@ -230,8 +230,9 @@ xbmc-git/dezi.tools.xberry:	xbmc-git
 	make -C tools/rbp/depends/xbmc/ || exit; \
 	touch dezi.tools.xberry
 	
+#		--prefix=/usr/local \
+
 xbmc-git-config-common= \
-		--prefix=/usr/local \
 		--disable-gl \
 		--enable-gles \
 		--disable-x11 \
@@ -266,9 +267,6 @@ xbmc-git-config-common= \
 		
 xbmc-git-config-xodroid= \
 		--with-platform=odroid-u2 \
-		--build=arm-linux-gnueabihf \
-		--localstatedir=/var/lib \
-		--disable-player=omxplayer \
 		
 xbmc-git-config-xberry= \
 		--with-platform=raspberry-pi \
