@@ -130,9 +130,13 @@ $(mplayer):
 	tar -cvzf $(mplayer).tar.gz $(mplayer)
 	mv -f $(mplayer).tar.gz ../download
 
-$(mplayer)/dezi.done:
+$(mplayer)/dezi.config:
 	cd $(mplayer); \
 	./configure || exit; \
+	touch dezi.config
+
+$(mplayer)/dezi.done:
+	cd $(mplayer); \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -154,7 +158,7 @@ $(mplayer)/dezi.xberry:
 		make install || exit; \
 	touch dezi.xberry
 
-mplayer: $(mplayer) $(mplayer)/dezi.done
+mplayer: $(mplayer) $(mplayer)/dezi.config $(mplayer)/dezi.done
 
-mplayer-xberry: $(mplayer) $(mplayer)/dezi.done $(mplayer)/dezi.xberry
+mplayer-xberry: mplayer $(mplayer)/dezi.xberry
 

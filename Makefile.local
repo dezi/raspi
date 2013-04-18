@@ -1,8 +1,15 @@
 ##################################################################
 #
-# Build local source add ons from scratch, loads latest sources from web.
+# Build local source addons from scratch, loads latest sources from web.
 #
 # Dennis Zierahn
+#
+
+#
+# TODO:
+# dyndns
+# wget http://downloads.sourceforge.net/project/ddclient/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz
+# sudo apt-get install libio-socket-ssl-perl
 #
 
 libcec_version				= git
@@ -74,7 +81,6 @@ abcde_version				= 2.5.4
 atomicparsley_version		= git
 mp4v2_version 				= svn
 gpac_version 				= svn
-tvheadend_version 			= git
 v8_version 					= git
 
 #####################################################################
@@ -142,24 +148,32 @@ libilbc = libilbc-$(libilbc_version)
 libbluray = libbluray-$(libbluray_version)
 abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
-tvheadend = tvheadend-$(tvheadend_version)
 v8 = v8-$(v8_version)
 e2fsprogs = e2fsprogs-$(e2fsprogs_version)
 libMXF = libMXF-src-$(libMXF_version)
+
+#####################################################################
+#
+# Setup target architecture and host system.
+#
+
+xtarget=$(shell if [ -f /usr/bin/raspi-config ]; then echo -n "xberry"; else echo -n "xodroid"; fi)
 
 ######################################################################
 #
 # Build section.
 #
 
-all: tools helpers codecs utilities
+all: tools helpers codecs utilities mxf
+
+packs: afpfs-ng-pack
 
 local-doit: ./local ./download
 	cd ./local; make all
 
 tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 
-helpers: jpeg sdl alsa freetype fontconfig taglib libiconv libcddb libdvdcss fribidi rtmpdump libcec
+helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump libcec
 
 codecs: \
 	libcdio libgsm libmad libass \
@@ -175,9 +189,7 @@ utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
 mxf: e2fsprogs libMXF
 
-special: tvheadend v8
-
-xberry: afpfs-ng-xberry
+special: v8
 
 #####################################################################
 #
@@ -216,7 +228,7 @@ $(e2fsprogs)/dezi.done:
 	./configure --prefix=/usr/local; \
 	cd lib/uuid; \
 	make; \
-	# nonono => sudo make install; \
+	sudo make install; \
 	cd ../..; \
 	touch dezi.done
 
@@ -268,25 +280,27 @@ xz: $(xz) $(xz)/dezi.done
 # libcec
 #
 
-libcec-git:
+$(libcec):
 	git clone --depth 5 https://github.com/Pulse-Eight/libcec.git $(libcec)
 	tar -cvzf $(libcec).tar.gz $(libcec)
 	mv $(libcec).tar.gz ../download
 
 $(libcec)/dezi.done: libcec-git
 	cd $(libcec); \
-	export LDFLAGS="-L/opt/vc/lib"; \
-	./bootstrap || exit; \
-	./configure --prefix=/usr/local --enable-rpi --with-rpi-include-path="/opt/vc/include" --with-rpi-lib-path="/opt/vc/lib/libbcm_host.so" || exit; \
+	if [ -f /usr/bin/raspi-config ] ; \
+	then \
+		export LDFLAGS="-L/opt/vc/lib"; \
+		./bootstrap || exit; \
+		./configure --prefix=/usr/local --enable-rpi --with-rpi-include-path="/opt/vc/include" --with-rpi-lib-path="/opt/vc/lib/libbcm_host.so" || exit; \
+	else \
+		./bootstrap || exit; \
+		./configure --prefix=/usr/local || exit; \
+	fi;	\
 	make || exit; \
 	sudo make install; \
 	touch dezi.done
 
 libcec: libcec-git/dezi.done
-
-### dyndns
-#wget http://downloads.sourceforge.net/project/ddclient/ddclient/ddclient-3.8.1/ddclient-3.8.1.tar.gz
-##sudo apt-get install libio-socket-ssl-perl
 
 #####################################################################
 #
@@ -395,31 +409,35 @@ $(afpfs-ng):
 
 $(afpfs-ng)/dezi.done:
 	cd $(afpfs-ng); \
-	autoreconv -fiv; \
+	autoreconf -fiv; \
 	./configure; \
 	make; \
 	sudo make install; \
 	touch dezi.done
 
-$(afpfs-ng)/dezi.xberry:
+$(afpfs-ng)/dezi.$(xtarget):
 	cd $(afpfs-ng); \
 	cp ../../descriptions/afpfs-ng.txt description-pak; \
 	mkdir -p doc-pak; \
 	cp ChangeLog doc-pak/CHANGELOG; \
 	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	mkdir -p debian; touch debian/control; rm debian/substvars; \
+	dpkg-shlibdeps -e/usr/local/bin/afpfsd -e/usr/local/bin/afpcmd; \
+	sed -i 's/shlibs:Depends=//' debian/substvars; \
 	sudo checkinstall \
 		--install=no \
 		--maintainer dezi@kappa-mm.de \
 		--pakdir=../../packages \
-		--pkggroup=xberry \
-		--pkgname=xberry-afpfs-ng \
+		--pkggroup=$(xtarget) \
+		--pkgname=$(xtarget)-afpfs-ng \
 		--pkgaltsource=git://github.com/dezi/afpfs-ng-fork.git \
+		--requires='`cat debian/substvars`' \
 		make install || exit; \
-	touch dezi.xberry
+	touch dezi.$(xtarget)
 
 afpfs-ng: $(afpfs-ng) $(afpfs-ng)/dezi.done
 
-afpfs-ng-xberry: $(afpfs-ng) $(afpfs-ng)/dezi.done $(afpfs-ng)/dezi.xberry
+afpfs-ng-pack: afpfs-ng $(afpfs-ng)/dezi.$(xtarget)
 
 #####################################################################
 #
@@ -1175,6 +1193,7 @@ $(faad2):
 
 $(faad2)/dezi.done:
 	cd $(faad2); \
+	export CFLAGS="-fPIC"; \
 	./configure; \
 	make; \
 	sudo make install; \
@@ -1487,23 +1506,29 @@ $(gpac):
 	tar -cvzf $(gpac).tar.gz  $(gpac)
 	mv -f $(gpac).tar.gz ../download
 
-$(gpac)/dezi.done:
+$(gpac)/dezi.configure:
+	mkdir -p ../static;
+	ln -sf /usr/local/lib/lib*.a ../static
+	ln -sf /usr/local/lib64/lib*.a ../static
+	ln -sf /usr/local/lib77/lib*.a ../static
 	MYPWD=`pwd`; \
 	cd $(gpac); \
 	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
 	export PATH="/usr/bin:$$PATH"; \
-	export LDFLAGS="-L$$MYPWD/../static"; \
+	export LDFLAGS="-L$$MYPWD/../static -lm"; \
 	./configure \
 		--static-mp4box \
+		--enable-pic \
 		--enable-static-bin \
-		--use-xvid=no \
-		--use-ffmpeg=no \
 		|| exit; \
-	cd src; make || exit; cd ..; \
-	cd applications/mp4box; make || exit; cd ../..; \
+	touch dezi.configure
+
+$(gpac)/dezi.done:
+	cd $(gpac); \
+	make || exit; \
 	touch dezi.done
 
-gpac: $(gpac) $(gpac)/dezi.done
+gpac: $(gpac) $(gpac)/dezi.configure $(gpac)/dezi.done
 
 #####################################################################
 #
@@ -1523,48 +1548,6 @@ $(frei0r)/dezi.done:
 	touch dezi.done
 
 frei0r: $(frei0r) $(frei0r)/dezi.done
-
-#####################################################################
-#
-# tvheadend
-#
-
-$(tvheadend): 
-	git clone git://github.com/tvheadend/tvheadend.git $(tvheadend)
-	tar -cvzf $(tvheadend).tar.gz $(tvheadend)
-	mv -f $(tvheadend).tar.gz ../download
-
-$(tvheadend)/dezi.done:
-	cd $(tvheadend); \
-	if [ -f "/usr/bin/gcc-4.7" ]; then \
-		export CC=gcc-4.7; \
-	fi; \
-	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
-	./configure || exit; \
-	make; \
-	sudo make install; \
-	touch dezi.done
-
-$(tvheadend)/dezi.xberry:
-	cd $(tvheadend); \
-	cp ../../descriptions/tvheadend.txt description-pak; \
-	mkdir -p doc-pak; \
-	cp ChangeLog doc-pak/CHANGELOG; \
-	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
-	sudo checkinstall \
-		--install=no \
-		--maintainer dezi@kappa-mm.de \
-		--pakdir=../../packages \
-		--pkggroup=xberry \
-		--pkgname=xberry-tvheadend \
-		--pkgversion=3.5.72 \
-		--pkgaltsource=git://github.com/tvheadend/tvheadend.git \
-		make install || exit; \
-	touch dezi.xberry
-
-tvheadend: $(tvheadend) $(tvheadend)/dezi.done
-
-tvheadend-xberry: $(tvheadend) $(tvheadend)/dezi.done $(tvheadend)/dezi.xberry
 
 #####################################################################
 #
