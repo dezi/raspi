@@ -45,15 +45,6 @@ xplatform=$(shell if [ -f /usr/bin/raspi-config ]; then echo -n "raspberry-pi"; 
 
 #####################################################################
 #
-# XBMC setup
-#
-
-./xbmc:
-	mkdir ./xbmc
-	ln -s ../Makefile.xbmc ./xbmc/Makefile
-	
-#####################################################################
-#
 # mplayer
 #
 
@@ -192,7 +183,6 @@ xbmc-git-env= \
 	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
 	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
-	export CPPFLAGS="-I/home/pi/raspi/xbmc/xbmc-git/xbmc"; \
 	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
 ##################################################################
@@ -294,11 +284,8 @@ xbmc-git-config-xberry= \
 		--enable-libcec \
 
 xbmc-git/dezi.config.xberry: xbmc-git
+	$(xbmc-git-env); \
 	cd xbmc-git; \
-	export INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
-	export CFLAGS="-Wno-psabi -Wa,-mno-warn-deprecated $$INCLUDES"; \
-	export CXXFLAGS="$$CFLAGS"; \
-	export LDFLAGS="-L/opt/vc/lib"; \
 	./bootstrap || exit; \
 	./configure \
 		$(xbmc-git-config-common) \
@@ -324,10 +311,8 @@ xbmc-git/dezi.make.xodroid: xbmc-git
 	cd xbmc-git; \
 	make -j3; \
 
-xbmc-git-doit: \
+xbmc: \
 	xbmc-git \
-	xbmc-git/dezi.patch \
-	xbmc-git/dezi.tools.($xtarget) \
 	xbmc-git/dezi.config.($xtarget) \
 	xbmc-git/dezi.make.($xtarget) \
 
