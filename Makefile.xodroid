@@ -285,6 +285,7 @@ xbmc-git-config-xberry= \
 
 xbmc-git/dezi.config.xberry: xbmc-git
 	$(xbmc-git-env); \
+	env; \
 	cd xbmc-git; \
 	./bootstrap || exit; \
 	./configure \
@@ -313,8 +314,8 @@ xbmc-git/dezi.make.xodroid: xbmc-git
 
 xbmc: \
 	xbmc-git \
-	xbmc-git/dezi.config.($xtarget) \
-	xbmc-git/dezi.make.($xtarget) \
+	xbmc-git/dezi.config.$(xtarget) \
+	xbmc-git/dezi.make.$(xtarget) \
 
 ##################################################################
 #
