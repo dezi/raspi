@@ -33,6 +33,15 @@ xberry:
 xbmc:
 	make -f Makefile.xbmc xbmc-doit
 
+xberry:
+	make -f Makefile.xodroid xberry-doit
+
+xodroid:
+	make -f Makefile.xodroid xodroid-doit
+
+updatepacks:
+	make -f Makefile.devel updatepacks
+
 ffmpeg: ffmpeg-cross ffmpeg-local
 
 ffmpeg-cross: ffmpeg-win32-doit ffmpeg-win64-doit
