@@ -101,7 +101,8 @@ updatepacks-common:
 	libafpclient-dev liblockdev1-dev autoconf automake libtool gcc udev openjdk-6-jre \
 	cmake g++ libudev-dev build-essential autoconf ccache doxygen autopoint \
 	gawk gperf mesa-utils zip unzip curl checkinstall subversion yasm \
-	cpufrequtils 
+	cpufrequtils apt-file lshw
+	sudo apt-file update
 	
 remove:
 	libgles2-mesa-dev libglew1.7-dev libglewmx1.7-dev libegl1-mesa-dev

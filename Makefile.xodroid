@@ -16,8 +16,24 @@ packs: \
 	tvheadend-pack \
 	mplayer-pack \
 
-xbmc-doit: ./xbmc
-	cd ./xbmc; make all
+#####################################################################
+#
+# Local setup
+#
+
+./xberry:
+	mkdir ./xberry
+	ln -s ../Makefile.xodroid ./xberry/Makefile
+
+./xodroid:
+	mkdir ./xodroid
+	ln -s ../Makefile.xodroid ./xodroid/Makefile
+
+xberry-doit: ./xberry
+	cd ./xberry; make all
+
+xodroid-doit: ./xodroid
+	cd ./xodroid; make all
 
 #####################################################################
 #
