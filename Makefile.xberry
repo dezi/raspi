@@ -1,0 +1,164 @@
+##################################################################
+#
+# XBerry packages build
+#
+# Dennis Zierahn
+#
+
+afpfs-ng_version			= 0.8.2
+libcec_version				= git
+tvheadend_version 			= git
+mplayer_version 			= svn
+
+#####################################################################
+
+libcec = libcec-$(libcec_version)
+afpfs-ng = afpfs-ng-$(afpfs-ng_version)
+tvheadend = tvheadend-$(tvheadend_version)
+mplayer = mplayer-$(mplayer_version)
+
+######################################################################
+#
+# Build section.
+#
+
+all:
+
+xberry-doit: ./xberry ./download
+	cd ./xberry; make all
+
+#####################################################################
+#
+# Local setup
+#
+
+./xberry:
+	mkdir ./xberry
+	ln -s ../Makefile.xberry ./xberry/Makefile
+
+./download:
+	mkdir ./download
+
+#####################################################################
+#
+# afps-ng
+#
+
+$(afpfs-ng): 
+	git clone git://github.com/dezi/afpfs-ng-fork.git $(afpfs-ng)
+	tar -cvjf $(afpfs-ng).tar.bz2 $(afpfs-ng)
+	mv $(afpfs-ng).tar.bz2 ../download
+
+$(afpfs-ng)/dezi.done:
+	cd $(afpfs-ng); \
+	autoreconv -fiv; \
+	./configure; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+$(afpfs-ng)/dezi.xberry:
+	cd $(afpfs-ng); \
+	cp ../../descriptions/afpfs-ng.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-afpfs-ng \
+		--pkgaltsource=git://github.com/dezi/afpfs-ng-fork.git \
+		make install || exit; \
+	touch dezi.xberry
+
+afpfs-ng: $(afpfs-ng) $(afpfs-ng)/dezi.done
+
+afpfs-ng-xberry: $(afpfs-ng) $(afpfs-ng)/dezi.done $(afpfs-ng)/dezi.xberry
+
+#####################################################################
+#
+# tvheadend
+#
+
+$(tvheadend): 
+	git clone git://github.com/tvheadend/tvheadend.git $(tvheadend)
+	tar -cvzf $(tvheadend).tar.gz $(tvheadend)
+	mv -f $(tvheadend).tar.gz ../download
+
+$(tvheadend)/dezi.done:
+	cd $(tvheadend); \
+	if [ -f "/usr/bin/gcc-4.7" ]; then \
+		export CC=gcc-4.7; \
+	fi; \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"; \
+	./configure || exit; \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+$(tvheadend)/dezi.xberry:
+	cd $(tvheadend); \
+	cp ../../descriptions/tvheadend.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-tvheadend \
+		--pkgversion=3.5.72 \
+		--pkgaltsource=git://github.com/tvheadend/tvheadend.git \
+		make install || exit; \
+	touch dezi.xberry
+
+tvheadend: $(tvheadend) $(tvheadend)/dezi.done
+
+tvheadend-xberry: $(tvheadend) $(tvheadend)/dezi.done $(tvheadend)/dezi.xberry
+
+#####################################################################
+#
+# mplayer
+#
+
+$(mplayer): 
+	svn checkout svn://svn.mplayerhq.hu/mplayer/trunk $(mplayer)
+	cd $(mplayer); git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git ffmpeg
+	tar -cvzf $(mplayer).tar.gz $(mplayer)
+	mv -f $(mplayer).tar.gz ../download
+
+$(mplayer)/dezi.config:
+	cd $(mplayer); \
+	./configure || exit; \
+	touch dezi.config
+
+$(mplayer)/dezi.done:
+	cd $(mplayer); \
+	make; \
+	sudo make install; \
+	touch dezi.done
+
+$(mplayer)/dezi.xberry:
+	cd $(mplayer); \
+	cp ../../descriptions/mplayer.txt description-pak; \
+	mkdir -p doc-pak; \
+	cp ChangeLog doc-pak/CHANGELOG; \
+	find . -regex "./[A-Z0-9-][A-Z0-9-]+\.*[a-z0-9]*" -type f -exec cp {} doc-pak \;; \
+	sudo checkinstall \
+		--install=no \
+		--maintainer dezi@kappa-mm.de \
+		--pakdir=../../packages \
+		--pkggroup=xberry \
+		--pkgname=xberry-mplayer \
+		--pkgversion=3.5.72 \
+		--pkgaltsource=svn://svn.mplayerhq.hu/mplayer/trunk \
+		make install || exit; \
+	touch dezi.xberry
+
+mplayer: $(mplayer) $(mplayer)/dezi.config $(mplayer)/dezi.done
+
+mplayer-xberry: mplayer $(mplayer)/dezi.xberry
+

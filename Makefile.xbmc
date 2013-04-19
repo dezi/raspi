@@ -58,7 +58,8 @@ xbmc-git-env= \
 	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
 	export CPPFLAGS="-I/home/pi/raspi/xbmc/xbmc-git/xbmc"; \
-	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
+	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT" \
+	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/local/lib/pkgconfig" \
 
 ##################################################################
 #
@@ -89,7 +90,7 @@ xbmc-git/dezi.shairport: xbmc-git
 xbmc-git/dezi.tools: xbmc-git
 	$(xbmc-git-env); \
 	cd xbmc-git; \
-	#sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
+	sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
 	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
 	sh tools/rbp/setup-sdk.sh; \
 	sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/' tools/rbp/depends/xbmc/Makefile; \
