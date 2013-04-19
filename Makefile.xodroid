@@ -195,48 +195,9 @@ xbmc-git:
 
 xbmc-git/dezi.patch: xbmc-git
 	cd xbmc-git; \
-	git apply --index ../../patches/xbmc.nfc.patch       || echo "Already applied..."; \
-	#git apply --index ../../patches/xbmc.omxplayer.patch || echo "Already applied..."; \
-	#sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/'   tools/depends/target/xbmc/Makefile; \
-	#sed -i 's/cd $$(SOURCE); $$(CONFIGURE)/#cd $$(SOURCE); $$(CONFIGURE)/' tools/depends/target/xbmc/Makefile; \
-	#sed -i 's/cd $$(SOURCE); .\/bootstrap/#cd $$(SOURCE); .\/bootstrap/'   tools/rbp/depends/xbmc/Makefile; \
-	#sed -i 's/cd $$(SOURCE); $$(CONFIGURE)/#cd $$(SOURCE); $$(CONFIGURE)/' tools/rbp/depends/xbmc/Makefile; \
-	sed -i 's/--prefix=$$(PREFIX)/--prefix=$$(PREFIX) $$(DEZICONFIGOPS)/' tools/depends/target/xbmc/Makefile; \
+	git apply --index ../../patches/xbmc.nfc.patch || echo "Already applied..."; \
+	sed -i 's/@USE_TEXTUREPACKER_NATIVE_ROOT@/\/usr/' tools/TexturePacker/Makefile.in; \
 	touch dezi.patch
-
-xbmc-git/dezi.taglib: xbmc-git
-	cd xbmc-git; \
-	make -C lib/taglib; \
-	sudo make -C lib/taglib install; \
-	touch dezi.taglib
-
-xbmc-git/dezi.shairport: xbmc-git
-	cd xbmc-git; \ 
-	make -C lib/libshairport; \
-	sudo make -C lib/libshairport install; \
-	touch dezi.shairport
-
-xbmc-git/dezi.tools.odroid: xbmc-git
-	cd xbmc-git; \
-	sudo mkdir -p /opt/xbmc-depends; \
-	sudo chmod a+w  /opt/xbmc-depends; \
-	cd tools/depends; \
-	./bootstrap; \
-	./configure --prefix=/opt/xbmc-depends || exit; \
-	make -j 4 || exit; \
-	cd ../..; \
-	touch dezi.tools.odroid
-
-xbmc-git/dezi.tools.xberry:	xbmc-git
-	$(xbmc-git-env); \
-	cd xbmc-git; \
-	#sed -i 's/USE_BUILDROOT=1/USE_BUILDROOT=0/' tools/rbp/setup-sdk.sh; \
-	sed -i 's/TOOLCHAIN=\/usr\/local\/bcm-gcc/TOOLCHAIN=\/usr/' tools/rbp/setup-sdk.sh; \
-	sh tools/rbp/setup-sdk.sh; \
-	make -C tools/rbp/depends/xbmc/ || exit; \
-	touch dezi.tools.xberry
-	
-#		--prefix=/usr/local \
 
 xbmc-git-config-common= \
 		--disable-gl \
@@ -285,7 +246,6 @@ xbmc-git-config-xberry= \
 
 xbmc-git/dezi.config.xberry: xbmc-git
 	$(xbmc-git-env); \
-	env; \
 	cd xbmc-git; \
 	./bootstrap || exit; \
 	./configure \
@@ -314,6 +274,7 @@ xbmc-git/dezi.make.xodroid: xbmc-git
 
 xbmc: \
 	xbmc-git \
+	xbmc-git/dezi.patch \
 	xbmc-git/dezi.config.$(xtarget) \
 	xbmc-git/dezi.make.$(xtarget) \
 
