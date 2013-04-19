@@ -1,5 +1,5 @@
 diff --git a/xbmc/cores/omxplayer/OMXPlayer.cpp b/xbmc/cores/omxplayer/OMXPlayer.cpp
-index 4420da2..4c2595a 100644
+index 4420da2..971d673 100644
 --- a/xbmc/cores/omxplayer/OMXPlayer.cpp
 +++ b/xbmc/cores/omxplayer/OMXPlayer.cpp
 @@ -52,6 +52,7 @@
@@ -54,10 +54,10 @@ index 4420da2..4c2595a 100644
 +      if (pPacket->iStreamId == m_CurrentVideo.id && pStream->source == m_CurrentVideo.source && pStream->type == STREAM_VIDEO)
 +      {
 +        if ((pPacket->iSize >= 8)
-+		&& (pPacket->pData[ 0 ] == 0x00)
-+		&& (pPacket->pData[ 1 ] == 0x00)
-+		&& (pPacket->pData[ 2 ] == 0x01)
-+		&& (pPacket->pData[ 3 ] == 0xb3))
++        && (pPacket->pData[ 0 ] == 0x00)
++        && (pPacket->pData[ 1 ] == 0x00)
++        && (pPacket->pData[ 2 ] == 0x01)
++        && (pPacket->pData[ 3 ] == 0xb3))
 +        {
 +           float aspect = 0.0f;
 +           switch (pPacket->pData[ 7 ] >> 4)
@@ -86,26 +86,6 @@ index 4420da2..4c2595a 100644
      try
      {
        if (pPacket->iStreamId == m_CurrentAudio.id && pStream->source == m_CurrentAudio.source && pStream->type == STREAM_AUDIO)
-@@ -1536,8 +1576,8 @@ void COMXPlayer::HandlePlaySpeed()
-   {
-     bool bGotAudio(m_pDemuxer->GetNrOfAudioStreams() > 0);
-     bool bGotVideo(m_pDemuxer->GetNrOfVideoStreams() > 0);
--    bool bAudioLevelOk(m_player_audio.GetLevel() > g_advancedSettings.m_iPVRMinAudioCacheLevel);
--    bool bVideoLevelOk(m_player_video.GetLevel() > g_advancedSettings.m_iPVRMinVideoCacheLevel);
-+    bool bAudioLevelOk(m_player_audio.GetLevel() > 50); //g_advancedSettings.m_iPVRMinAudioCacheLevel);
-+    bool bVideoLevelOk(m_player_video.GetLevel() > 50); //g_advancedSettings.m_iPVRMinVideoCacheLevel);
-     bool bAudioFull(!m_player_audio.AcceptsData());
-     bool bVideoFull(!m_player_video.AcceptsData());
- 
-@@ -1631,7 +1671,7 @@ bool COMXPlayer::CheckStartCaching(COMXCurrentStream& current)
-     if (CachePVRStream())
-     {
-       if ((current.type == STREAM_AUDIO && current.started && m_player_audio.GetLevel() == 0) ||
--         (current.type == STREAM_VIDEO && current.started && m_player_video.GetLevel() == 0))
-+          (current.type == STREAM_VIDEO && current.started && m_player_video.GetLevel() == 0))
-       {
-         CLog::Log(LOGDEBUG, "%s stream stalled. start buffering", current.type == STREAM_AUDIO ? "audio" : "video");
-         SetCaching(CACHESTATE_PVR);
 @@ -2899,6 +2939,12 @@ bool COMXPlayer::OpenVideoStream(int iStream, int source, bool reset)
      hint.software = true;
    }
@@ -132,3 +112,29 @@ index 40d9a05..072c301 100644
    CFileItem               m_item;
    CPlayerOptions          m_PlayerOptions;
    unsigned int            m_iChannelEntryTimeOut;
+diff --git a/xbmc/cores/omxplayer/OMXPlayerAudio.cpp b/xbmc/cores/omxplayer/OMXPlayerAudio.cpp
+index 16ea6c3..0f99b1d 100644
+--- a/xbmc/cores/omxplayer/OMXPlayerAudio.cpp
++++ b/xbmc/cores/omxplayer/OMXPlayerAudio.cpp
+@@ -84,7 +84,7 @@ OMXPlayerAudio::OMXPlayerAudio(OMXClock *av_clock, CDVDMessageQueue& parent)
+   m_av_clock->SetMasterClock(false);
+ 
+   m_messageQueue.SetMaxDataSize(3 * 1024 * 1024);
+-  m_messageQueue.SetMaxTimeSize(8.0);
++  m_messageQueue.SetMaxTimeSize(16.0);
+ }
+ 
+ 
+diff --git a/xbmc/cores/omxplayer/OMXPlayerVideo.cpp b/xbmc/cores/omxplayer/OMXPlayerVideo.cpp
+index 3e27f4f..b92bbc9 100644
+--- a/xbmc/cores/omxplayer/OMXPlayerVideo.cpp
++++ b/xbmc/cores/omxplayer/OMXPlayerVideo.cpp
+@@ -93,7 +93,7 @@ OMXPlayerVideo::OMXPlayerVideo(OMXClock *av_clock,
+   m_fForcedAspectRatio    = 0.0f;
+   m_send_eos              = false;
+   m_messageQueue.SetMaxDataSize(10 * 1024 * 1024);
+-  m_messageQueue.SetMaxTimeSize(8.0);
++  m_messageQueue.SetMaxTimeSize(16.0);
+ 
+   m_dst_rect.SetRect(0, 0, 0, 0);
+ }
