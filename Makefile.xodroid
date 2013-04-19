@@ -171,18 +171,40 @@ xbmc-pvr: xbmc-pvr-git-doit
 # XBMC configure environment
 #
 
-xbmc-git-env= \
+xbmc-git-env-xodroid= \
+	export TARGET_SUBARCH="armv7"; \
+	export TARGET_CPU="cortex-a9"; \
+	export TARGET_FLOAT="hard"; \
+	export TARGET_FPU="neon"; \
+	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
+	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3"; \
+	export TARGET_COPT="$$TARGET_COPT -fexcess-precision=fast -ffast-math -funsafe-math-optimizations"; \
+	export TARGET_LOPT="-s -Wl,--as-needed"; \
+	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux"; \
+	export CFLAGS="$$CFLAGS $$TARGET_COPT $$TARGET_EXTRA_FLAGS"; \
+	export CXXFLAGS="$$CFLAGS"; \
+	export CFLAGS="$$CFLAGS -fgnu89-inline"; \
+	export CPPFLAGS="$$CFLAGS"; \
+	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
+
+xbmc-git-env-xberry= \
 	export TARGET_SUBARCH="armv6zk"; \
 	export TARGET_CPU="arm1176jzf-s"; \
 	export TARGET_FLOAT="hard"; \
 	export TARGET_FPU="vfp"; \
 	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
 	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
-	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math  -fgnu89-inline"; \
+	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3 -fexcess-precision=fast -ffast-math"; \
 	export TARGET_LOPT="-s -Wl,--as-needed"; \
-	export TARGET_INCLUDES="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"; \
-	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
+	export TARGET_INCLUDES="$$TARGET_INCLUDES -I/opt/vc/include"; \
+	export TARGET_INCLUDES="$$TARGET_INCLUDES -I/opt/vc/include/interface/vcos/pthreads"; \
+	export TARGET_INCLUDES="$$TARGET_INCLUDES -I/opt/vc/include/interface/vmcs_host/linux"; \
+	export CFLAGS="-march=$$TARGET_SUBARCH -mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux"; \
+	export CFLAGS="$$CFLAGS $$TARGET_COPT $$TARGET_EXTRA_FLAGS $$TARGET_INCLUDES"; \
 	export CXXFLAGS="$$CFLAGS"; \
+	export CFLAGS="$$CFLAGS -fgnu89-inline"; \
+	export CPPFLAGS="$$CFLAGS"; \
 	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
 ##################################################################
@@ -214,7 +236,6 @@ xbmc-git-config-common= \
 		--disable-vdpau \
 		--disable-xrandr \
 		--enable-airplay \
-		--disable-alsa \
 		--enable-avahi \
 		--enable-libbluray \
 		--enable-dvdcss \
@@ -236,6 +257,7 @@ xbmc-git-config-xodroid= \
 		--disable-vdpau \
 		--disable-vaapi \
 		--disable-libcec \
+		--enable-alsa \
 		
 xbmc-git-config-xberry= \
 		--with-platform=raspberry-pi \
@@ -243,9 +265,10 @@ xbmc-git-config-xberry= \
 		--localstatedir=/var/lib \
 		--enable-player=omxplayer \
 		--enable-libcec \
+		--disable-alsa \
 
 xbmc-git/dezi.config.xberry: xbmc-git
-	$(xbmc-git-env); \
+	$(xbmc-git-env-xberry); \
 	cd xbmc-git; \
 	./bootstrap || exit; \
 	./configure \
