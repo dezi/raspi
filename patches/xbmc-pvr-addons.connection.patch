@@ -1,13 +1,3 @@
-From de638318d223481e6e44ce8548f9917bbee68ebe Mon Sep 17 00:00:00 2001
-From: dezi <dezi@kappa-mm.de>
-Date: Mon, 1 Apr 2013 07:37:39 +0000
-Subject: [PATCH] Fixed PVF.HTS connection drop by timeout.
-
----
- addons/pvr.hts/src/HTSPConnection.cpp | 27 +++++++++++++++++++++------
- lib/platform/posix/os-socket.h        |  8 ++++----
- 2 files changed, 25 insertions(+), 10 deletions(-)
-
 diff --git a/addons/pvr.hts/src/HTSPConnection.cpp b/addons/pvr.hts/src/HTSPConnection.cpp
 index 22ccfbc..68e404c 100644
 --- a/addons/pvr.hts/src/HTSPConnection.cpp
@@ -69,10 +59,28 @@ index 22ccfbc..68e404c 100644
          if(msg == NULL || msg->hm_data == NULL)
          {
 diff --git a/lib/platform/posix/os-socket.h b/lib/platform/posix/os-socket.h
-index 2c49962..5d138d2 100644
+index 2c49962..d5ab209 100644
 --- a/lib/platform/posix/os-socket.h
 +++ b/lib/platform/posix/os-socket.h
-@@ -224,7 +224,7 @@
+@@ -145,7 +145,7 @@ namespace PLATFORM
+       if (returnv == -1)
+       {
+         *iError = errno;
+-        return -errno;
++        break;
+       }
+       else if (returnv == 0)
+       {
+@@ -156,7 +156,7 @@ namespace PLATFORM
+       if (returnv == -1)
+       {
+         *iError = errno;
+-        return -errno;
++        break;
+       }
+ 
+       iBytesRead += returnv;
+@@ -224,7 +224,7 @@ namespace PLATFORM
          if (iPollResult == 0)
          {
            *iError = ETIMEDOUT;
@@ -81,7 +89,7 @@ index 2c49962..5d138d2 100644
          }
        }
  
-@@ -236,12 +236,12 @@
+@@ -236,12 +236,12 @@ namespace PLATFORM
          if (errno == EAGAIN && iTimeoutMs > 0)
            continue;
          *iError = errno;
@@ -97,6 +105,3 @@ index 2c49962..5d138d2 100644
        }
  
        iBytesRead += iReadResult;
--- 
-1.8.1.6
-

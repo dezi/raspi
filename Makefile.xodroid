@@ -151,7 +151,7 @@ xbmc-pvr-addons-git:
 
 xbmc-pvr-addons-git/dezi.patch: xbmc-pvr-addons-git
 	cd xbmc-pvr-addons-git; \
-	git apply --index ../../patches/xbmc-pvr-addons.timeout.patch || echo "Already applied..."; \
+	git apply --index ../../patches/xbmc-pvr-addons.connection.patch || echo "Already applied..."; \
 	touch dezi.patch
 
 xbmc-pvr-addons-git/dezi.done: xbmc-pvr-addons-git
