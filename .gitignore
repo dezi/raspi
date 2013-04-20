@@ -1,11 +1,13 @@
 xbmc
-kernel
 local
+kernel
+static
 xberry
 xodroid
 patches
 packages
 download
+dvbstick
 ffmpeg-win32
 ffmpeg-win64
 ffmpeg-local
