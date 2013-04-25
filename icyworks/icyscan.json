@@ -1,0 +1,163 @@
+{
+	"fixups":
+	{
+		"str_replace":
+		[
+			"|de.radioneunkirchen|(Radio Neunkirchen)||",
+			"|de.945radiocottbus|(Radio Cottbus)||",
+			"|de.955charivari|***Neu***||",
+			"|de.adultradio|- German Top 100 Single Charts -|-|",
+			"|de.alternativefm|AlternativeFM - rockt. -||",
+			"|de.antennelandau|(94.8 Antenne Landau)||",
+			"|de.antennezweibruecken|(Antenne Zweibrücken 91.6)||",
+			"|de.campusfm|- (Testbetrieb)||",
+			"|de.cityradiotrier|(Cityradio Trier 88.4)||",
+			"|de.clubstars|Now On Air:||",
+			"|de.cremfm|songs - ||",
+			"|de.dasding| /// | - |",
+			"|de.dieneuewelle|die neue welle - Der beste Musikmix aus 4 Jahrzehnten! - ||",
+			"|de.dierockwelle|AlternativeFM - rockt. - ||",
+			"|de.ichtysradio|***Wunschbox On-Air*** ||",
+			"|de.isimsizfm|(128 kb/s MP3 Stream)||",
+			"|de.jumpinthemix|im MDR JUMP In The Mix Channel ||",
+			"|de.jumppiraten|im MDR JUMP In The Mix Channel ||",
+			"|de.jumprock|im MDR JUMP Rock Channel ||",
+			"|de.jumptrend|im MDR JUMP Trend Channel ||",
+			"|de.radioidaroberstein|(87.6 Radio Idar-Oberstein)||",
+			"|de.radiomerzig|(Radio Merzig)||",
+			"|de.radioneunkirchen|(Radio Neunkirchen)||",
+			"!de.radiosaw80er!| radio SAW-80er!!",
+			"!de.radiosaw90er!| radio SAW-90er!!",
+			"|de.romantic|(Romantic Radio ... Dein Kuschelsender auf www.hello-city.de)||",
+			"|de.schwarzewelle|(onAir: Schwarze Welle)||",
+			"!de.sunshine-live!| radio sunshine live :: electronic music web!!",
+			"|de.swr1|Sie hoeren: ||",
+			"|de.swr1bw|Sie hoeren: ||",
+			"|de.swr1rp|Sie hoeren: ||",
+			"|de.swr4|Sie hoeren: ||",
+			"|de.swr4bw|Sie hoeren: ||",
+			"|de.swr4rp|Sie hoeren: ||",
+			"|de.tanzfm|On Air: ||",
+			"|de.trance-nation|* ( (¯`». .« Angel Of Darknes ». .«´¯))*||",
+			
+			""
+		],
+	
+		"preg_replace":
+		[
+			"|de.palmenstrandradio|\\.\\.::.*?::\\.\\.|||",
+			"|de.dasding|^\\/\\/\\/ |||",
+			
+			""
+		]
+	},
+
+	"nuke":
+	{
+		"strstr":
+		[
+			"|de.1055spreeradio|Die Besten Songs Aller Zeiten|",
+			"|de.1live|1LIVE|",
+			"|de.890rtl|89.0 Rtl|",
+			"|de.890rtl|89.0rtl|",
+			"|de.955charivari|Radio Charivari|",
+			"|de.antennebayern|ANTENNE BAYERN|",
+			"|de.antennemainz|Werbung|",
+			"|de.bayern1|Bayern 1|",
+			"|de.bayern1|bayern1.de|",
+			"|de.bayern2|Bayern 2|",
+			"|de.bayern2|bayern2.de|",
+			"|de.bayern3|Bayern 3|",
+			"|de.bayern3|bayern3.de|",
+			"|de.bayern3|Studio-Hotline:|",
+			"|de.bayernplus|Servus Bayern|",
+			"|de.campusfm|www.campusfm.info|",
+			"|de.cremfm|!WERBUNG!|",
+			"|de.deltaradio|delta radio - |",
+			"|de.deutschlandfunk|Nachrichten|",
+			"|de.ffncomedy|ffn comedy - |",
+			"|de.funkhauseuropa|Funkhaus Europa|",
+			"|de.funkhauseuropa|Sie hoeren - |",
+			"|de.funkhauseuropa|eMail:|",
+			"|de.hellwegradio|www.hellwegradio.de|",
+			"|de.hitstationfmschlager|Hitstation.fm -|",
+			"|de.irabo|Irabo - |",
+			"|de.peppermint|ffn Peppermint - |",
+			"|de.radioarabella|Radio Arabella Deutschland|",
+			"|de.radioaugsburg|Radio Augsburg -|",
+			"|de.radionora|Radio NORA - |",
+			"|de.sunshine-live|radio sunshine live ::|",
+			"|de.swr1|Swr 1 - |",
+			"|de.swr1|* S W R 1 * |",
+			"|de.swr1|SWR 1 im|",
+			"|de.swr1bw|Swr 1 - |",
+			"|de.swr1bw|* S W R 1 * |",
+			"|de.swr1bw|SWR 1 im|",
+			"|de.swr1rp|Swr 1 - |",
+			"|de.swr1rp|* S W R 1 * |",
+			"|de.swr1rp|SWR 1 im|",
+			"|de.swr3|** Swr3 - |",
+			"|de.swr3|SWR3 * *|",
+			"|de.swr3| * SWR3 |",
+			"|de.swr3|Am Mikrofon: |",
+			"|de.swr4|Swr4 Bw - |",
+			"|de.swr4|* S W R 4 *|",
+			"|de.swr4bw|Swr4 Bw - |",
+			"|de.swr4bw|* S W R 4 *|",
+			"|de.swr4rp|Swr4 Bw - |",
+			"|de.swr4rp|* S W R 4 *|",
+			
+			""
+		],
+	
+		"preg_match":
+		[
+			"|de.big-up|^Ad$||",
+			"|de.bigmusicblack|^[0-9a-z]*$||",
+			"|de.bigmusicrnb|^[0-9a-z]*$||",
+			"|de.bigmusicrock|^[0-9a-z]*$||",
+			"|de.dasding| \\/\\/\\/$||",
+			"|de.dieneuewelle|^Aktuell$||",
+			
+			""
+		]
+	},
+	
+	"reverse":
+	[
+		"de.swr3",
+		"de.swr4",
+		
+		""
+	],
+	
+	"ignore":
+	[
+		"de.b5aktuell",
+		"de.b5plus",
+		"de.brklassik",
+		"de.dkultur",
+		"de.erf",
+		"de.klassiklounge",
+		"de.klassikmovie",
+		"de.klassikradio",
+		"de.klassikradiomovie",
+		"de.lobpreis",
+		"de.lukesspielwiese",
+		"de.njoyflavormix",
+		"de.radioaena",
+		"de.schwany1",
+		"de.schwany3",
+		"de.schwany4",
+		"de.schwany5",
+		"de.swr2",
+		"de.swrinfo",
+		"de.tierstimmen",
+		"de.wdr3",
+		"de.wdr4",
+		"de.wdr5",
+		"de.wdrevent",
+		
+		""
+	]
+}
