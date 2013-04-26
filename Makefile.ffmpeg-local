@@ -47,37 +47,37 @@ $(ffmpeg)/libavfilter/vf_logo.c:
 ffmpeg-common = \
 	--enable-gpl \
 	--enable-version3 \
-	--enable-nonfree \
+	--disable-nonfree \
 	--enable-runtime-cpudetect \
 	--enable-hardcoded-tables \
 	--enable-zlib \
 	--enable-bzlib \
 	--enable-gnutls \
-	--enable-librtmp \
-	--enable-libfreetype \
-	--enable-libfdk-aac \
-	--enable-libopencore-amrnb \
-	--enable-libopencore-amrwb \
-	--enable-libvo-aacenc \
-	--enable-libvo-amrwbenc \
-	--enable-libmp3lame \
-	--enable-libopenjpeg \
-	--enable-libtheora \
-	--enable-libvorbis \
-	--enable-libspeex \
-	--enable-libass \
-	--enable-libopus \
-	--enable-libgsm \
-	--enable-libvpx \
-	--enable-libxavs \
-	--enable-libxvid \
-	--enable-libx264 \
-	--enable-libbluray \
-	--enable-libschroedinger \
-	--enable-libilbc \
-	--enable-fontconfig \
-	--enable-frei0r \
-	--enable-filter=frei0r \
+	--disable-librtmp \
+	--disable-libfreetype \
+	--disable-libfdk-aac \
+	--disable-libopencore-amrnb \
+	--disable-libopencore-amrwb \
+	--disable-libvo-aacenc \
+	--disable-libvo-amrwbenc \
+	--disable-libmp3lame \
+	--disable-libopenjpeg \
+	--disable-libtheora \
+	--disable-libvorbis \
+	--disable-libspeex \
+	--disable-libass \
+	--disable-libopus \
+	--disable-libgsm \
+	--disable-libvpx \
+	--disable-libxavs \
+	--disable-libxvid \
+	--disable-libx264 \
+	--disable-libbluray \
+	--disable-libschroedinger \
+	--disable-libilbc \
+	--disable-fontconfig \
+	--disable-frei0r \
+	--disable-filter=frei0r \
 	
 ffmpeg-shared = \
 	--disable-static \
@@ -114,6 +114,23 @@ ffmpeg-darwin:
 ffmpeg-moreoptions-dont-work-yet:
 	--enable-libcdio \
 	--enable-libutvideo \
+
+ffmpeg-env-xodroid= \
+	export TARGET_SUBARCH="armv7"; \
+	export TARGET_CPU="cortex-a9"; \
+	export TARGET_FLOAT="hard"; \
+	export TARGET_FPU="neon"; \
+	export TARGET_FPU_FLAGS="-mfloat-abi=$$TARGET_FLOAT -mfpu=$$TARGET_FPU"; \
+	export TARGET_EXTRA_FLAGS="-Wno-psabi -Wa,-mno-warn-deprecated"; \
+	export TARGET_COPT="-Wall -pipe -fomit-frame-pointer -O3"; \
+	export TARGET_COPT="$$TARGET_COPT -fexcess-precision=fast -ffast-math -funsafe-math-optimizations"; \
+	export TARGET_LOPT="-s -Wl,--as-needed"; \
+	export CFLAGS="-mcpu=$$TARGET_CPU $$TARGET_FPU_FLAGS -mabi=aapcs-linux"; \
+	export CFLAGS="$$CFLAGS $$TARGET_COPT $$TARGET_EXTRA_FLAGS"; \
+	export CXXFLAGS="$$CFLAGS"; \
+	export CFLAGS="$$CFLAGS -fgnu89-inline"; \
+	export CPPFLAGS="$$CFLAGS"; \
+	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 	
 $(ffmpeg)/dezi.static.conf:
 	mkdir -p ../static;
@@ -142,6 +159,7 @@ $(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
 	touch dezi.static.done
 	
 $(ffmpeg)/dezi.shared.conf:
+	${ffmpeg-env-xodroid}; \
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
@@ -167,5 +185,5 @@ ffmpeg: \
 	$(ffmpeg) \
 	$(ffmpeg)/libavfilter/vf_logo.c \
 	$(ffmpeg)/dezi.shared.done \
-	$(ffmpeg)/dezi.static.done \
+	#$(ffmpeg)/dezi.static.done \
 
