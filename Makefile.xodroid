@@ -221,6 +221,83 @@ xbmc-git/dezi.patch: xbmc-git
 	sed -i 's/@USE_TEXTUREPACKER_NATIVE_ROOT@/\/usr/' tools/TexturePacker/Makefile.in; \
 	touch dezi.patch
 
+xbmc-git-config-ubuntu= \
+	--host=arm-linux-gnueabihf \
+	--build=arm-linux-gnueabihf \
+	--prefix=/usr/local \
+	--docdir=/usr/local/share/doc/xbmc \
+	--disable-debug \
+	--enable-optimizations \
+	--enable-gl \
+	--disable-gles \
+	--disable-vdpau \
+	--disable-vdadecoder \
+	--disable-vtbdecoder \
+	--disable-openmax \
+	--disable-tegra \
+	--disable-profiling \
+	--enable-joystick \
+	--enable-xrandr \
+	--disable-ccache \
+	--enable-pulse \
+	--enable-rtmp \
+	--enable-ffmpeg-libvorbis \
+	--disable-mid \
+	--enable-hal \
+	--enable-avahi \
+	--disable-asap-codec \
+	--enable-webserver \
+	--enable-optical-drive \
+	--enable-texturepacker \
+	--enable-nfs \
+	--disable-libcec \
+	--disable-afpclient \
+	--enable-airtunes \
+	--disable-external-libraries \
+	--disable-external-ffmpeg \
+	--disable-dvdcss \
+	--disable-non-free \
+	--disable-crystalhd \
+
+xbmc-git-config-ubuntu2= \
+	--host=arm-linux-gnueabihf \
+	--build=arm-linux-gnueabihf \
+	--prefix=/usr/local \
+	--docdir=/usr/local/share/doc/xbmc \
+	--disable-debug \
+	--enable-optimizations \
+	--disable-gl \
+	--enable-sdl \
+	--enable-x11 \
+	--enable-gles \
+	--enable-xrandr \
+	--disable-vdpau \
+	--disable-vaapi \
+	--enable-neon \
+	--disable-crystalhd \
+	--disable-vdadecoder \
+	--disable-vtbdecoder \
+	--disable-openmax \
+	--disable-tegra \
+	--disable-profiling \
+	--enable-joystick \
+	--disable-ccache \
+	--enable-pulse \
+	--enable-rtmp \
+	--enable-ffmpeg-libvorbis \
+	--disable-mid \
+	--enable-hal \
+	--enable-avahi \
+	--disable-asap-codec \
+	--enable-webserver \
+	--enable-optical-drive \
+	--enable-texturepacker \
+	--enable-nfs \
+	--disable-libcec \
+	--enable-afpclient \
+	--enable-airtunes \
+	--enable-gstreamer \
+
 xbmc-git-config-common= \
 		--disable-gl \
 		--enable-gles \
@@ -283,7 +360,7 @@ xbmc-git/dezi.config.xodroid: xbmc-git
 	export CXXFLAGS="$$CFLAGS"; \
 	./bootstrap || exit; \
 	./configure \
-		$(xbmc-git-config-xodroid) \
+		$(xbmc-git-config-ubuntu2) \
 		|| exit; \
 	touch dezi.config.xodroid
 

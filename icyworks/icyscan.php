@@ -159,7 +159,7 @@ function fixups_icy($channel,$icy)
 			$toto = $parts[ 3 ];
 			$modi = $parts[ 4 ];
 			
-			$pattern = "$sepa$from$sepa$modi";
+			$pattern = $sepa . $from . $sepa . $modi;
 			
 			echo "====> fixups preg_replace($pattern) => $icy\n";
 			$icy = trim(preg_replace($pattern,$toto,$icy));
@@ -181,7 +181,8 @@ function nuke_icy($channel,$icy)
 			
 			if (strstr($icy,$pattern) !== false) 
 			{
-				echo "====> nuke strstr => $icy\n";
+				echo "====> nuke strstr($pattern) => $icy\n";
+				
 				return true;
 			}
 		}
@@ -197,11 +198,12 @@ function nuke_icy($channel,$icy)
 			$from = $parts[ 2 ];
 			$modi = $parts[ 3 ];
 			
-			$pattern = "$sepa$from$sepa$modi";
+			$pattern = $sepa . $from . $sepa . $modi;
 			
-			if (! preg_match($icy,$pattern)) 
-			{
-				echo "====> nuke preg_match => $icy\n";
+			if (! preg_match($pattern,$icy)) 
+			{			
+				echo "====> nuke preg_match($pattern) => $icy\n";
+
 				return true;
 			}
 		}
@@ -243,6 +245,7 @@ function nice_icy($icy)
 	if (substr($icy,-4) == ".MP3") $icy = substr($icy,0,-4);
 	if (substr($icy,-4) == ".mp3") $icy = substr($icy,0,-4);
 	if (substr($icy,-3) ==  "mp3") $icy = substr($icy,0,-3);
+	if (substr($icy,-3) ==  "...") $icy = substr($icy,0,-3);
 
 	//
 	// Check for addition in square brackets.
@@ -363,7 +366,12 @@ function nice_icy($icy)
 		$parts = explode("|",$icy);
 		$icy = trim($parts[ 1 ] . " - " . $parts[ 0 ]);
 	}
+	
+	return $icy;
+}
 
+function case_icy($icy)
+{
 	//
 	// Check all upper case.
 	//
@@ -385,9 +393,7 @@ function nice_icy($icy)
 			if (strtoupper($parts[ 0 ]) == $parts[ 0 ])
 			{
 				$parts[ 0 ] = nice_fup($parts[ 0 ]);
-				
-				if ($parts[ 0 ] == "Ac/Dc" ) $parts[ 0 ] = "AC/DC";
-				if ($parts[ 0 ] == "Ac-Dc" ) $parts[ 0 ] = "AC/DC";
+
 				if ($parts[ 0 ] == "Lmfao" ) $parts[ 0 ] = "LMFAO";
 				if ($parts[ 0 ] == "Zz Top") $parts[ 0 ] = "ZZ Top";
 				
@@ -407,6 +413,10 @@ function nice_icy($icy)
 	// Common abbreviations.
 	//
 	
+	$icy = str_replace("Ac/Dc","AC/DC",$icy);
+	$icy = str_replace("Ac-Dc","AC/DC",$icy);
+	
+	$icy = str_replace("&amp;","&",$icy);
 	$icy = str_replace(" vs."," vs. ",$icy);
 	$icy = str_replace(" ft."," feat. ",$icy);
 	$icy = str_replace(" Ft."," feat. ",$icy);
@@ -556,6 +566,7 @@ function open_channel(&$havechannels,&$openchannels,&$deadchannels)
 	$oc[ "url"     ] = $streamurl;
 	$oc[ "head"    ] = false;
 	$oc[ "headers" ] = Array();
+	$oc[ "start"   ] = time();
 	
 	array_push($oc[ "headers" ],$streamurl);
 	array_push($openchannels,$oc);	
@@ -566,7 +577,22 @@ function process_channel(&$openchannels,&$deadchannels)
 	for ($inx = 0; $inx < count($openchannels); $inx++)
 	{		
 		$channel = $openchannels[ $inx ][ "channel" ];
-
+		$start   = $openchannels[ $inx ][ "start"   ];
+		$elapsed = time() - $start;
+		
+		if ($elapsed > 20)
+		{
+			if (isset($openchannels[ $inx ][ "fd" ]))
+			{
+				fclose($openchannels[ $inx ][ "fd" ]);
+			}
+			
+			echo "--------------------> elapsed $channel\n";
+	
+			array_splice($openchannels,$inx--,1);
+			continue;
+		}
+		
 		if (! isset($openchannels[ $inx ][ "fd" ]))
 		{
 			$streamurl = $openchannels[ $inx ][ "url" ];
@@ -677,6 +703,12 @@ function process_channel(&$openchannels,&$deadchannels)
 					}
 					else
 					{
+						$icy = nice_icy($icy);
+						$icy = fixups_icy($channel,$icy);
+						$icy = case_icy($icy);
+
+						if (nuke_icy($channel,$icy)) continue;
+
 						$lasticy = "";
 						
 						$lasticyfile = "./lasticys/$channel.txt";
@@ -691,10 +723,9 @@ function process_channel(&$openchannels,&$deadchannels)
 						}
 
 						file_put_contents($lasticyfile,$icy);
-						
-						$icy = nice_icy($icy);
-						
-						$icy = fixups_icy($channel,$icy);
+
+						$total = time() - $start;
+						$total = str_pad($total,3," ",STR_PAD_LEFT); 
 						
 						$line = date("Ymd.His")
 							  . " "
@@ -704,7 +735,7 @@ function process_channel(&$openchannels,&$deadchannels)
 						$playlistfile = "./playlists/$channel.txt";
 						file_put_contents($playlistfile,$line,FILE_APPEND);
 						
-						echo $line;
+						echo $total . " " . $line;
 					}
 				}
 				

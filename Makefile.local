@@ -1009,11 +1009,11 @@ $(libvpx):
 
 $(libvpx)/dezi.done: 
 	cd $(libvpx); \
-	./configure --enable-vp8 --enable-vp9 --enable-static --disable-shared; \
-	make; \
+	./configure --extra-cflags="-fPIC" --enable-vp8 --enable-vp9 --enable-static --disable-shared; \
+	make -j4; \
 	sudo make install; \
-	./configure --enable-vp8 --enable-vp9 --enable-shared --disable-static; \
-	make; \
+	./configure --extra-cflags="-fPIC" --enable-vp8 --enable-vp9 --enable-shared --disable-static; \
+	make -j4; \
 	sudo make install; \
 	touch dezi.done
 
