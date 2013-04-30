@@ -35,7 +35,12 @@ function json_encrec($data,$level = 0)
 			foreach ($data as $key => $value) 
 			{
 				$output_indexed[] = json_encrec($value,$level + 1);
-				$output_associative[] = json_encrec($key,$level + 1) . ':' . json_encrec($value,$level + 1);
+				
+				$output_associative[] 
+					= json_encrec($key,$level + 1) 
+					. ':' 
+					. json_encrec($value,$level + 1)
+					;
 				
 				if ($output_index_count !== NULL && $output_index_count++ !== $key) 
 				{
@@ -54,6 +59,19 @@ function json_encrec($data,$level = 0)
 			return '';
 	}
 }
+
+function json_nukeempty(&$data)
+{
+	if (! is_array($data)) return;
+	
+	foreach ($data as $key => $dummy)
+	{
+		if (! is_array($data[ $key ])) continue;
+		
+		if (count($data[ $key ])  > 0) json_nukeempty($data[ $key ]);		
+		if (count($data[ $key ]) == 0) unset($data[ $key ]);
+	}
+} 
 
 function json_encdat($data,$level = 0)
 {

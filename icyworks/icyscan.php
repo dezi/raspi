@@ -200,10 +200,14 @@ function query_icy($channel,$icy)
 	// Looks reasonable, give it a try.
 	//
 	
-	$icyname = "./library/$icy.json";
+	$icyname = "./releases/$icy.json";
+	if (file_exists($icyname)) return '$';
+	
+	$icyname = "./queries/$icy.json";
 	if (file_exists($icyname)) return '*';
 	
-	$url = "http://api.discogs.com/database/search?q=" . urlencode($icy);
+	$query = str_replace("?","",$icy);
+	$url = "http://api.discogs.com/database/search?q=" . urlencode($query);
 	$discogsjson = file_get_contents($url,false,$GLOBALS[ "context" ]);
 
 	if ($discogsjson === false) return "!";

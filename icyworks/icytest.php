@@ -26,6 +26,11 @@ function make_nice($icy)
   	$icy = mb_convert_case($icy,MB_CASE_LOWER,"UTF-8");
   	$icy = preg_replace("/\\([^)]*\\)/","",$icy);
   	
+  	if (substr($icy,0,4) == "the ") $icy = substr($icy,4);
+  	if (substr($icy,0,4) == "der ") $icy = substr($icy,4);
+  	if (substr($icy,0,4) == "die ") $icy = substr($icy,4);
+  	if (substr($icy,0,4) == "das ") $icy = substr($icy,4);
+  	
   	$icy = str_replace(" - "," ^ ",$icy);
   	$icy = str_replace("-"," ",$icy);
   	$icy = str_replace(" ^ "," - ",$icy);
@@ -54,6 +59,20 @@ function make_nice($icy)
   	return $icy;
 }
 
+function comp_levenshtein($str1,$str2)
+{
+	if ((strlen($str1) < 4) || (strlen($str2) < 4))
+	{
+		return ($str1 == $str2);
+	}
+	
+	$dist = levenshtein($str1,$str2);
+	$maxd = floor(min(strlen($str1),strlen($str2)) / 8);
+	
+	return ($dist <= $maxd);
+	
+}
+
 	$options = array
 	(
   		'http' => array
@@ -73,8 +92,6 @@ function make_nice($icy)
   		$trackcont = file_get_contents($trackfile);
   		$trackjson = json_decdat($trackcont);
   		
-  		if (! $trackjson) continue;
-  		
   		$tracklower = make_nice(substr($track,0,-5));
   		$trackfound = null;
   		
@@ -90,7 +107,9 @@ function make_nice($icy)
   			{
   				if (! isset($entry[ "title" ])) continue;
   				
-	  			if ($tracklower != make_nice($entry[ "title" ])) continue;
+  				$complower = make_nice($entry[ "title" ]);
+  				
+	  			if (! comp_levenshtein($tracklower,$complower)) continue;
   				
 				array_push($release,$entry);
 				 
@@ -113,11 +132,13 @@ function make_nice($icy)
   				$parts = explode(" - ",$tracklower);
   				if (count($parts) != 2) continue;
   				
-  				$complower = make_nice($entry[ "title" ]);
+  				$complower  = make_nice($entry[ "title" ]);
+  				$compartist = substr($complower,0,strlen($parts[ 0 ]));
+  				$comptitle  = substr($complower, -strlen($parts[ 1 ]));
   				
-  				if (substr($complower,0,strlen($parts[ 0 ])) != $parts[ 0 ]) continue;
+  				if (! comp_levenshtein($compartist,$parts[ 0 ])) continue;
   				
-  				if ((substr($complower, -strlen($parts[ 1 ])) != $parts[ 1 ]) &&
+  				if ((! comp_levenshtein($comptitle,$parts[ 1 ])) &&
   					(strstr($complower," - " . $parts[ 1 ]) == false))
   				{
   					continue;
@@ -144,18 +165,23 @@ function make_nice($icy)
   				$parts = explode(" - ",$tracklower);
   				if (count($parts) != 2) continue;
   				
-  				$complower = make_nice($entry[ "title" ]);
+  				$complower  = make_nice($entry[ "title" ]);
+  				$compartist = explode(" - ",$complower);
+  				$compartist = $compartist[ 0 ];
   				
-  				if (substr($complower,0,strlen($parts[ 0 ])) != $parts[ 0 ]) continue;
-  								 
+  				if ((! comp_levenshtein($compartist,$parts[ 0 ])) &&
+  					(substr($complower,0,7) != "various"))
+  				{
+  					continue;
+  				}
+  						 
   				echo $track . "\n";
   				echo $entry[ "title" ] . "\n";
   				echo $entry[ "resource_url" ] . "\n";
   				echo "=====\n";
   				
-  				//sleep(1);
 				$releasecont = file_get_contents($entry[ "resource_url" ],false,$GLOBALS[ "context" ]);
-				if (! $releasecont) exit(0);
+				if (! $releasecont) continue;
 				$releasejson = json_decdat($releasecont);
 				
 				if (! isset($releasejson[ "tracklist" ])) continue;
@@ -165,7 +191,8 @@ function make_nice($icy)
 					if (! isset($trackitem[ "title" ])) continue;
 
 					$trackitemlower = make_nice($trackitem[ "title" ]);
-					if ($trackitemlower != $parts[ 1 ]) continue;
+					
+					if (! comp_levenshtein($trackitemlower,$parts[ 1 ])) continue;
 					
 					echo $track . "\n";
   					echo $trackitem[ "title" ] . "\n";
