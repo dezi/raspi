@@ -41,6 +41,13 @@ function icy_configure()
 		{
 			if (! strlen($channel)) continue;
 			$ignore[ $channel ] = true;
+			
+			//
+			// Remove playlist.
+			//
+			
+			$playlist = "./playlists/$channel.txt";
+			if (file_exists($playlist)) unlink($playlist);
 		}
 		
 		$GLOBALS[ "ignore" ] = &$ignore;
@@ -184,7 +191,7 @@ function fixups_icy($channel,$icy)
 	return $icy;
 }
 
-function query_icy($channel,$icy)
+function query_icy($channel,&$icy)
 {
 	$parts = explode(" - ",$icy);
 	if (count($parts) != 2) return "?";
@@ -203,9 +210,26 @@ function query_icy($channel,$icy)
 	$icyname = "./releases/$icy.json";
 	if (file_exists($icyname)) return '$';
 	
-	$icyname = "./queries/$icy.json";
+	$icyname = "./releases/" . $parts[ 1 ] . " - " . $parts[ 0 ] . ".json";
+	if (file_exists($icyname)) 
+	{
+		$icy = $parts[ 1 ] . " - " . $parts[ 0 ];
+		return '$';
+	}
+	
+	$icyname = "./queryok/$icy.json";
 	if (file_exists($icyname)) return '*';
 	
+	$icyname = "./queries/$icy.json";
+	if (file_exists($icyname)) 
+	{
+		rename($icyname,"./queryok/$icy.json");
+		return '*';
+	}
+	
+	$icyjson = "";
+	
+	/*
 	$query = str_replace("?","",$icy);
 	$url = "http://api.discogs.com/database/search?q=" . urlencode($query);
 	$discogsjson = file_get_contents($url,false,$GLOBALS[ "context" ]);
@@ -217,6 +241,7 @@ function query_icy($channel,$icy)
 	if (! isset($discogs[ "results" ])) return '-';
 	
 	$icyjson = json_encdat($discogs[ "results" ]);
+	*/
 	
 	file_put_contents($icyname,$icyjson);
 	
@@ -423,11 +448,17 @@ function nice_icy($icy)
 		$icy = trim($parts[ 1 ] . " - " . $parts[ 0 ]);
 	}
 	
-	if ((strstr($icy, " - " ) === false) && 
+	if ((strstr($icy," - ") === false) && 
 		(strstr($icy,"|") !== false))
 	{
 		$parts = explode("|",$icy);
 		$icy = trim($parts[ 1 ] . " - " . $parts[ 0 ]);
+	}
+	
+	if ((strstr($icy," - ") === false) && 
+		(strstr($icy,"-") !== false))
+	{
+		$icy = str_replace("-"," - ",$icy);
 	}
 	
 	if (substr($icy,-1) == "-") $icy = trim(substr($icy,0,-1));
@@ -512,9 +543,13 @@ function case_icy($icy)
 	$icy = str_replace(" Ft."," Feat. ",$icy);
 	$icy = str_replace(" Feat."," Feat. ",$icy);
 	
+	$icy = trim(str_replace("P!nk"," Pink",$icy));
 	$icy = trim(str_replace("(Radio)"," ",$icy));
 	$icy = trim(str_replace("(Radio Edit)"," ",$icy));
 	$icy = trim(str_replace("(Radio Version)"," ",$icy));
+	
+	$icy = trim(str_replace(", The - "," - ",$icy));
+	$icy = trim(str_replace(", Die - "," - ",$icy));
 	
 	$icy = str_replace("   "," ",$icy);
 	$icy = str_replace("  "," ",$icy);
@@ -556,8 +591,14 @@ function open_channel(&$havechannels,&$openchannels,&$deadchannels)
 	if (count($havechannels) == 0) return;
 	
 	$channel = array_pop($havechannels);
-	if (isset($deadchannels[ $channel ])) return;
 	if (isset($GLOBALS[ "ignore" ][ $channel ])) return;
+	
+	if (isset($deadchannels[ $channel ]))
+	{
+		if (time() < $deadchannels[ $channel ]) return;
+		
+		unset($deadchannels[ $channel ]);
+	}
 	
 	$setup = get_channel_config($channel);
 	if ($setup == null) return;
@@ -581,6 +622,37 @@ function open_channel(&$havechannels,&$openchannels,&$deadchannels)
 	
 	array_push($oc[ "headers" ],$streamurl);
 	array_push($openchannels,$oc);	
+}
+
+function put_deadchannel($channeldata,$reason = null,$penalty = 0)
+{
+	$channel  = $channeldata[ "channel" ];
+	$deadfile = "./deadchannels/$channel.json";
+	
+	if ($reason === null)
+	{
+		if (file_exists($deadfile)) unlink($deadfile);
+		
+		return;
+	}
+	
+	$dump = Array();
+	
+	if (file_exists($deadfile))
+	{
+		$dump = json_decdat(file_get_contents($deadfile));
+	}
+
+	if (! isset($dump[ "retries" ])) $dump[ "retries" ] = 0;
+	
+	$dump[ "reason"  ]  = $reason;
+	$dump[ "url"     ]  = $channeldata[ "url" ];
+	$dump[ "header"  ]  = $channeldata[ "headers" ];
+	$dump[ "retries" ] += 1;
+	
+	file_put_contents($deadfile,json_encdat($dump) . "\n");
+
+	$deadchannels[ $channel ] = time() + $penalty;
 }
 
 function process_channel(&$openchannels,&$deadchannels)
@@ -611,13 +683,9 @@ function process_channel(&$openchannels,&$deadchannels)
 			
 			if (! isset($urlparts[ "host" ]))
 			{
-				$headers = $openchannels[ $inx ][ "headers" ];
-				array_push($headers,"Badurl....");
-				$headerfile = "./deadchannels/$channel.txt";
-				file_put_contents($headerfile,implode("\n",$headers) . "\n");
-				$deadchannels[ $channel ] = true;
-
+				put_deadchannel($openchannels[ $inx ],"badurl",600);
 				array_splice($openchannels,$inx--,1);
+				
 				echo "--------------------> invalid $streamurl\n";
 				continue;
 			}
@@ -633,7 +701,9 @@ function process_channel(&$openchannels,&$deadchannels)
 			
 			if ($fd == null) 
 			{
+				put_deadchannel($openchannels[ $inx ],"timeout",100);
 				array_splice($openchannels,$inx--,1);
+				
 				echo "--------------------> timeout $streamurl\n";
 				continue;
 			}
@@ -715,10 +785,12 @@ function process_channel(&$openchannels,&$deadchannels)
 						
 					if (! strlen($icy))
 					{
-
+						put_deadchannel($openchannels[ $inx ],"emptyicy",0);
 					}
 					else
 					{
+						put_deadchannel($openchannels[ $inx ]);
+						
 						$icy = nice_icy($icy);
 						$icy = fixups_icy($channel,$icy);
 						$icy = case_icy($icy);
@@ -765,7 +837,18 @@ function process_channel(&$openchannels,&$deadchannels)
 							  . " $query$icy\n";
 						
 						
-						echo $total . " " . $opens . " " . $kbits . " kbit/s " . $line;
+						if ($query != '?') $GLOBALS[ "itemsfound" ]++;
+						if ($query == '$') $GLOBALS[ "itemsknown" ]++;
+						
+						if ($GLOBALS[ "itemsfound" ] > 1000)
+						{
+							$GLOBALS[ "itemsfound" ] = floor($GLOBALS[ "itemsfound" ] / 10);
+							$GLOBALS[ "itemsknown" ] = floor($GLOBALS[ "itemsknown" ] / 10);
+						}
+						
+						$got = floor(99 * $GLOBALS[ "itemsknown" ] / $GLOBALS[ "itemsfound" ]);
+						
+						echo $total . " " . $opens . " " . $kbits . " kbit/s $got% " . $line;
 					}
 				}
 				
@@ -789,14 +872,10 @@ function process_channel(&$openchannels,&$deadchannels)
 				*/
 				
 				if (! isset($openchannels[ $inx ][ "chunk" ]))
-				{
-					$headers = $openchannels[ $inx ][ "headers" ];
-					array_push($headers,"Nochunk....");
-					$headerfile = "./deadchannels/$channel.txt";
-					file_put_contents($headerfile,implode("\n",$headers) . "\n");
-					$deadchannels[ $channel ] = true;
-					
+				{					
 					fclose($fd);
+					
+					put_deadchannel($openchannels[ $inx ],"nochunk",600);
 					array_splice($openchannels,$inx--,1);
 					
 					continue;
@@ -840,9 +919,6 @@ function process_channel(&$openchannels,&$deadchannels)
 	$openchannels = Array();
 	$deadchannels = Array();
 
-	$lastdead = get_channels("deadchannels");
-	foreach ($lastdead as $channel) $deadchannels[ $channel ] = true;
-	
 	$options = array
 	(
   		'http' => array
@@ -854,8 +930,10 @@ function process_channel(&$openchannels,&$deadchannels)
 
 	$context = stream_context_create($options);
 	
-	$downbytes = 0;
-	$downstamp = time() - 1;
+	$downbytes  = 0;
+	$downstamp  = time() - 1;
+	$itemsknown = 0;
+	$itemsfound = 0;
 	
 	while (true)
 	{

@@ -84,148 +84,173 @@ function comp_levenshtein($str1,$str2)
 
 	$context = stream_context_create($options);
 
-  	$library = get_directory("./queries");
-  	
-  	foreach ($library as $track)
-  	{
-  		$trackfile = "./queries/$track";
-  		$trackcont = file_get_contents($trackfile);
-  		$trackjson = json_decdat($trackcont);
-  		
-  		$tracklower = make_nice(substr($track,0,-5));
-  		$trackfound = null;
-  		
-  		$release = Array();
-  		
-  		//
-  		// Identify exact match artists and track.
-  		//
-  		 
-  		if (count($release) == 0)
-  		{
-	  		foreach ($trackjson as $entry)
-  			{
-  				if (! isset($entry[ "title" ])) continue;
-  				
-  				$complower = make_nice($entry[ "title" ]);
-  				
-	  			if (! comp_levenshtein($tracklower,$complower)) continue;
-  				
-				array_push($release,$entry);
-				 
-  				echo $track . "\n";
-  				echo $entry[ "title" ] . "\n";
-  				echo "-----\n";
-  			}
-  		}
-  	
-  		//
-  		// Identify artist and track separate.
-  		//
-  		
-  		if (count($release) == 0)
-  		{
-	  		foreach ($trackjson as $entry)
-  			{
-  				if (! isset($entry[ "title" ])) continue;
-  				
-  				$parts = explode(" - ",$tracklower);
-  				if (count($parts) != 2) continue;
-  				
-  				$complower  = make_nice($entry[ "title" ]);
-  				$compartist = substr($complower,0,strlen($parts[ 0 ]));
-  				$comptitle  = substr($complower, -strlen($parts[ 1 ]));
-  				
-  				if (! comp_levenshtein($compartist,$parts[ 0 ])) continue;
-  				
-  				if ((! comp_levenshtein($comptitle,$parts[ 1 ])) &&
-  					(strstr($complower," - " . $parts[ 1 ]) == false))
-  				{
-  					continue;
-  				}
-  				
-				array_push($release,$entry);
-				 
-  				echo $track . "\n";
-  				echo $entry[ "title" ] . "\n";
-  				echo "-----\n";
-  			}
-  		}
-  		
-  		//
-  		// Identify artist and load release tracks.
-  		//
-  		
-  		if (count($release) == 0)
-  		{
-	  		foreach ($trackjson as $entry)
-  			{
-  				if (! isset($entry[ "title" ])) continue;
-  				
-  				$parts = explode(" - ",$tracklower);
-  				if (count($parts) != 2) continue;
-  				
-  				$complower  = make_nice($entry[ "title" ]);
-  				$compartist = explode(" - ",$complower);
-  				$compartist = $compartist[ 0 ];
-  				
-  				if ((! comp_levenshtein($compartist,$parts[ 0 ])) &&
-  					(substr($complower,0,7) != "various"))
-  				{
-  					continue;
-  				}
-  						 
-  				echo $track . "\n";
-  				echo $entry[ "title" ] . "\n";
-  				echo $entry[ "resource_url" ] . "\n";
-  				echo "=====\n";
-  				
-				$releasecont = file_get_contents($entry[ "resource_url" ],false,$GLOBALS[ "context" ]);
-				if (! $releasecont) continue;
-				$releasejson = json_decdat($releasecont);
-				
-				if (! isset($releasejson[ "tracklist" ])) continue;
-				
-				foreach ($releasejson[ "tracklist" ] as $trackitem)
-				{
-					if (! isset($trackitem[ "title" ])) continue;
-
-					$trackitemlower = make_nice($trackitem[ "title" ]);
-					
-					if (! comp_levenshtein($trackitemlower,$parts[ 1 ])) continue;
-					
-					echo $track . "\n";
-  					echo $trackitem[ "title" ] . "\n";
-  					echo ">>>>>\n";
-
-					array_push($release,$entry);
-
-					break;
-				}
-  			}
-  		}
-  			
-		//
-		// Create release if found.
-		//
+	while (true)
+	{
+		$library = get_directory("./queryok");
 	
-  		if (count($release) > 0)
-  		{
-			$releasefile = "./releases/$track";
-			file_put_contents($releasefile,json_encdat($release) . "\n");
-  			unlink($trackfile);
-		}
-		else
+		foreach ($library as $track)
 		{
-			if (count($trackjson) == 0)
+			$trackfile = "./queryok/$track";
+			$trackcont = file_get_contents($trackfile);
+		
+			if ($trackcont === "")
 			{
-  				unlink($trackfile);
+				$query = str_replace("?","",substr($track,0,-5));
+				$url = "http://api.discogs.com/database/search?q=" . urlencode($query);
+				$discogsjson = file_get_contents($url,false,$GLOBALS[ "context" ]);
+				if ($discogsjson === false) continue;
+			
+				echo $trackfile . "\n";
+				echo ".....\n";
+			
+				$discogs = json_decdat($discogsjson);
+				if (! $discogs) 
+				{
+					echo "?????\n";
+					continue;
+				}
+			
+				$trackcont = json_encdat($discogs[ "results" ]);
+				file_put_contents($trackfile,$trackcont);
+			}
+		
+			$trackjson = json_decdat($trackcont);
+		
+			$tracklower = make_nice(substr($track,0,-5));
+			$trackfound = null;
+		
+			$release = Array();
+		
+			//
+			// Identify exact match artists and track.
+			//
+		 
+			if (count($release) == 0)
+			{
+				foreach ($trackjson as $entry)
+				{
+					if (! isset($entry[ "title" ])) continue;
+				
+					$complower = make_nice($entry[ "title" ]);
+				
+					if (! comp_levenshtein($tracklower,$complower)) continue;
+				
+					array_push($release,$entry);
+				 
+					echo $track . "\n";
+					echo $entry[ "title" ] . "\n";
+					echo "-----\n";
+				}
+			}
+	
+			//
+			// Identify artist and track separate.
+			//
+		
+			if (count($release) == 0)
+			{
+				foreach ($trackjson as $entry)
+				{
+					if (! isset($entry[ "title" ])) continue;
+				
+					$parts = explode(" - ",$tracklower);
+					if (count($parts) != 2) continue;
+				
+					$complower  = make_nice($entry[ "title" ]);
+					$compartist = substr($complower,0,strlen($parts[ 0 ]));
+					$comptitle  = substr($complower, -strlen($parts[ 1 ]));
+				
+					if (! comp_levenshtein($compartist,$parts[ 0 ])) continue;
+				
+					if ((! comp_levenshtein($comptitle,$parts[ 1 ])) &&
+						(strstr($complower," - " . $parts[ 1 ]) == false))
+					{
+						continue;
+					}
+				
+					array_push($release,$entry);
+				 
+					echo $track . "\n";
+					echo $entry[ "title" ] . "\n";
+					echo "-----\n";
+				}
+			}
+		
+			//
+			// Identify artist and load release tracks.
+			//
+		
+			if (count($release) == 0)
+			{
+				foreach ($trackjson as $entry)
+				{
+					if (! isset($entry[ "title" ])) continue;
+				
+					$parts = explode(" - ",$tracklower);
+					if (count($parts) != 2) continue;
+				
+					$complower  = make_nice($entry[ "title" ]);
+					$compartist = explode(" - ",$complower);
+					$compartist = $compartist[ 0 ];
+				
+					if ((! comp_levenshtein($compartist,$parts[ 0 ])) &&
+						(substr($complower,0,7) != "various"))
+					{
+						continue;
+					}
+						 
+					echo $track . "\n";
+					echo $entry[ "title" ] . "\n";
+					echo $entry[ "resource_url" ] . "\n";
+					echo "=====\n";
+				
+					$releasecont = file_get_contents($entry[ "resource_url" ],false,$GLOBALS[ "context" ]);
+					if (! $releasecont) continue;
+					$releasejson = json_decdat($releasecont);
+				
+					if (! isset($releasejson[ "tracklist" ])) continue;
+				
+					foreach ($releasejson[ "tracklist" ] as $trackitem)
+					{
+						if (! isset($trackitem[ "title" ])) continue;
+
+						$trackitemlower = make_nice($trackitem[ "title" ]);
+					
+						if (! comp_levenshtein($trackitemlower,$parts[ 1 ])) continue;
+					
+						echo $track . "\n";
+						echo $trackitem[ "title" ] . "\n";
+						echo ">>>>>\n";
+
+						array_push($release,$entry);
+
+						break;
+					}
+				}
+			}
+			
+			//
+			// Create release if found.
+			//
+	
+			if (count($release) > 0)
+			{
+				$releasefile = "./releases/$track";
+				file_put_contents($releasefile,json_encdat($release) . "\n");
+				unlink($trackfile);
 			}
 			else
 			{
-				$schrottfile = "./schrott/$track";
-	  			rename($trackfile,$schrottfile);
-  			}
+				if (count($trackjson) == 0)
+				{
+					unlink($trackfile);
+				}
+				else
+				{
+					$schrottfile = "./schrott/$track";
+					rename($trackfile,$schrottfile);
+				}
+			}
 		}
   	}
 ?>
