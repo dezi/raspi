@@ -95,12 +95,17 @@ function comp_levenshtein($str1,$str2)
 		
 			if ($trackcont === "")
 			{
+				//
+				// Plain search.
+				//
+				
 				$query = str_replace("?","",substr($track,0,-5));
+				$query = str_replace("Ac-Dc","AC/DC",$query);
 				$url = "http://api.discogs.com/database/search?q=" . urlencode($query);
 				$discogsjson = file_get_contents($url,false,$GLOBALS[ "context" ]);
 				if ($discogsjson === false) continue;
 			
-				echo $trackfile . "\n";
+				echo $query . "\n";
 				echo ".....\n";
 			
 				$discogs = json_decdat($discogsjson);
@@ -112,6 +117,43 @@ function comp_levenshtein($str1,$str2)
 			
 				$trackcont = json_encdat($discogs[ "results" ]);
 				file_put_contents($trackfile,$trackcont);
+				
+				if (count($discogs[ "results" ]) == 0)
+				{
+					$query2 = $query;
+					
+					$query2 = str_replace("Ae","Ä",$query2);
+					$query2 = str_replace("Oe","Ö",$query2);
+					$query2 = str_replace("Ue","Ü",$query2);
+					$query2 = str_replace("ae","ä",$query2);
+					$query2 = str_replace("oe","ö",$query2);
+					$query2 = str_replace("ue","ü",$query2);
+					$query2 = str_replace("ss","ß",$query2);
+					
+					if ($query != $query2)
+					{
+						//
+						// Retry german search.
+						//
+						
+						$url = "http://api.discogs.com/database/search?q=" . urlencode($query2);
+						$discogsjson = file_get_contents($url,false,$GLOBALS[ "context" ]);
+						if ($discogsjson === false) continue;
+			
+						echo $query2 . "\n";
+						echo ".....\n";
+			
+						$discogs = json_decdat($discogsjson);
+						if (! $discogs) 
+						{
+							echo "?????\n";
+							continue;
+						}
+			
+						$trackcont = json_encdat($discogs[ "results" ]);
+						file_put_contents($trackfile,$trackcont);
+					}
+				}
 			}
 		
 			$trackjson = json_decdat($trackcont);

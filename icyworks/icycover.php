@@ -47,7 +47,7 @@ function get_directory($what)
 			
 			$thumb = $release[ "thumb" ];
 			$thumb = str_replace("R-90-","R-150-",$thumb);
-			$thumb = str_replace("api.discogs.com","s.pixogs.com",$thumb);
+			//$thumb = str_replace("api.discogs.com","s.pixogs.com",$thumb);
 
 			$parts = explode("/",$thumb);
 			$local = "./images/" . $parts[ count($parts) - 1 ];
@@ -62,7 +62,6 @@ function get_directory($what)
 			if ($jpeg === false) continue;
 			
 			file_put_contents($local,$jpeg);
-			sleep(1);
 		}
 	}
 ?>

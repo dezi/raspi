@@ -66,6 +66,69 @@ function consume_release($release)
 	}
 }
 
+function consume_artist($artist)
+{
+	if (strlen($artist) == 0) return;
+	
+	//if (! preg_match('/<release id="([0-9]*)"/',$release,$result)) return;
+	
+	//$id   = $result[ 1 ];
+	$xml  = simplexml_load_string($release);
+	$json = json_encdat($xml);
+	$data = json_decdat($json);
+	json_nukeempty($data);
+	$json = json_encdat($data);
+	echo $json . " \n";
+	exit(0);
+	
+	$file = str_pad($id,10,"0",STR_PAD_LEFT);
+	
+	file_put_contents("./discogs/$file.json",trim($json) . "\n");
+	
+	$artist = "";
+	
+	if (isset($data[ "artists" ])) $artist = build_artist($data[ "artists" ]);
+	
+	if (isset($data[ "tracklist" ]) &&
+	    isset($data[ "tracklist" ][ "track" ]))
+	{
+		foreach ($data[ "tracklist" ][ "track" ] as $track)
+		{
+			if (! isset($track[ "title" ])) continue;
+			
+			$title = $track[ "title" ];
+			
+			$thisartist = $artist;
+						
+			if (isset($track[ "artists" ])) $thisartist = build_artist($track[ "artists" ]);
+
+			echo "$file $thisartist - $title\n";
+		}
+	}
+}
+
+	$pfd = popen("gunzip < discogs_20130401_artists.xml.gz","r");
+	
+	fgets($pfd);
+	
+	$artist = "";
+	
+	while (($line = fgets($pfd)) != null)
+	{
+		if (substr($line,0,12) == "<artist>")
+		{
+			consume_artist($artist);
+			$artist = "";
+		}
+		
+		$artist .= $line;
+	}
+	
+	consume_artist($artist);
+	
+	pclose($pfd);
+
+	/*
 	$pfd = popen("gunzip < discogs_20130401_releases.xml.gz","r");
 	
 	fgets($pfd);
@@ -85,5 +148,6 @@ function consume_release($release)
 	
 	consume_release($release);
 	
-	pclose($pfd);	
+	pclose($pfd);
+	*/
 ?>

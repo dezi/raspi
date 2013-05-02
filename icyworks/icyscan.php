@@ -279,16 +279,14 @@ function nuke_icy($channel,$icy)
 			
 			$pattern = $sepa . $from . $sepa . $modi;
 			
-			if (! preg_match($pattern,$icy)) 
+			if (preg_match($pattern,$icy) === 1) 
 			{			
-				//echo "====> nuke preg_match($pattern) => $icy\n";
-
 				return true;
 			}
 		}
 	}
 
-	return false;
+	return ($channel != "*") ? nuke_icy("*",$icy) : false;
 }
 
 function nice_fup($icy)
@@ -464,6 +462,33 @@ function nice_icy($icy)
 	if (substr($icy,-1) == "-") $icy = trim(substr($icy,0,-1));
 	if (substr($icy,-1) == "*") $icy = trim(substr($icy,0,-1));
 	
+	if ((strstr($icy,"(") !== false) && 
+		(strstr($icy,")") === false))
+	{
+		$icy .= ")";
+	}
+	
+	return $icy;
+}
+	
+function feat_icy($icy)
+{
+	$parts = explode(" - ",$icy);
+	
+	if ((count($parts) == 2) && (strpos($parts[ 1 ],"(") === false))
+	{
+		$funzs = explode(" Feat. ",$parts[ 1 ]);
+		
+		if (count($funzs) == 2)
+		{
+			$icy = $parts[ 0 ] 
+				 . " Feat. " 
+				 . $funzs[ 1 ] 
+				 . " - "
+				 . $funzs[ 0 ];
+		}
+	}
+
 	return $icy;
 }
 
@@ -540,6 +565,8 @@ function case_icy($icy)
 	$icy = str_replace(" vs."," Vs. ",$icy);
 	$icy = str_replace(" Vs."," Vs. ",$icy);
 	$icy = str_replace(" ft."," Feat. ",$icy);
+	$icy = str_replace(" Ft "," Feat. ",$icy);
+	$icy = str_replace(" Feat "," Feat. ",$icy);
 	$icy = str_replace(" Ft."," Feat. ",$icy);
 	$icy = str_replace(" Feat."," Feat. ",$icy);
 	
@@ -795,7 +822,8 @@ function process_channel(&$openchannels,&$deadchannels)
 						$icy = fixups_icy($channel,$icy);
 						$icy = case_icy($icy);
 						$icy = reverse_icy($channel,$icy);
-
+						$icy = feat_icy($icy);
+						
 						if (nuke_icy($channel,$icy)) continue;
 
 						$lasticy = "";

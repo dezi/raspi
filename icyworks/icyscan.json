@@ -84,7 +84,6 @@
 			"!de.radiosaw!| radio SAW-Neuheiten!!",
 			"!de.radiosaw70er!| radio SAW-70er!!",
 			"|de.radiozwiebel| (Dj Tonarm)||",
-			"|de.radiozwiebeldorf|..::live On Air über den Wolken ::..||",
 			"!de.rocklanddigital!| Rockland!!",
 			"|de.starfmberlin|NEXT: ||",
 			"|de.starfmnuernberg|Next: ||",
@@ -152,9 +151,11 @@
 			"|de.hr24discofox|^[0-9 ]*\\.|||",
 			"|de.loungeloversfm|^[0-9 ]*\\. |||",
 			"|de.radioeleven|- Sendestudio.*|||",
+			"|de.freshlane| - .* - | - ||",
 			"|de.kamikaze-radio| - .* - | - ||",
 			"|de.kamikaze-radio|^[0-9]* |||",
 			"|de.livesong-radio| - Live.*$| (Live)||",
+			"|de.radiozwiebeldorf|\\.\\.::.*?::\\.\\.||",
 			
 			"/de.turntables24/ |.*?|.*$//",
 
@@ -256,6 +257,7 @@
 			"|de.funkhauseuropa|eMail:|",
 			"|de.funkhauseuropa|www.funkhauseuropa.de|",
 			"|de.funkhauseuropa|Hotline -|",
+			"|de.freshlane|Radionomy - Radionomy|",
 			"|de.gothicradiofm|nachrichten|",
 			"|de.hellwegradio|www.hellwegradio.de|",
 			"|de.hitradioantenne|Hit-Radio Antenne|",
@@ -390,6 +392,9 @@
 	
 		"preg_match":
 		[
+			"|*|^Werbung:||",
+			"|*|^Werbung -||",
+			
 			"|de.antenneblackbeatz|^-$||",
 			"|de.big-up|^Ad$||",
 			"|de.bigmusicblack|^[0-9a-z]*$||",
