@@ -985,7 +985,7 @@ static const AVFilterPad avfilter_vf_logo_outputs[] = {
     { NULL }
 };
 
-AVFilter avfilter_vf_logo = {
+AVFilter ff_vf_logo = {
     .name      = "logo",
     .description = NULL_IF_CONFIG_SMALL("Logo overlay filter."),
     .priv_size = sizeof(LogoContext),
