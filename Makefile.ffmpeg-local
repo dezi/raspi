@@ -47,36 +47,36 @@ $(ffmpeg)/libavfilter/vf_logo.c:
 ffmpeg-common = \
 	--enable-gpl \
 	--enable-version3 \
-	--disable-nonfree \
+	--enable-nonfree \
 	--enable-runtime-cpudetect \
 	--enable-hardcoded-tables \
 	--enable-zlib \
 	--enable-bzlib \
 	--enable-gnutls \
-	--disable-librtmp \
-	--disable-libfreetype \
-	--disable-libfdk-aac \
-	--disable-libopencore-amrnb \
-	--disable-libopencore-amrwb \
-	--disable-libvo-aacenc \
-	--disable-libvo-amrwbenc \
-	--disable-libmp3lame \
-	--disable-libopenjpeg \
-	--disable-libtheora \
-	--disable-libvorbis \
-	--disable-libspeex \
+	--enable-librtmp \
+	--enable-libfreetype \
+	--enable-libfdk-aac \
+	--enable-libopencore-amrnb \
+	--enable-libopencore-amrwb \
+	--enable-libvo-aacenc \
+	--enable-libvo-amrwbenc \
+	--enable-libmp3lame \
+	--enable-libopenjpeg \
+	--enable-libtheora \
+	--enable-libvorbis \
+	--enable-libspeex \
 	--disable-libass \
-	--disable-libopus \
-	--disable-libgsm \
-	--disable-libvpx \
-	--disable-libxavs \
-	--disable-libxvid \
-	--disable-libx264 \
-	--disable-libbluray \
-	--disable-libschroedinger \
-	--disable-libilbc \
-	--disable-fontconfig \
-	--disable-frei0r \
+	--enable-libopus \
+	--enable-libgsm \
+	--enable-libvpx \
+	--enable-libxavs \
+	--enable-libxvid \
+	--enable-libx264 \
+	--enable-libbluray \
+	--enable-libschroedinger \
+	--enable-libilbc \
+	--enable-fontconfig \
+	--enable-frei0r \
 	--disable-filter=frei0r \
 	
 ffmpeg-shared = \
@@ -159,7 +159,6 @@ $(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
 	touch dezi.static.done
 	
 $(ffmpeg)/dezi.shared.conf:
-	${ffmpeg-env-xodroid}; \
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
@@ -185,5 +184,5 @@ ffmpeg: \
 	$(ffmpeg) \
 	$(ffmpeg)/libavfilter/vf_logo.c \
 	$(ffmpeg)/dezi.shared.done \
-	#$(ffmpeg)/dezi.static.done \
+	$(ffmpeg)/dezi.static.done \
 
