@@ -3,6 +3,7 @@
  *
  * Filter to overlay logo on top of video
  *
+ * Copyright (c) 2014 Dennis Zierahn   (update to current ffmpeg)
  * Copyright (c) 2013 Dennis Zierahn   (update to current ffmpeg)
  * Copyright (c) 2012 Dennis Zierahn   (update to current ffmpeg)
  * Copyright (c) 2010 Dennis Zierahn   (major revision)
@@ -147,18 +148,13 @@ static int load_logo_create_frames(AVFilterContext *ctx);
 static av_cold int init(AVFilterContext *ctx, const char *args)
 {
     LogoContext *logo = ctx->priv;
-    static const char *shorthand[] = { "x", "y", "i", NULL };
     int ret;
 	
     av_log(NULL, AV_LOG_INFO, "vf_logo: init\n");
     av_log(NULL, AV_LOG_INFO, "vf_logo: version %s\n", VF_LOGO_VERSION);
-
+	
     logo->class = &logo_class;
-    av_opt_set_defaults(logo);
-
-    if ((ret = av_opt_set_from_string(logo, args, shorthand, "=", ":")) < 0)
-        return ret;
-		
+			
     logo->alpha_R = -1;
     logo->alpha_G = -1;
     logo->alpha_B = -1;
@@ -986,14 +982,14 @@ static const AVFilterPad avfilter_vf_logo_outputs[] = {
 };
 
 AVFilter ff_vf_logo = {
-    .name      = "logo",
-    .description = NULL_IF_CONFIG_SMALL("Logo overlay filter."),
-    .priv_size = sizeof(LogoContext),
-    .init      = init,
-    .uninit    = uninit,
+    .name           = "logo",
+    .description    = NULL_IF_CONFIG_SMALL("Logo overlay filter."),
+    .priv_size      = sizeof(LogoContext),
+    .priv_class     = &logo_class,
+    .init           = init,
+    .uninit         = uninit,
 
-    .query_formats   = query_formats,
-    .inputs    = avfilter_vf_logo_inputs,
-    .outputs   = avfilter_vf_logo_outputs,
-    .priv_class = &logo_class,
+    .query_formats  = query_formats,
+    .inputs         = avfilter_vf_logo_inputs,
+    .outputs        = avfilter_vf_logo_outputs,
 };
