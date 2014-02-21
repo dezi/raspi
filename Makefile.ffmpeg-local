@@ -119,12 +119,10 @@ ffmpeg-alloptions = \
 	--enable-libsoxr \
 	--enable-libspeex \
 	--enable-libssh \
-	--enable-libstagefright-h264 \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libutvideo \
 	--enable-libv4l2 \
-	--enable-libvidstab \
 	--enable-libvo-aacenc \
 	--enable-libvo-amrwbenc \
 	--enable-libvorbis \
@@ -132,10 +130,8 @@ ffmpeg-alloptions = \
 	--enable-libwavpack \
 	--enable-libwebp \
 	--enable-libx264 \
-	--enable-libx265 \
 	--enable-libxavs \
 	--enable-libxvid \
-	--enable-libzmq \
 	--enable-libzvbi \
 	--enable-openal \
 	--enable-opencl \
@@ -145,6 +141,10 @@ ffmpeg-alloptions = \
 
 ffmpeg-failoptions = \
 	--enable-decklink \
+	--enable-libstagefright-h264 \
+	--enable-libvidstab \
+	--enable-libx265 \
+	--enable-libzmq \
 	
 ffmpeg-shared = \
 	--disable-static \
@@ -251,7 +251,7 @@ $(ffmpeg)/dezi.test.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	./configure $(ffmpeg-alloptions) $(ffmpeg-shared) || exit; \
+	./configure $(ffmpeg-alloptions) $(ffmpeg-static) || exit; \
 	touch dezi.test.conf
 	
 ffmpeg-test: \

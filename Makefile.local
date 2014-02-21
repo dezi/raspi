@@ -12,6 +12,8 @@
 # sudo apt-get install libio-socket-ssl-perl
 #
 
+shine_version				= git
+libnut_version				= git
 celt_version				= git
 libcec_version				= git
 noip_version				= 2.1.9-1
@@ -87,6 +89,8 @@ v8_version 					= git
 
 #####################################################################
 
+shine = shine-$(shine_version)
+libnut = libnut-$(libnut_version)
 celt = celt-$(celt_version)
 libcec = libcec-$(libcec_version)
 noip = noip-$(noip_version)
@@ -180,7 +184,7 @@ tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump libcec
 
 codecs: \
-	celt libcdio libgsm libmad libass libxml2 \
+	celt shine libnut libcdio libgsm libmad libass libxml2 \
 	libogg libvorbis libtheora libbluray libvpx \
 	libaacplus libcaca libilbc \
 	opus openjpeg fdk-aac xvidcore x264 \
@@ -298,6 +302,45 @@ $(celt)/dezi.done: celt-git
 	touch dezi.done
 
 celt: celt-git/dezi.done
+
+##################################################################
+#
+# shine
+#
+
+$(shine):
+	git clone --depth 5 https://github.com/savonet/shine.git $(shine)
+	tar -cvzf $(shine).tar.gz $(shine)
+	mv $(shine).tar.gz ../download
+
+$(shine)/dezi.done: shine-git
+	cd $(shine); \
+	./bootstrap; \
+	./configure; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+shine: shine-git/dezi.done
+
+##################################################################
+#
+# libnut
+#
+
+$(libnut):
+	git clone --depth 5 https://github.com/Distrotech/libnut $(libnut)
+	tar -cvzf $(libnut).tar.gz $(libnut)
+	mv $(libnut).tar.gz ../download
+
+$(libnut)/dezi.done: libnut-git
+	cd $(libnut); \
+	echo "prefix = /usr/local" | tee -a Makefile; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+libnut: libnut-git/dezi.done
 
 ##################################################################
 #
