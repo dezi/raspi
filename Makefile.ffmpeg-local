@@ -78,6 +78,73 @@ ffmpeg-common = \
 	--enable-fontconfig \
 	--enable-frei0r \
 	--disable-filter=frei0r \
+
+ffmpeg-alloptions = \
+	--enable-gpl \
+	--enable-nonfree \
+	--enable-version3 \
+	--enable-avisynth \
+	--enable-fontconfig \
+	--enable-frei0r \
+	--enable-gnutls \
+	--enable-ladspa \
+	--enable-libaacplus \
+	--enable-libass \
+	--enable-libbluray \
+	--enable-libcaca \
+	--enable-libcelt \
+	--enable-libcdio \
+	--enable-libdc1394 \
+	--enable-libfaac \
+	--enable-libfdk-aac \
+	--enable-libflite \
+	--enable-libfreetype \
+	--enable-libgme \
+	--enable-libgsm \
+	--enable-libiec61883 \
+	--enable-libilbc \
+	--enable-libmodplug \
+	--enable-libmp3lame \
+	--enable-libnut \
+	--enable-libopencore-amrnb \
+	--enable-libopencore-amrwb \
+	--enable-libopencv \
+	--enable-libopenjpeg \
+	--enable-libopus \
+	--enable-libpulse \
+	--enable-libquvi \
+	--enable-librtmp \
+	--enable-libschroedinger \
+	--enable-libshine \
+	--enable-libsoxr \
+	--enable-libspeex \
+	--enable-libssh \
+	--enable-libstagefright-h264 \
+	--enable-libtheora \
+	--enable-libtwolame \
+	--enable-libutvideo \
+	--enable-libv4l2 \
+	--enable-libvidstab \
+	--enable-libvo-aacenc \
+	--enable-libvo-amrwbenc \
+	--enable-libvorbis \
+	--enable-libvpx \
+	--enable-libwavpack \
+	--enable-libwebp \
+	--enable-libx264 \
+	--enable-libx265 \
+	--enable-libxavs \
+	--enable-libxvid \
+	--enable-libzmq \
+	--enable-libzvbi \
+	--enable-openal \
+	--enable-opencl \
+	--enable-opengl \
+	--enable-openssl \
+	--enable-x11grab \
+
+ffmpeg-failoptions = \
+	--enable-decklink \
 	
 ffmpeg-shared = \
 	--disable-static \
@@ -179,6 +246,18 @@ $(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
 	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared; \
 	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
 	touch dezi.shared.done
+	
+$(ffmpeg)/dezi.test.conf:
+	cd $(ffmpeg); \
+	rm -f ffmpeg ffplay ffprobe ffserver; \
+	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
+	./configure $(ffmpeg-alloptions) $(ffmpeg-shared) || exit; \
+	touch dezi.test.conf
+	
+ffmpeg-test: \
+	$(ffmpeg) \
+	$(ffmpeg)/libavfilter/vf_logo.c \
+	$(ffmpeg)/dezi.test.conf \
 	
 ffmpeg: \
 	$(ffmpeg) \
