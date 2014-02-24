@@ -97,16 +97,12 @@ ffmpeg-alloptions = \
 	--enable-libfreetype \
 	--enable-libgme \
 	--enable-libgsm \
-	--enable-libiec61883 \
 	--enable-libilbc \
-	--enable-libmodplug \
 	--enable-libmp3lame \
 	--enable-libnut \
 	--enable-libopencore-amrnb \
 	--enable-libopencore-amrwb \
 	--enable-libopenjpeg \
-	--enable-libopus \
-	--enable-libpulse \
 	--enable-libschroedinger \
 	--enable-libsoxr \
 	--enable-libspeex \
@@ -124,28 +120,20 @@ ffmpeg-alloptions = \
 	--enable-libxavs \
 	--enable-libxvid \
 	--enable-libzvbi \
-	--enable-gnutls \
-	--enable-libbluray \
-	--enable-libv4l2 \
-	--enable-libssh \
-	--enable-libshine \
-	--enable-libquvi \
-	--enable-librtmp \
-	--enable-libdc1394 \
-	--enable-libopencv \
-	--enable-opengl \
-	--enable-openal \
-	--enable-opencl \
-	--enable-openssl \
-	--enable-x11grab \
 
 ffmpeg_allshared = \
+	--enable-shared \
+	--enable-static \
 	--enable-gnutls \
 	--enable-libbluray \
+	--enable-libiec61883 \
+	--enable-libmodplug \
 	--enable-libv4l2 \
 	--enable-libssh \
 	--enable-libshine \
+	--enable-libopus \
 	--enable-libquvi \
+	--enable-libpulse \
 	--enable-librtmp \
 	--enable-libdc1394 \
 	--enable-libopencv \
@@ -202,7 +190,6 @@ ffmpeg-alllibs = \
 	--extra-libs="-lv4lconvert" \
 	--extra-libs="-lraw1394" \
 	--extra-libs="-lasound" \
-	--extra-libs="-lSDL2" \
 	--extra-libs="-lSDL" \
 	--extra-libs="-lusb-1.0" \
 	--extra-libs="-lgusb" \
@@ -213,34 +200,9 @@ ffmpeg-alllibs = \
 ffmpeg-allstatic = \
 	--enable-static \
 	--disable-shared \
-	--extra-libs="-lrt" \
-	--extra-libs="-ljpeg" \
-	--extra-libs="-lv4lconvert" \
-	--extra-libs="-lopencv_core" \
-	--extra-libs="-lsasl2" \
-	--extra-libs="-llua5.1" \
-	--extra-libs="-lgpg-error" \
-	--extra-libs="-lssh2" \
-	--extra-libs="-lgssapi_krb5" \
-	--extra-libs="-llber" \
-	--extra-libs="-lldap" \
-	--extra-libs="-lgudev-1.0" \
-	--extra-libs="-lusb-1.0" \
-	--extra-libs="-lp11-kit" \
-	--extra-libs="-lgcrypt" \
-	--extra-libs="-llzma" \
-	--extra-libs="-lfribidi" \
-	--extra-libs="-lenca" \
-	--extra-libs="-lorc-0.4" \
-	--extra-libs="-lxml2" \
-	--extra-libs="-ltasn1" \
-	--extra-libs="-lgpm" \
-	--extra-libs="-lpng12" \
-	--extra-libs="-lexpat" \
-	--extra-libs="-ltinfo" \
-	--extra-libs="-lncursesw" \
-	--extra-libs="-lslang" \
-	--extra-libs="-L../../static" \
+	--disable-outdevs \
+	--disable-decoder=mpeg_xvmc_decoder \
+	--extra-ldflags="-v" \
 	
 ffmpeg-shared = \
 	--enable-shared \
@@ -350,7 +312,7 @@ $(ffmpeg)/dezi.test.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	./configure $(ffmpeg-alloptions) --disable-shared --enable-static || exit; \
+	./configure $(ffmpeg-alloptions) $(ffmpeg-allstatic) || exit; \
 	touch dezi.test.conf
 	
 ffmpeg-test: \
