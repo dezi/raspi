@@ -29,6 +29,7 @@ libfontconfig1-dev \
 libfreetype6-dev \
 libfribidi-dev \
 libgl1-mesa-dev \
+libglib2.0-dev \
 libgme-dev \
 libgmp-dev \
 libgnutls-dev \
@@ -65,6 +66,7 @@ libopus-dev \
 liborc-0.4-dev \
 libp11-dev \
 libpango1.0-dev \
+libpcre3-dev \
 libpng12-dev \
 libpulse-dev \
 libquvi-dev \

@@ -86,10 +86,8 @@ ffmpeg-alloptions = \
 	--enable-fontconfig \
 	--enable-frei0r \
 	--enable-ladspa \
-	--enable-libaacplus \
 	--enable-libass \
 	--enable-libcaca \
-	--enable-libcelt \
 	--enable-libcdio \
 	--enable-libfaac \
 	--enable-libfdk-aac \
@@ -126,9 +124,11 @@ ffmpeg_allshared = \
 	--enable-static \
 	--enable-gnutls \
 	--enable-libbluray \
+	--enable-libaacplus \
 	--enable-libiec61883 \
 	--enable-libmodplug \
 	--enable-libv4l2 \
+	--enable-libcelt \
 	--enable-libssh \
 	--enable-libshine \
 	--enable-libopus \
@@ -200,8 +200,8 @@ ffmpeg-alllibs = \
 ffmpeg-allstatic = \
 	--enable-static \
 	--disable-shared \
+	--disable-indev=alsa \
 	--disable-outdevs \
-	--disable-decoder=mpeg_xvmc_decoder \
 	--extra-ldflags="-v" \
 	
 ffmpeg-shared = \

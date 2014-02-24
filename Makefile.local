@@ -48,7 +48,7 @@ fontconfig_version 			= git
 libcddb_version				= 1.3.2
 taglib_version				= 1.8
 libdvdcss_version 			= 1.2.12
-fribidi_version 			= 0.19.5
+fribidi_version 			= 0.19.6
 rtmpdump_version 			= git
 
 libcdio_version				= 0.90

@@ -8,7 +8,17 @@ function dolib($name,$path,&$mods,$excl,$level = 1)
 	
 	$pad = str_pad("",$level * 4," ");
 	
-	exec("ldd $path",$lines);
+	//
+	// Prefer locally builds objects before standard objects
+	// when analyzing shared objects.
+	//
+
+	$localpath = "/usr/local/lib/" . array_pop(explode("/",$path));
+
+	if (file_exists($localpath))
+		exec("ldd $localpath",$lines);
+	else
+		exec("ldd $path",$lines);
 	
 	$childs = 0;
 	
@@ -37,31 +47,33 @@ function dolib($name,$path,&$mods,$excl,$level = 1)
 	$mods[ $name ][ "childs" ] = $childs;
 	$mods[ $name ][ "shared" ] = $path;
 	$mods[ $name ][ "sname"  ] = $sname;
-		
-	if (! isset($mods[ $name ][ "static" ]))
-	{		
-		$test = "/lib/$sname";
-		if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
-		$test = "/usr/lib/$sname";
-		if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
-		$test = "/usr/local/lib/$sname";
-		if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
-		$test = "/lib/arm-linux-gnueabihf/$sname";
-		if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
-		$test = "/usr/lib/arm-linux-gnueabihf/$sname";
-		if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
-	}
+
+	//
+	// Try to identify the matching static archives.
+	//
+
+	$test = "/lib/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	$test = "/usr/lib/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	$test = "/usr/local/lib/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	$test = "/lib/arm-linux-gnueabihf/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	$test = "/usr/lib/arm-linux-gnueabihf/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	$test = "/usr/lib/gcc/arm-linux-gnueabihf/4.8/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
 }
 
 $excl = array();
 
-//$excl[ "libc.so.6"       ] = true;
-//$excl[ "libm.so.6"       ] = true;
-//$excl[ "libdl.so.2"      ] = true;
-//$excl[ "libpthread.so.0" ] = true;
-//$excl[ "libstdc++.so.6"  ] = true;
-
-$excl[ "libgcc_s.so.1"   ] = true;
+$excl[ "libgcc_s.so.1" ] = true;
 
 $extrashared = "";
 $extrastatic = "";
