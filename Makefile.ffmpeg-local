@@ -83,18 +83,14 @@ ffmpeg-alloptions = \
 	--enable-gpl \
 	--enable-nonfree \
 	--enable-version3 \
-	--enable-avisynth \
 	--enable-fontconfig \
 	--enable-frei0r \
-	--enable-gnutls \
 	--enable-ladspa \
 	--enable-libaacplus \
 	--enable-libass \
-	--enable-libbluray \
 	--enable-libcaca \
 	--enable-libcelt \
 	--enable-libcdio \
-	--enable-libdc1394 \
 	--enable-libfaac \
 	--enable-libfdk-aac \
 	--enable-libflite \
@@ -108,21 +104,16 @@ ffmpeg-alloptions = \
 	--enable-libnut \
 	--enable-libopencore-amrnb \
 	--enable-libopencore-amrwb \
-	--enable-libopencv \
 	--enable-libopenjpeg \
 	--enable-libopus \
 	--enable-libpulse \
-	--enable-libquvi \
-	--enable-librtmp \
 	--enable-libschroedinger \
-	--enable-libshine \
 	--enable-libsoxr \
 	--enable-libspeex \
-	--enable-libssh \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libutvideo \
-	--enable-libv4l2 \
+	--enable-libvidstab \
 	--enable-libvo-aacenc \
 	--enable-libvo-amrwbenc \
 	--enable-libvorbis \
@@ -133,27 +124,131 @@ ffmpeg-alloptions = \
 	--enable-libxavs \
 	--enable-libxvid \
 	--enable-libzvbi \
+	--enable-gnutls \
+	--enable-libbluray \
+	--enable-libv4l2 \
+	--enable-libssh \
+	--enable-libshine \
+	--enable-libquvi \
+	--enable-librtmp \
+	--enable-libdc1394 \
+	--enable-libopencv \
+	--enable-opengl \
 	--enable-openal \
 	--enable-opencl \
-	--enable-opengl \
 	--enable-openssl \
 	--enable-x11grab \
 
-ffmpeg-failoptions = \
-	--enable-decklink \
+ffmpeg_allshared = \
+	--enable-gnutls \
+	--enable-libbluray \
+	--enable-libv4l2 \
+	--enable-libssh \
+	--enable-libshine \
+	--enable-libquvi \
+	--enable-librtmp \
+	--enable-libdc1394 \
+	--enable-libopencv \
+	--enable-opengl \
+	--enable-openal \
+	--enable-opencl \
+	--enable-openssl \
+	--enable-x11grab \
+
+ffmpeg-alloptionsfail = \
+	--enable-avisynth \
 	--enable-libstagefright-h264 \
-	--enable-libvidstab \
 	--enable-libx265 \
-	--enable-libzmq \
+	--enable-decklink \
+
+ffmpeg-alllibs = \
+	--extra-libs="-lm" \
+	--extra-libs="-lz" \
+	--extra-libs="-ldl" \
+	--extra-libs="-lrt" \
+	--extra-libs="-lbz2" \
+	--extra-libs="-lpng" \
+	--extra-libs="-lexpat" \
+	--extra-libs="-lfreetype" \
+	--extra-libs="-lbz2" \
+	--extra-libs="-lfontconfig" \
+	--extra-libs="-lorc-0.4" \
+	--extra-libs="-lgmp" \
+	--extra-libs="-lhogweed" \
+	--extra-libs="-lnettle" \
+	--extra-libs="-lgnutls" \
+	--extra-libs="-ltasn1" \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-llzma" \
+	--extra-libs="-lzmq" \
+	--extra-libs="-lxml2" \
+	--extra-libs="-lcdio" \
+	--extra-libs="-lcdio_cdda" \
+	--extra-libs="-lcdio_paranoia" \
+	--extra-libs="-lgpg-error" \
+	--extra-libs="-lgusb" \
+	--extra-libs="-lxcb" \
+	--extra-libs="-lshine" \
+	--extra-libs="-lenca" \
+	--extra-libs="-lslang" \
+	--extra-libs="-ltinfo" \
+	--extra-libs="-lgpm" \
+	--extra-libs="-lncursesw" \
+	--extra-libs="-lcurses" \
+	--extra-libs="-lncurses" \
+	--extra-libs="-lcrypt" \
+	--extra-libs="-lcrypto" \
+	--extra-libs="-lgcrypt" \
+	--extra-libs="-lv4lconvert" \
+	--extra-libs="-lraw1394" \
+	--extra-libs="-lasound" \
+	--extra-libs="-lSDL2" \
+	--extra-libs="-lSDL" \
+	--extra-libs="-lusb-1.0" \
+	--extra-libs="-lgusb" \
+	--extra-libs="-lusb" \
+	--extra-libs="-lquvi" \
+	--extra-libs="-lpng" \
+	
+ffmpeg-allstatic = \
+	--enable-static \
+	--disable-shared \
+	--extra-libs="-lrt" \
+	--extra-libs="-ljpeg" \
+	--extra-libs="-lv4lconvert" \
+	--extra-libs="-lopencv_core" \
+	--extra-libs="-lsasl2" \
+	--extra-libs="-llua5.1" \
+	--extra-libs="-lgpg-error" \
+	--extra-libs="-lssh2" \
+	--extra-libs="-lgssapi_krb5" \
+	--extra-libs="-llber" \
+	--extra-libs="-lldap" \
+	--extra-libs="-lgudev-1.0" \
+	--extra-libs="-lusb-1.0" \
+	--extra-libs="-lp11-kit" \
+	--extra-libs="-lgcrypt" \
+	--extra-libs="-llzma" \
+	--extra-libs="-lfribidi" \
+	--extra-libs="-lenca" \
+	--extra-libs="-lorc-0.4" \
+	--extra-libs="-lxml2" \
+	--extra-libs="-ltasn1" \
+	--extra-libs="-lgpm" \
+	--extra-libs="-lpng12" \
+	--extra-libs="-lexpat" \
+	--extra-libs="-ltinfo" \
+	--extra-libs="-lncursesw" \
+	--extra-libs="-lslang" \
+	--extra-libs="-L../../static" \
 	
 ffmpeg-shared = \
-	--disable-static \
 	--enable-shared \
+	--disable-static \
 	
 ffmpeg-static = \
-	--disable-shared \
-	--enable-static \
-	--extra-cflags=--static	\
+	--enable-shared \
+	--disable-static \
 	--extra-ldflags="-L../../static" \
 
 ffmpeg-libs = \
@@ -198,12 +293,16 @@ ffmpeg-env-xodroid= \
 	export CFLAGS="$$CFLAGS -fgnu89-inline"; \
 	export CPPFLAGS="$$CFLAGS"; \
 	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
-	
-$(ffmpeg)/dezi.static.conf:
+
+nixi:
 	mkdir -p ../static;
 	ln -sf /usr/local/lib/lib*.a ../static
 	ln -sf /usr/local/lib64/lib*.a ../static
 	ln -sf /usr/local/lib77/lib*.a ../static
+	ln -sf /usr/lib/arm-linux-gnueabihf/lib*.a ../static
+	ln -sf /lib/arm-linux-gnueabihf/lib*.a ../static
+	
+$(ffmpeg)/dezi.static.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
@@ -251,7 +350,7 @@ $(ffmpeg)/dezi.test.conf:
 	cd $(ffmpeg); \
 	rm -f ffmpeg ffplay ffprobe ffserver; \
 	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	./configure $(ffmpeg-alloptions) $(ffmpeg-static) || exit; \
+	./configure $(ffmpeg-alloptions) --disable-shared --enable-static || exit; \
 	touch dezi.test.conf
 	
 ffmpeg-test: \

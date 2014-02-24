@@ -12,6 +12,9 @@
 # sudo apt-get install libio-socket-ssl-perl
 #
 
+vidsta_version				= git
+enca_version				= git
+libzmq_version				= git
 shine_version				= git
 libnut_version				= git
 celt_version				= git
@@ -75,7 +78,7 @@ xvidcore_version			= 1.3.2
 orc_version 				= 0.4.16
 schroedinger_version 		= 1.0.11
 xavs_version				= svn
-utvideo_version				= 11.1.1
+libutvideo_version				= git
 speex_version 				= 1.2rc1
 frei0r_version				= 1.3
 
@@ -89,6 +92,9 @@ v8_version 					= git
 
 #####################################################################
 
+vidsta = vidsta-$(vidsta_version)
+enca = enca-$(enca_version)
+libzmq = libzmq-$(libzmq_version)
 shine = shine-$(shine_version)
 libnut = libnut-$(libnut_version)
 celt = celt-$(celt_version)
@@ -118,7 +124,7 @@ vo-amrwbenc = vo-amrwbenc-$(vo-amrwbenc_version)
 vo-aacenc = vo-aacenc-$(vo-aacenc_version)
 xvidcore = xvidcore-$(xvidcore_version)
 xavs = xavs-$(xavs_version)
-utvideo = utvideo-$(utvideo_version)
+libutvideo = libutvideo-$(libutvideo_version)
 opus = opus-$(opus_version)
 openjpeg = openjpeg-$(openjpeg_version)
 speex = speex-$(speex_version)
@@ -172,6 +178,8 @@ xtarget=$(shell if [ -f /usr/bin/raspi-config ]; then echo -n "xberry"; else ech
 # Build section.
 #
 
+nix:
+
 all: tools helpers codecs utilities mxf
 
 packs: afpfs-ng-pack
@@ -184,13 +192,13 @@ tools: yasm cmake gperf gmp nettle gnutls expat zlib bzip2
 helpers: sdl alsa freetype fontconfig taglib libcddb libdvdcss fribidi rtmpdump libcec
 
 codecs: \
-	celt shine libnut libcdio libgsm libmad libass libxml2 \
+	celt vidsta enca libzmq shine libnut libcdio libgsm libmad libass libxml2 \
 	libogg libvorbis libtheora libbluray libvpx \
 	libaacplus libcaca libilbc \
 	opus openjpeg fdk-aac xvidcore x264 \
 	lame faac faad2 opencore-amr \
 	vo-amrwbenc vo-aacenc \
-	orc schroedinger xavs utvideo speex \
+	orc schroedinger xavs libutvideo speex \
 	frei0r \
 
 utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
@@ -302,6 +310,70 @@ $(celt)/dezi.done: celt-git
 	touch dezi.done
 
 celt: celt-git/dezi.done
+
+##################################################################
+#
+# vidsta
+#
+
+$(vidsta):
+	git clone --depth 1 https://github.com/georgmartius/vid.stab.git  $(vidsta)
+	tar -cvzf $(vidsta).tar.gz $(vidsta)
+	mv $(vidsta).tar.gz ../download
+
+$(vidsta)/dezi.done: vidsta-git
+	cd $(vidsta); \
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr/local; \
+	make || exit ;\
+	sudo make install; \
+	sed -i 's/^add_library/##add_library/g' CMakeLists.txt; \
+	sed -i 's/^# add_library/add_library/g' CMakeLists.txt; \
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr/local; \
+	make  || exit; \
+	sudo make install; \
+	touch dezi.done
+
+vidsta: vidsta-git/dezi.done
+
+##################################################################
+#
+# enca
+#
+
+$(enca):
+	git clone --depth 5 https://github.com/nijel/enca.git $(enca)
+	tar -cvzf $(enca).tar.gz $(enca)
+	mv $(enca).tar.gz ../download
+
+$(enca)/dezi.done: enca-git
+	cd $(enca); \
+	sed -i 's/ln -s/ln -sf/g' configure; \
+	./configure; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+enca: enca-git/dezi.done
+
+##################################################################
+#
+# libzmq
+#
+
+$(libzmq):
+	git clone --depth 5 https://github.com/zeromq/libzmq.git $(libzmq)
+	tar -cvzf $(libzmq).tar.gz $(libzmq)
+	mv $(libzmq).tar.gz ../download
+
+$(libzmq)/dezi.done: libzmq-git
+	cd $(libzmq); \
+	./autogen.sh; \
+	./configure; \
+	make || exit; \
+	sudo make install; \
+	touch dezi.done
+
+libzmq: libzmq-git/dezi.done
 
 ##################################################################
 #
@@ -1401,7 +1473,7 @@ $(xavs):
 
 $(xavs)/dezi.done:
 	cd $(xavs); \
-	./configure --enable-pic --disable-asm; \
+	./configure --enable-pic --disable-asm --enable-shared; \
 	make; \
 	sudo make install; \
 	touch dezi.done
@@ -1410,22 +1482,22 @@ xavs: $(xavs) $(xavs)/dezi.done
 
 #####################################################################
 #
-# utvideo
+# libutvideo
 #
 
-$(utvideo): 
-	wget --no-check-certificate http://github.com/downloads/rdp/FFmpeg/$(utvideo)-src.zip -O $(utvideo).zip
-	unzip $(utvideo).zip
-	mv -f $(utvideo).zip ../download
+$(libutvideo): 
+	git clone --depth 1 https://github.com/qyot27/libutvideo.git $(libutvideo)
+	tar -cvzf $(libutvideo).tar.gz $(libutvideo)
+	mv -f $(libutvideo).tar.gz ../download
 
-$(utvideo)/dezi.done:
-	cd $(utvideo); \
-	sed -i 's/CXXFLAGS=/CXXFLAGS=-fPIC /g' GNUmakefile; \
+$(libutvideo)/dezi.done:
+	cd $(libutvideo); \
+	./configure --enable-shared --enable-pic; \
 	make; \
 	sudo make install; \
 	touch dezi.done
 
-utvideo: $(utvideo) $(utvideo)/dezi.done
+libutvideo: $(libutvideo) $(libutvideo)/dezi.done
 
 #####################################################################
 #
