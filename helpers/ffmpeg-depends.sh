@@ -1,8 +1,8 @@
+sudo apt-get update
 sudo apt-get install \
 comerr-dev \
 flite1-dev \
 frei0r-plugins-dev \
-heimdal-dev \
 ladspa-sdk \
 libasound2-dev \
 libass-dev \
@@ -29,7 +29,6 @@ libflac-dev \
 libfontconfig1-dev \
 libfreetype6-dev \
 libfribidi-dev \
-libgl1-mesa-dev \
 libglib2.0-dev \
 libgme-dev \
 libgmp-dev \
@@ -114,4 +113,3 @@ nettle-dev \
 ocl-icd-opencl-dev \
 uuid-dev \
 zlib1g-dev \
-libgl1-mesa-swx11-dev \

@@ -506,11 +506,11 @@ static int prepare_wave_file(const char* filename, WAVInput* input)
                 fprintf(stderr, "Failed to read the wav format chunk (common part)\n");
                 return 0;
             }
-            if (get_uint16_le(buffer) != WAVE_FORMAT_PCM)
-            {
-                fprintf(stderr, "Unexpected wav format - expecting WAVE_FORMAT_PCM (0x0001)\n");
-                return 0;
-            }
+            //if (get_uint16_le(buffer) != WAVE_FORMAT_PCM)
+            //{
+            //    fprintf(stderr, "Unexpected wav format - expecting WAVE_FORMAT_PCM (0x0001)\n");
+            //    return 0;
+            //}
             input->numAudioChannels = get_uint16_le(&buffer[2]);
             if (input->numAudioChannels == 0)
             {
