@@ -18,6 +18,7 @@ libcairo2-dev \
 libcap-dev \
 libcdio-cdda-dev \
 libcdio-paranoia-dev \
+libcurl4-gnutls-dev \
 libcvaux-dev \
 libcv-dev \
 libdbus-1-dev \
@@ -80,6 +81,7 @@ libsm-dev \
 libsndfile1-dev \
 libsoxr-dev \
 libspeex-dev \
+libspeexdsp-dev \
 libssh-dev \
 libtasn1-6-dev \
 libtheora-dev \
@@ -112,4 +114,4 @@ nettle-dev \
 ocl-icd-opencl-dev \
 uuid-dev \
 zlib1g-dev \
-
+libgl1-mesa-swx11-dev \

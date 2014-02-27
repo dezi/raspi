@@ -85,28 +85,38 @@ ffmpeg-alloptions = \
 	--enable-version3 \
 	--enable-fontconfig \
 	--enable-frei0r \
+	--enable-gnutls \
 	--enable-ladspa \
 	--enable-libass \
+	--enable-libbluray \
 	--enable-libcaca \
 	--enable-libcdio \
+	--enable-libcelt \
+	--enable-libdc1394 \
 	--enable-libfaac \
 	--enable-libfdk-aac \
 	--enable-libflite \
 	--enable-libfreetype \
 	--enable-libgme \
 	--enable-libgsm \
+	--enable-libiec61883 \
 	--enable-libilbc \
+	--enable-libmodplug \
 	--enable-libmp3lame \
 	--enable-libnut \
 	--enable-libopencore-amrnb \
 	--enable-libopencore-amrwb \
 	--enable-libopenjpeg \
+	--enable-libpulse \
+	--enable-librtmp \
 	--enable-libschroedinger \
+	--enable-libshine \
 	--enable-libsoxr \
 	--enable-libspeex \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libutvideo \
+	--enable-libv4l2 \
 	--enable-libvidstab \
 	--enable-libvo-aacenc \
 	--enable-libvo-amrwbenc \
@@ -118,91 +128,31 @@ ffmpeg-alloptions = \
 	--enable-libxavs \
 	--enable-libxvid \
 	--enable-libzvbi \
-
-ffmpeg_allshared = \
-	--enable-shared \
-	--enable-static \
-	--enable-gnutls \
-	--enable-libbluray \
-	--enable-libaacplus \
-	--enable-libiec61883 \
-	--enable-libmodplug \
-	--enable-libv4l2 \
-	--enable-libcelt \
-	--enable-libssh \
-	--enable-libshine \
-	--enable-libopus \
-	--enable-libquvi \
-	--enable-libpulse \
-	--enable-librtmp \
-	--enable-libdc1394 \
-	--enable-libopencv \
-	--enable-opengl \
 	--enable-openal \
 	--enable-opencl \
-	--enable-openssl \
+	--enable-opengl \
 	--enable-x11grab \
 
-ffmpeg-alloptionsfail = \
-	--enable-avisynth \
-	--enable-libstagefright-h264 \
-	--enable-libx265 \
-	--enable-decklink \
+ffmpeg-allshared = \
+	--enable-shared \
+	--enable-static \
+	--enable-libaacplus \
+	--enable-libopus \
+	--enable-libquvi \
+	--enable-openssl \
+	--enable-libssh \
 
-ffmpeg-alllibs = \
-	--extra-libs="-lm" \
-	--extra-libs="-lz" \
-	--extra-libs="-ldl" \
-	--extra-libs="-lrt" \
-	--extra-libs="-lbz2" \
-	--extra-libs="-lpng" \
-	--extra-libs="-lexpat" \
-	--extra-libs="-lfreetype" \
-	--extra-libs="-lbz2" \
-	--extra-libs="-lfontconfig" \
-	--extra-libs="-lorc-0.4" \
-	--extra-libs="-lgmp" \
-	--extra-libs="-lhogweed" \
-	--extra-libs="-lnettle" \
-	--extra-libs="-lgnutls" \
-	--extra-libs="-ltasn1" \
-	--extra-libs="-ljpeg" \
-	--extra-libs="-llzma" \
-	--extra-libs="-lzmq" \
-	--extra-libs="-lxml2" \
-	--extra-libs="-lcdio" \
-	--extra-libs="-lcdio_cdda" \
-	--extra-libs="-lcdio_paranoia" \
-	--extra-libs="-lgpg-error" \
-	--extra-libs="-lgusb" \
-	--extra-libs="-lxcb" \
-	--extra-libs="-lshine" \
-	--extra-libs="-lenca" \
-	--extra-libs="-lslang" \
-	--extra-libs="-ltinfo" \
-	--extra-libs="-lgpm" \
-	--extra-libs="-lncursesw" \
-	--extra-libs="-lcurses" \
-	--extra-libs="-lncurses" \
-	--extra-libs="-lcrypt" \
-	--extra-libs="-lcrypto" \
-	--extra-libs="-lgcrypt" \
-	--extra-libs="-lv4lconvert" \
-	--extra-libs="-lraw1394" \
-	--extra-libs="-lasound" \
-	--extra-libs="-lSDL" \
-	--extra-libs="-lusb-1.0" \
-	--extra-libs="-lgusb" \
-	--extra-libs="-lusb" \
-	--extra-libs="-lquvi" \
-	--extra-libs="-lpng" \
-	
 ffmpeg-allstatic = \
 	--enable-static \
 	--disable-shared \
-	--disable-indev=alsa \
-	--disable-outdevs \
 	--extra-ldflags="-v" \
+
+ffmpeg-alloptionsfail = \
+	--enable-avisynth \
+	--enable-libopencv \
+	--enable-libstagefright-h264 \
+	--enable-libx265 \
+	--enable-decklink \
 	
 ffmpeg-shared = \
 	--enable-shared \

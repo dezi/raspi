@@ -34,7 +34,7 @@ function dolib($name,$path,&$mods,$excl,$level = 1)
 		
 		if (isset($excl[ $parts[ 0 ] ])) continue;
 				
-		//echo "$pad$line\n";
+		echo "$pad$line\n";
 
 		dolib($parts[ 0 ],$parts[ 2 ],$mods,$excl,$level + 1);
 		
@@ -42,7 +42,16 @@ function dolib($name,$path,&$mods,$excl,$level = 1)
 	}
 	
 	$parts = explode(".so",$name);
-	$sname = $parts[ 0 ] . ".a";
+
+	$lname = $parts[ 0 ];
+
+	if ($lname == "libts-0.0"         ) $lname = "libts";
+	if ($lname == "libSDL-1.2"        ) $lname = "libSDL";
+	if ($lname == "libfusion-1.2"     ) $lname = "libfusion";
+	if ($lname == "libdirect-1.2"     ) $lname = "libdirect";
+	if ($lname == "libdirectfb-1.2"   ) $lname = "libdirectfb";
+
+	$sname = $lname . ".a";
 
 	$mods[ $name ][ "childs" ] = $childs;
 	$mods[ $name ][ "shared" ] = $path;
@@ -69,6 +78,13 @@ function dolib($name,$path,&$mods,$excl,$level = 1)
 
 	$test = "/usr/lib/gcc/arm-linux-gnueabihf/4.8/$sname";
 	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
+
+	//
+	// Special hack for pulse
+	//
+
+	$test = "/usr/local/lib/pulseaudio/$sname";
+	if (file_exists($test)) $mods[ $name ][ "static" ] = $test;
 }
 
 $excl = array();
@@ -78,6 +94,16 @@ $excl[ "libgcc_s.so.1" ] = true;
 $extrashared = "";
 $extrastatic = "";
 $extraboth   = "";
+
+$parts = explode("/",$rootmod);
+array_pop($parts);
+array_pop($parts);
+$staticpath = implode("/",$parts) . "/ffmpeg-static";
+
+if (file_exists($staticpath))
+{
+	@exec("rm $staticpath/*");
+}
 
 while (true)
 {
@@ -113,10 +139,15 @@ while (true)
 		}
 		else
 		{
-			if (($sname != "libcelt0.a") &&
+			if (($sname != "libc.a") &&
+			    ($sname != "librt.a") &&
+			    ($sname != "libdl.a") &&
+			    ($sname != "libgcc_s.a") &&
+			    ($sname != "libpthread.a") &&
 		 	    ($sname != "libaacplus.a"))
 			{
 				echo "ln -sf $target .\n";
+				if (file_exists($staticpath)) exec("ln -sf $target $staticpath\n");
 				
 				$isstatic = true;
 			}
@@ -126,38 +157,47 @@ while (true)
 
 		$lname = substr($sname,3,-2);
 		
-		if ($lname == "pulsecommon-4.0") continue;
 		if ($lname == "glapi") continue;
 		
 		if ($lname == "ts-0.0"      ) $lname = "ts";
 		if ($lname == "SDL-1.2"     ) $lname = "SDL";
 		if ($lname == "lber-2.4"    ) $lname = "lber";
 		if ($lname == "ldap_r-2.4"  ) $lname = "ldap";
-		if ($lname == "fusion-1.2"  ) $lname = "fusion";
-		if ($lname == "direct-1.2"  ) $lname = "direct";
-		if ($lname == "directfb-1.2") $lname = "directfb";
 
-		if ($lname == "ncursesw"    ) $lname = "ncursesw -lgpm";
+		if ($lname == "ncursesw")
+		{
+			//
+			// Has a hidden dependency to libgpm.a
+			//
+
+			$target = "/usr/lib/arm-linux-gnueabihf/libgpm.a";
+
+			echo "ln -sf $target .\n";
+			if (file_exists($staticpath)) exec("ln -sf $target $staticpath\n");
+
+			$lname = "ncursesw -lgpm";
+		}
 		
 		if ($isstatic) 
 			$thisstatic = $thisstatic . " -l$lname";
 		else
 			$thisshared = $thisshared . " -l$lname";
 		
-		$thisboth = $thisstatic . " -l$lname";
+		$thisboth = $thisboth . " -l$lname";
 	}
 	
-	$extrashared = trim($thisshared) . " " . $extrashared;
-	$extrastatic = trim($thisstatic) . " " . $extrastatic;
-	$extraboth   = trim($thisboth)   . " " . $extraboth;
+	$extrashared = trim(trim($thisshared) . " " . $extrashared);
+	$extrastatic = trim(trim($thisstatic) . " " . $extrastatic);
+	$extraboth   = trim(trim($thisboth)   . " " . $extraboth  );
 }
 
-echo "$extrastatic";
+echo "EXTRALIBS=-L../ffmpeg-static $extrastatic";
 echo " ";
 echo "$extrashared";
+echo "\n";
+echo "\n";
 
-//echo "$extraboth";
-
+echo "EXTRALIBS=-L../ffmpeg-static $extraboth";
 echo "\n";
 
 ?>
