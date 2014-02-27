@@ -41,22 +41,22 @@ patches:
 	cp ../patches/uname patches
 	chmod a+x patches/uname
 
-dezi.build32.done: patches sandbox/mingw-w64-build-3.1.0
+dezi.build32.done: patches sandbox/mingw-w64-build-3.5.8
 	if ! [ -f "dezi.build32.done" ]; then \
-		cd sandbox; ./mingw-w64-build-3.1.0 \
-			--cpu-count=1 --build-type=win32 \
-			--mingw-w64-ver=svn --disable-nls \
+		cd sandbox; ./mingw-w64-build-3.5.8 \
+			--cpu-count=4 --build-type=win32 \
+			--mingw-w64-ver=svn \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
 		cd ..; tar -cvzf dezi.build32.tar.gz sandbox; \
 	fi
 	touch dezi.build32.done
 
-dezi.build64.done: patches sandbox/mingw-w64-build-3.1.0
+dezi.build64.done: patches sandbox/mingw-w64-build-3.5.8
 	if ! [ -f "dezi.build64.done" ]; then \
-		cd sandbox; ./mingw-w64-build-3.1.0 \
-			--cpu-count=1 --build-type=win64 \
-			--mingw-w64-ver=svn --disable-nls \
+		cd sandbox; ./mingw-w64-build-3.5.8 \
+			--cpu-count=4 --build-type=win64 \
+			--mingw-w64-ver=svn \
 			--disable-shared --default-configure \
 			--clean-build --threads=pthreads-w32 || exit 1; \
 		cd ..; tar -cvzf dezi.build64.tar.gz sandbox; \
@@ -85,12 +85,12 @@ ffmpeg-win64-work: dezi.build64.done dezi.ffmpeg64.done
 sandbox:
 	mkdir sandbox
 
-sandbox/mingw-w64-build-3.1.0: sandbox
+sandbox/mingw-w64-build-3.5.8: sandbox
 	cd sandbox; \
-	curl http://zeranoe.com/scripts/mingw_w64_build/mingw-w64-build-3.1.0 -O || exit 1; \
-	chmod a+x mingw-w64-build-3.1.0; \
-	sed -i 's/grep -c processor \/proc\/cpuinfo/echo 2/g' mingw-w64-build-3.1.0 ;\
-	#sed -i 's/grep -c processor \/proc\/cpuinfo/grep -s -c processor \/proc\/cpuinfo || echo 2/g' mingw-w64-build-3.1.0
+	curl http://zeranoe.com/scripts/mingw_w64_build/mingw-w64-build-3.5.8 -O || exit 1; \
+	chmod a+x mingw-w64-build-3.5.8; \
+	sed -i 's/grep -c processor \/proc\/cpuinfo/echo 4/g' mingw-w64-build-3.5.8 ;\
+	#sed -i 's/grep -c processor \/proc\/cpuinfo/grep -s -c processor \/proc\/cpuinfo || echo 2/g' mingw-w64-build-3.5.8
 	
 #####################################################################
 #
@@ -100,7 +100,7 @@ sandbox/mingw-w64-build-3.1.0: sandbox
 cross_compile_ffmpeg.sh:
 	wget https://raw.github.com/rdp/ffmpeg-windows-build-helpers/master/cross_compile_ffmpeg.sh
 	chmod a+x cross_compile_ffmpeg.sh
-	sed -i 's/grep -c processor \/proc\/cpuinfo/echo 2/g' cross_compile_ffmpeg.sh
+	sed -i 's/grep -c processor \/proc\/cpuinfo/echo 4/g' cross_compile_ffmpeg.sh
 	sed -i 's/generic_configure # unfortunately/generic_configure "--cross-prefix=$$cross_prefix" # unfortunately/g' cross_compile_ffmpeg.sh
 
 #####################################################################
