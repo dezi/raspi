@@ -113,6 +113,7 @@ ffmpeg-alloptions = \
 	--enable-libshine \
 	--enable-libsoxr \
 	--enable-libspeex \
+	--enable-libssh \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libutvideo \
@@ -140,7 +141,6 @@ ffmpeg-allshared = \
 	--enable-libopus \
 	--enable-libquvi \
 	--enable-openssl \
-	--enable-libssh \
 
 ffmpeg-allstatic = \
 	--enable-static \
