@@ -590,6 +590,7 @@ $(gmp):
 
 $(gmp)/dezi.done:
 	cd $(gmp); \
+	CFLAGS="-fPIC -fno-common -DPIC"; \
 	./configure; \
 	make; \
 	sudo make install; \

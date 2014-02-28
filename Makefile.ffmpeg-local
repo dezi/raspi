@@ -159,8 +159,8 @@ ffmpeg-shared = \
 	--disable-static \
 	
 ffmpeg-static = \
-	--enable-shared \
-	--disable-static \
+	--disable-shared \
+	--enable-static \
 	--extra-ldflags="-L../../static" \
 
 ffmpeg-libs = \
@@ -168,6 +168,7 @@ ffmpeg-libs = \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
 	--extra-libs="-lbz2" \
+	--extra-libs="-lxml2" \
 	--extra-libs="-lexpat" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
