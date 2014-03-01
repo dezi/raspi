@@ -76,7 +76,6 @@
 #include "formats.h"
 #include "internal.h"
 #include "video.h"
-#include "lavfutils.h"
 
 enum { Y, U, V, A };
 
@@ -114,8 +113,8 @@ typedef struct {
 	struct SwsContext *sws;
 	
     AVFrame           *plogo_frame;						//< Original image frame
-	uint8_t           *buffer_logo_frame;				//< RGBA32 variant pixel buffer
-
+    uint8_t           *buffer_logo_frame;				//< Original image pixel buffer
+	
     AVFrame           *plogo_frame_rgba32;				//< RGBA32 variant image frame 
     uint8_t           *buffer_logo_frame_rgba32;		//< RGBA32 variant pixel buffer
     
@@ -146,9 +145,10 @@ AVFILTER_DEFINE_CLASS(logo);
 
 static int load_logo_create_frames(AVFilterContext *ctx);
 
-static av_cold int init(AVFilterContext *ctx)
+static av_cold int init(AVFilterContext *ctx, const char *args)
 {
     LogoContext *logo = ctx->priv;
+    int ret;
 	
     av_log(NULL, AV_LOG_INFO, "vf_logo: init\n");
     av_log(NULL, AV_LOG_INFO, "vf_logo: version %s\n", VF_LOGO_VERSION);
@@ -175,27 +175,36 @@ static av_cold int init(AVFilterContext *ctx)
 
 static int load_logo_create_frames(AVFilterContext *ctx)
 {
-    AVInputFormat *iformat = NULL;
     LogoContext	*logo = ctx->priv;
     
 	int err;
 	int numBytes;
 	int frameFinished;
-	
+
+    av_log(NULL, AV_LOG_INFO, "vf_logo: load_logo_create_frames\n");
+
 	//
 	// The last three parameters specify the file format, buffer size and format
 	// parameters; by simply specifying NULL or 0 we ask libavformat to auto-detect
 	// the format and use a default buffer size.
 	//
 	
-	iformat = av_find_input_format("image2");
-
-	if ((err = avformat_open_input(&logo->pFormatCtx, logo->file_name, iformat, NULL)) != 0) 
+	if ((err = avformat_open_input(&logo->pFormatCtx, logo->file_name, NULL, NULL)) != 0) 
 	{
 		av_log(NULL, AV_LOG_ERROR, " vf_logo: cannot open logo file %s error is %d\n", logo->file_name, err);
 		return -1;
 	}
+
+	//
+	// This fills the streams field of the AVFormatContext with valid information.
+	//
 	
+	if (avformat_find_stream_info(logo->pFormatCtx, NULL) < 0)
+	{
+		av_log(NULL, AV_LOG_ERROR, "vf_logo: failed to find stream info in logo file\n");
+		return -1;
+	}
+
 	//
 	// We simply use the first video stream.
 	//
@@ -239,6 +248,17 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 		av_log(NULL, AV_LOG_ERROR, "vf_logo: failed to find any codec for decoding logo frame.\n");
 		return -1;
 	}
+
+	//
+	// Inform the codec that we can handle truncated bitstreams, 
+	// i.e. bitstreams where frame boundaries can fall in 
+	// the middle of packets.
+	//
+	
+	if (logo->pCodec->capabilities & CODEC_CAP_TRUNCATED)
+	{
+		logo->pCodecCtx->flags |= CODEC_FLAG_TRUNCATED;
+	}
 	
 	//
 	// Open codec.
@@ -256,21 +276,55 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 	// Allocate an AVFrame structure. 
 	//
 	
-	logo->plogo_frame = av_frame_alloc();
+	logo->plogo_frame = avcodec_alloc_frame();
 	
 	if (logo->plogo_frame == NULL)
 	{
 		av_log(NULL, AV_LOG_ERROR, "vf_logo: failed to alloc plogo_frame\n");
 		return -1;
 	}
+  
+	//
+	// Determine required buffer size and allocate buffer 
+	// for uncompressed image data.
+	//
+	
+	numBytes = avpicture_get_size(logo->pCodecCtx->pix_fmt, 
+								  logo->pCodecCtx->width, 
+								  logo->pCodecCtx->height
+								  );
+	
+	logo->buffer_logo_frame = av_malloc(numBytes);
 
+	//
+	// Assign appropriate parts of buffer to image planes in plogo_frame.
+	//
+	
+	avpicture_fill((AVPicture *) logo->plogo_frame, 
+		logo->buffer_logo_frame, 
+		logo->pCodecCtx->pix_fmt, 
+		logo->pCodecCtx->width, 
+		logo->pCodecCtx->height
+		);
+
+	logo->w      = logo->pCodecCtx->width;
+	logo->h      = logo->pCodecCtx->height;
+	logo->format = logo->pCodecCtx->pix_fmt;
+
+	av_log(NULL, AV_LOG_INFO, "vf_logo: logo size is %dx%d pix-fmt:%s\n", logo->w, logo->h, av_get_pix_fmt_name(logo->format));
+
+	av_log(NULL, AV_LOG_INFO, "vf_logo: linesizes [0]=%d [1]=%d [2]=%d [3]=%d\n",
+		((AVPicture *) logo->plogo_frame)->linesize[ 0 ], 
+		((AVPicture *) logo->plogo_frame)->linesize[ 1 ],
+		((AVPicture *) logo->plogo_frame)->linesize[ 2 ], 
+		((AVPicture *) logo->plogo_frame)->linesize[ 3 ]
+		);
+  
 	//
 	// Now read the original image frame.
 	//
 	
 	av_log(NULL, AV_LOG_INFO, "vf_logo: av_read_frame\n");
-
-    av_init_packet(&logo->packet);
 	
 	frameFinished = 0;
 
@@ -302,7 +356,7 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 		//
 		
 		av_free_packet(&logo->packet);
-		
+			
 		//
 		// Did we get a video frame?
 		//
@@ -323,39 +377,19 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 		return -1;
 	}
 	
-	logo->w      = logo->plogo_frame->width;
-	logo->h      = logo->plogo_frame->height;
-	logo->format = logo->plogo_frame->format;
-
-	av_log(NULL, AV_LOG_INFO, "vf_logo: logo size is %dx%d pix-fmt:%s\n", logo->w, logo->h, av_get_pix_fmt_name(logo->format));
-
-	//
-	// Get a planar version from image into buffer.
-	//
-	
-	numBytes = avpicture_get_size(logo->format,logo->w,logo->h);
-	logo->buffer_logo_frame = av_malloc(numBytes);
-
-	avpicture_layout((AVPicture *) logo->plogo_frame, 
-				   logo->format, 
-				   logo->w, 
-				   logo->h,
-				   logo->buffer_logo_frame,
-				   numBytes
-				   );
-
 	//
 	// Now we have read the image in whatever format.
 	// We need the overlay image to be in RGBA, so
 	// we will convert it with the swscaler functions.
 	//
-	
+	  
 	if (logo->pCodecCtx->pix_fmt == PIX_FMT_RGBA)
 	{
 		//
-		// Source logo image is in correct format. 
+		// Source logo image is in correct format, 
+		// simply copy the pointers.
 		//
-
+		
 		logo->plogo_frame_rgba32       = logo->plogo_frame;
 		logo->buffer_logo_frame_rgba32 = logo->buffer_logo_frame;
 	}
@@ -378,7 +412,7 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 		// Allocate an AVFrame structure.
 		//
 		
-		logo->plogo_frame_rgba32 = av_frame_alloc();
+		logo->plogo_frame_rgba32 = avcodec_alloc_frame();
 		
 		if (logo->plogo_frame_rgba32 == NULL)
 		{
@@ -476,7 +510,7 @@ static int load_logo_create_frames(AVFilterContext *ctx)
 			scanline += logo->plogo_frame_rgba32->linesize[ 0 ];
 		}
 	}
-    
+     
 	//
 	// Check if fixed alpha color was desired in options
 	// and adjust pixels data if so.
@@ -593,11 +627,11 @@ static int config_input(AVFilterLink *inlink)
 	//
 	// Figure out subsampling.
 	//
+	// avcodec_get_chroma_sub_sample(inlink->format,&logo->hsub, &logo->vsub);
+	//
 	
-	avcodec_get_chroma_sub_sample(inlink->format,&logo->hsub, &logo->vsub);
-	
-    //logo->hsub = av_pix_fmt_descriptors[inlink->format].log2_chroma_w;
-    //logo->vsub = av_pix_fmt_descriptors[inlink->format].log2_chroma_h;
+    logo->hsub = av_pix_fmt_descriptors[inlink->format].log2_chroma_w;
+    logo->vsub = av_pix_fmt_descriptors[inlink->format].log2_chroma_h;
 	
 	av_log(inlink->dst, AV_LOG_DEBUG, "subsampling h:%d v:%d\n", logo->hsub, logo->vsub);
 
@@ -619,9 +653,6 @@ static int config_input(AVFilterLink *inlink)
 	// format.
 	//
 	
-	av_log(NULL, AV_LOG_INFO, "vf_logo: video pix_fmt=%s\n", av_get_pix_fmt_name(inlink->format));
-	av_log(NULL, AV_LOG_INFO, "vf_logo: log   pix_fmt=%s\n", av_get_pix_fmt_name(logo->format));
-
 	if (inlink->format == logo->format)
 	{
 		logo->plogo_frame_video_format       = logo->plogo_frame;
@@ -647,7 +678,7 @@ static int config_input(AVFilterLink *inlink)
 		// Allocate an AVFrame structure
 		//
 		
-		logo->plogo_frame_video_format = av_frame_alloc();
+		logo->plogo_frame_video_format = avcodec_alloc_frame();
 		
 		if (logo->plogo_frame_video_format == NULL)
 		{
@@ -838,12 +869,12 @@ static int config_input(AVFilterLink *inlink)
     return 0;
 }
 
-#ifdef WANT_TEST_BLA
+#ifdef WANT_draw_slice_box
 
-static int filter_frame_box(AVFilterLink *inlink, AVFrame *frame)
+static int filter_frame_box(AVFilterLink *inlink, AVFilterBufferRef *frame)
 {	
     LogoContext 	  *logo   = inlink->dst->priv;
-	AVFrame           *picref = frame;
+	AVFilterBufferRef *picref = frame;
 
 	int xb = logo->app_x;
 	int yb = logo->app_y;
@@ -859,7 +890,7 @@ static int filter_frame_box(AVFilterLink *inlink, AVFrame *frame)
 	
 	alpha = (double) yuv_color[A] / 255;
     
-	for (int y = FFMAX(yb, 0); y < frame->height && y < (yb + logo->app_h); y++) 
+	for (int y = FFMAX(yb, 0); y < frame->video->h && y < (yb + logo->app_h); y++) 
 	{
 		vidrow[ 0 ] = picref->data[ 0 ] + y * picref->linesize[ 0 ];
 
@@ -868,7 +899,7 @@ static int filter_frame_box(AVFilterLink *inlink, AVFrame *frame)
 			vidrow[ plane ] = picref->data[ plane ] + picref->linesize[ plane ] * (y >> logo->vsub);
 		}
 		
-		for (int x = FFMAX(xb, 0); x < (xb + logo->app_w) && x < picref->width; x++) 
+		for (int x = FFMAX(xb, 0); x < (xb + logo->app_w) && x < picref->video->w; x++) 
 		{
 			int xh = x >> logo->hsub;
 			
@@ -887,42 +918,10 @@ static int filter_frame_box(AVFilterLink *inlink, AVFrame *frame)
 
 #endif
 
-#ifdef JUNKFROM_DRAWBOX
-
-static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
-{
-    int plane, x, y, xb = 10, yb = 10;
-    unsigned char *row[4];
-
-    for (y = FFMAX(yb, 0); y < frame->height && y < (yb + 100); y++) {
-        row[0] = frame->data[0] + y * frame->linesize[0];
-
-        for (plane = 1; plane < 3; plane++)
-            row[plane] = frame->data[plane] +
-                 frame->linesize[plane] * (y >> s->vsub);
-		{
-            for (x = FFMAX(xb, 0); x < xb + s->w && x < frame->width; x++) {
-                double alpha = (double)s->yuv_color[A] / 255;
-
-                if ((y - yb < s->thickness) || (yb + s->h - 1 - y < s->thickness) ||
-                    (x - xb < s->thickness) || (xb + s->w - 1 - x < s->thickness)) {
-                    row[0][x           ] = (1 - alpha) * row[0][x                 ] + alpha * s->yuv_color[Y];
-                    row[1][x >> s->hsub] = (1 - alpha) * row[1][x >> s->hsub] + alpha * s->yuv_color[U];
-                    row[2][x >> s->hsub] = (1 - alpha) * row[2][x >> s->hsub] + alpha * s->yuv_color[V];
-                }
-            }
-        }
-    }
-
-    return ff_filter_frame(inlink->dst->outputs[0], frame);
-}
-
-#endif
-
-static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
+static int filter_frame(AVFilterLink *inlink, AVFilterBufferRef *frame)
 {
     LogoContext 	  *logo   = inlink->dst->priv;
-	AVFrame			  *picref = frame;
+	AVFilterBufferRef *picref = frame;
 	AVPicture		  *imgref = (AVPicture *) logo->plogo_frame_video_format;	
 	AVPicture		  *rgbref = (AVPicture *) logo->plogo_frame_rgba32;	
 	
@@ -933,7 +932,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
 	unsigned char *imgrow[ 4 ];
 	unsigned char *rulrow;
 
-	for (int y = FFMAX(yb, 0); y < frame->height && y < (yb + logo->app_h); y++) 
+	for (int y = FFMAX(yb, 0); y < frame->video->h && y < (yb + logo->app_h); y++) 
 	{
 		vidrow[ 0 ] = picref->data[ 0 ] + y        * picref->linesize[ 0 ];
 		imgrow[ 0 ] = imgref->data[ 0 ] + (y - yb) * imgref->linesize[ 0 ];
@@ -945,7 +944,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
 			imgrow[ plane ] = imgref->data[ plane ] + imgref->linesize[ plane ] * ((y - yb) >> logo->vsub);
 		}
 		
-		for (int x = FFMAX(xb, 0); x < (xb + logo->app_w) && x < picref->width; x++) 
+		for (int x = FFMAX(xb, 0); x < (xb + logo->app_w) && x < picref->video->w; x++) 
 		{
 			int xh  =  x       >> logo->hsub;	// Sub sampled video image index
 			int xbh = (x - xb) >> logo->hsub;	// Sub sampled logo image index
@@ -969,7 +968,7 @@ static const AVFilterPad avfilter_vf_logo_inputs[] = {
         .config_props     = config_input,
         .get_video_buffer = ff_null_get_video_buffer,
         .filter_frame     = filter_frame,
-        .needs_writable   = 1,
+        .min_perms        = AV_PERM_WRITE | AV_PERM_READ,
     },
     { NULL }
 };
