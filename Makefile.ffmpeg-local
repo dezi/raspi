@@ -161,7 +161,7 @@ ffmpeg-shared = \
 ffmpeg-static = \
 	--disable-shared \
 	--enable-static \
-	--extra-ldflags="-L../../static" \
+	--extra-ldflags="-L../ffmpeg-static" \
 
 ffmpeg-libs = \
 	--extra-libs="-lm" \
@@ -207,23 +207,18 @@ ffmpeg-env-xodroid= \
 	export CPPFLAGS="$$CFLAGS"; \
 	export LDFLAGS="-L/opt/vc/lib -march=$$TARGET_SUBARCH -mtune=$$TARGET_CPU $$TARGET_LOPT"
 
-nixi:
-	mkdir -p ../static;
-	ln -sf /usr/local/lib/lib*.a ../static
-	ln -sf /usr/local/lib64/lib*.a ../static
-	ln -sf /usr/local/lib77/lib*.a ../static
-	ln -sf /usr/lib/arm-linux-gnueabihf/lib*.a ../static
-	ln -sf /lib/arm-linux-gnueabihf/lib*.a ../static
+ffmpeg-static:
+	mkdir -p ffmpeg-static 
+	[ -d /lib                         ] && ln -sf /lib/lib*.a                         ffmpeg-static || true
+	[ -d /usr/lib                     ] && ln -sf /usr/lib/lib*.a                     ffmpeg-static || true
+	[ -d /usr/local/lib               ] && ln -sf /usr/local/lib/lib*.a               ffmpeg-static || true
+	[ -d /usr/local/lib64             ] && ln -sf /usr/local/lib64/lib*.a             ffmpeg-static || true
+	[ -d /lib/arm-linux-gnueabihf     ] && ln -sf /lib/arm-linux-gnueabihf/lib*.a     ffmpeg-static || true
+	[ -d /usr/lib/arm-linux-gnueabihf ] && ln -sf /usr/lib/arm-linux-gnueabihf/lib*.a ffmpeg-static || true
 	
-$(ffmpeg)/dezi.static.conf:
+$(ffmpeg)/dezi.static.conf: ffmpeg-static
 	cd $(ffmpeg); \
-	rm -f ffmpeg ffplay ffprobe ffserver; \
-	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	export PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
-	make clean; \
+	make distclean; \
 	./configure $(ffmpeg-common) $(ffmpeg-static) $(ffmpeg-libs) || exit; \
 	touch dezi.static.conf
 
@@ -231,21 +226,15 @@ $(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
 	cd $(ffmpeg); \
 	make || exit; \
 	sudo make install; \
-	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-static; \
-	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-static; \
-	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-static; \
-	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-static; \
+	[ -f ffmpeg   ] && sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-static   || true; \
+	[ -f ffplay   ] && sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-static   || true; \
+	[ -f ffprobe  ] && sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-static  || true; \
+	[ -f ffserver ] && sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-static || true; \
 	touch dezi.static.done
 	
 $(ffmpeg)/dezi.shared.conf:
 	cd $(ffmpeg); \
-	rm -f ffmpeg ffplay ffprobe ffserver; \
-	rm -f ffmpeg_g ffplay_g ffprobe_g ffserver_g; \
-	export PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
-	export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig:$$PKG_CONFIG_PATH"; \
-	make clean; \
+	make distclean; \
 	./configure $(ffmpeg-common) $(ffmpeg-shared) $(ffmpeg-libs) || exit; \
 	touch dezi.shared.conf
 	
@@ -253,10 +242,10 @@ $(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
 	cd $(ffmpeg); \
 	make || exit; \
 	sudo make install; \
-	sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared; \
-	sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared; \
-	sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared; \
-	sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared; \
+	[ -f ffmpeg   ] && sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared   || true; \
+	[ -f ffplay   ] && sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared   || true; \
+	[ -f ffprobe  ] && sudo mv -f /usr/local/bin/ffprobe  /usr/local/bin/ffprobe-shared  || true; \
+	[ -f ffserver ] && sudo mv -f /usr/local/bin/ffserver /usr/local/bin/ffserver-shared || true; \
 	touch dezi.shared.done
 	
 $(ffmpeg)/dezi.test.conf:
