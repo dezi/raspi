@@ -36,7 +36,6 @@ libiconv_version 			= 1.14
 nettle_version				= 2.5
 gnutls_version				= 3.0.22
 pkg-config_version			= 0.28
-e2fsprogs_version			= git
 libMXF_version				= 1.0.0
 
 jpeg_version				= v9
@@ -163,7 +162,6 @@ libbluray = libbluray-$(libbluray_version)
 abcde = abcde-$(abcde_version)
 atomicparsley = atomicparsley-$(atomicparsley_version)
 v8 = v8-$(v8_version)
-e2fsprogs = e2fsprogs-$(e2fsprogs_version)
 libMXF = libMXF-src-$(libMXF_version)
 
 #####################################################################
@@ -203,9 +201,16 @@ codecs: \
 
 utilities: cd-discid libcdio-paranoia abcde atomicparsley mp4v2 gpac
 
-mxf: e2fsprogs libMXF
-
 special: v8
+
+static:
+	mkdir -p ../static;
+	[ -d /lib                         ] && ln -sf /lib/lib*.a                         ../static || true
+	[ -d /usr/lib                     ] && ln -sf /usr/lib/lib*.a                     ../static || true
+	[ -d /usr/local/lib               ] && ln -sf /usr/local/lib/lib*.a               ../static || true
+	[ -d /usr/local/lib64             ] && ln -sf /usr/local/lib64/lib*.a             ../static || true
+	[ -d /lib/arm-linux-gnueabihf     ] && ln -sf /lib/arm-linux-gnueabihf/lib*.a     ../static || true
+	[ -d /usr/lib/arm-linux-gnueabihf ] && ln -sf /usr/lib/arm-linux-gnueabihf/lib*.a ../static || true
 
 #####################################################################
 #
@@ -231,27 +236,6 @@ darwin:
 
 #####################################################################
 #
-# e2fsprogs => libuuid => libMXF
-#
-
-$(e2fsprogs): 
-	git clone git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git $(e2fsprogs)
-	tar -cvzf $(e2fsprogs).tar.gz $(e2fsprogs)
-	mv $(e2fsprogs).tar.gz ../download
-
-$(e2fsprogs)/dezi.done:
-	cd $(e2fsprogs); \
-	./configure --prefix=/usr/local; \
-	cd lib/uuid; \
-	make; \
-	sudo make install; \
-	cd ../..; \
-	touch dezi.done
-
-e2fsprogs: $(e2fsprogs) $(e2fsprogs)/dezi.done
-
-#####################################################################
-#
 # libMXF => writeavidmxf
 #
 
@@ -262,9 +246,8 @@ $(libMXF):
 
 $(libMXF)/dezi.done:
 	cd $(libMXF); \
-	curl 
-	sed -i 's/-Werror//g' libMXF/vars.mk; \
-	sed -i 's/-Werror//g' libMXF++/vars.mk; \
+	curl https://raw.github.com/dezi/raspi/master/patches/libMXF.diff -O; \
+	patch -Np0 -i libMXF.diff; \
 	make; \
 	sudo make install; \
 
@@ -1665,26 +1648,20 @@ $(gpac):
 	tar -cvzf $(gpac).tar.gz  $(gpac)
 	mv -f $(gpac).tar.gz ../download
 
-$(gpac)/dezi.configure:
-	mkdir -p ../static;
-	ln -sf /usr/local/lib/lib*.a ../static
-	ln -sf /usr/local/lib64/lib*.a ../static
-	ln -sf /usr/local/lib77/lib*.a ../static
+$(gpac)/dezi.configure: static
 	MYPWD=`pwd`; \
 	cd $(gpac); \
-	export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"; \
-	export PATH="/usr/bin:$$PATH"; \
-	export LDFLAGS="-L$$MYPWD/../static -lm"; \
 	./configure \
 		--static-mp4box \
 		--enable-pic \
-		--enable-static-bin \
 		|| exit; \
+	echo "LDFLAGS=-L$$MYPWD/../static -lz -lm" >> config.mak; \
 	touch dezi.configure
 
 $(gpac)/dezi.done:
 	cd $(gpac); \
 	make || exit; \
+	sudo make install; \
 	touch dezi.done
 
 gpac: $(gpac) $(gpac)/dezi.configure $(gpac)/dezi.done
