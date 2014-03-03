@@ -1655,7 +1655,8 @@ $(gpac)/dezi.configure: static
 		--static-mp4box \
 		--enable-pic \
 		|| exit; \
-	echo "LDFLAGS=-L$$MYPWD/../static -lz -lm" >> config.mak; \
+	echo "LDFLAGS=-L$$MYPWD/../static -lz" >> config.mak; \
+	echo "EXTRALIBS=" >> config.mak; \
 	touch dezi.configure
 
 $(gpac)/dezi.done:
