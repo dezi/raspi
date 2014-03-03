@@ -207,10 +207,10 @@ static:
 	mkdir -p ../static;
 	[ -d /lib                         ] && ln -sf /lib/lib*.a                         ../static || true
 	[ -d /usr/lib                     ] && ln -sf /usr/lib/lib*.a                     ../static || true
-	[ -d /usr/local/lib               ] && ln -sf /usr/local/lib/lib*.a               ../static || true
-	[ -d /usr/local/lib64             ] && ln -sf /usr/local/lib64/lib*.a             ../static || true
 	[ -d /lib/arm-linux-gnueabihf     ] && ln -sf /lib/arm-linux-gnueabihf/lib*.a     ../static || true
 	[ -d /usr/lib/arm-linux-gnueabihf ] && ln -sf /usr/lib/arm-linux-gnueabihf/lib*.a ../static || true
+	[ -d /usr/local/lib               ] && ln -sf /usr/local/lib/lib*.a               ../static || true
+	[ -d /usr/local/lib64             ] && ln -sf /usr/local/lib64/lib*.a             ../static || true
 
 #####################################################################
 #
