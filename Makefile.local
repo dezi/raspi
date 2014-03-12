@@ -1271,7 +1271,7 @@ $(x264):
 
 $(x264)/dezi.done:
 	cd $(x264); \
-	./configure --enable-shared --enabled-static; \
+	./configure --enable-shared --disable-avs --disable-swscale --disable-lavf --disable-ffms; \
 	make; \
 	sudo make install; \
 	sudo make install-lib-dev; \
@@ -1649,21 +1649,21 @@ $(gpac):
 	tar -cvzf $(gpac).tar.gz  $(gpac)
 	mv -f $(gpac).tar.gz ../download
 
-$(gpac)/dezi.configure: static
+$(gpac)/dezi.configure:
 	MYPWD=`pwd`; \
 	cd $(gpac); \
 	./configure \
-		--static-mp4box \
 		--enable-pic \
+		--static-mp4box \
+		--disable-tinygl \
+		--disable-x11-shm \
+		--disable-x11-xv \
 		|| exit; \
-	echo "LDFLAGS=-L$$MYPWD/../static -lz" >> config.mak; \
-	echo "EXTRALIBS=-lz -lm" >> config.mak; \
 	touch dezi.configure
 
 $(gpac)/dezi.done:
 	cd $(gpac); \
-	make || exit; \
-	sudo make install; \
+	make -j8 || true; \
 	touch dezi.done
 
 gpac: $(gpac) $(gpac)/dezi.configure $(gpac)/dezi.done
