@@ -1271,7 +1271,7 @@ $(x264):
 
 $(x264)/dezi.done:
 	cd $(x264); \
-	./configure --enable-shared --enabled-static; \
+	./configure --enable-shared --disable-avs --disable-swscale --disable-lavf --disable-ffms; \
 	make; \
 	sudo make install; \
 	sudo make install-lib-dev; \
