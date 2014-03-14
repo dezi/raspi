@@ -30,6 +30,7 @@ typedef unsigned char byte;
 #define MAXSLOTS 32
 
 #define BUFSIZE  4 * 1024 * 1024
+#define RDWRSIZE       64 * 1024
 
 //
 // Pipe info structure.
@@ -49,6 +50,14 @@ struct kafifo
 	int		height;
 	int		format;
 	int		pixfmt;
+	
+	int		aspect_num;
+	int 	aspect_den;
+	
+	int		fps_num;
+	int 	fps_den;
+	
+	char	mode;
 	
 	//
 	// Audio related.
@@ -71,8 +80,9 @@ struct kafifo
 	int 	group;
 	int		fd;
 	
-	int		bufsiz;
-	byte   *buffer;
+	int			bufsiz;
+	byte	   *buffer;
+	pthread_t	thread;
 };
 
 typedef struct kafifo kafifo_t;
@@ -89,7 +99,6 @@ int	  		kappa_fifo_groupscnt = 0;
 int	  		kappa_fifo_groupmore = 0;
 char  		kappa_fifo_groupname[ MAXSLOTS ][ 64 ];
 int   		kappa_fifo_grouptodo[ MAXSLOTS ];
-pthread_t 	kappa_fifo_groupthrd[ MAXSLOTS ];
 
 int	  		kappa_fifo_inputscnt = 0;
 int	  		kappa_fifo_inputdone = 0;
@@ -116,7 +125,7 @@ void kappa_fifo_usage()
 // http://wiki.multimedia.cx/index.php?title=YUV4MPEG2
 //
 
-void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
+void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 {
 	if (strncmp(info->buffer,"YUV4MPEG2",9))
 	{
@@ -125,9 +134,13 @@ void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	}
 	
 	byte *headend = index(info->buffer,'\n');
+	int   headlen;
 	
 	*headend = '\0';
-	fprintf(stderr,"Header  output %s %s\n",group,info->buffer);
+	
+	headlen = strlen(info->buffer) + 1;
+	fprintf(stderr,"Header  output %s %d %s\n",group,headlen,info->buffer);
+	
 	*headend = '\n';
 	
 	if (strstr(info->buffer," W"))
@@ -139,7 +152,24 @@ void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	{
 		info->height = atoi(strstr(info->buffer," H") + 2);
 	}
-	
+		
+	if (strstr(info->buffer," F"))
+	{
+		info->fps_num = atoi(strstr(info->buffer," F") + 2);
+		info->fps_den = atoi(strstr(strstr(info->buffer," F") + 2,":") + 1);
+	}
+
+	if (strstr(info->buffer," A"))
+	{
+		info->aspect_num = atoi(strstr(info->buffer," A") + 2);
+		info->aspect_den = atoi(strstr(strstr(info->buffer," A") + 2,":") + 1);
+	}
+
+	if (strstr(info->buffer," I"))
+	{
+		info->mode = *(strstr(info->buffer," I") + 2);
+	}
+
 	if (strstr(info->buffer," C"))
 	{
 		info->format = atoi(strstr(info->buffer," C") + 2);
@@ -165,9 +195,11 @@ void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	
 	info->chunksize = info->framesize + strlen("FRAME\n");
 	
-	fprintf(stderr,"Header  output %s %d %d %d %s framesize=%d\n",
+	fprintf(stderr,"Header  output %s %d %d %d F%d:%d A%d:%d I%c %s framesize=%d\n",
 			group,info->width,info->height,info->format,
-			av_get_pix_fmt_name(info->pixfmt),
+			info->fps_num,info->fps_den,
+			info->aspect_num,info->aspect_den,
+			info->mode,av_get_pix_fmt_name(info->pixfmt),
 			info->framesize);
 	
 	//
@@ -187,20 +219,64 @@ void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 		info->bufsiz = info->chunksize;
 	}
 	
+	//
+	// Remove header from buffer.
+	//
+	
+	memcpy(info->buffer,info->buffer + headlen,info->bufsiz - headlen);
+	info->iobytes -= headlen;
+	
 	info->isheader = true;
+}
+
+//
+// Create input YUV4MPEG header and write.
+//
+
+void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
+{
+	input->width		= output->width;
+	input->height		= output->height;
+	input->format		= output->format;
+	input->pixfmt		= output->pixfmt;
+	
+	input->aspect_num	= output->aspect_num;
+	input->aspect_den	= output->aspect_den;
+	
+	input->fps_num		= output->fps_num;
+	input->fps_den		= output->fps_den;
+	
+	input->mode			= output->mode;
+	
+	char yheader[ 256 ];
+	
+	snprintf(yheader,sizeof(yheader),
+			 "YUV4MPEG2 W%d H%d F%d:%d I%c A%d:%d C%03dmpeg2 XYSCSS=%03dMPEG2\n",
+			 input->width,input->height,
+			 input->fps_num,input->fps_den,
+			 input->mode,
+			 input->aspect_num,input->aspect_den,
+			 input->format,input->format
+			);
+	
+	int xfer = write(input->fd,yheader,strlen(yheader));
+	
+	fprintf(stderr,"Header  input  %s %d %s",group,xfer,yheader);
+		
+	input->isheader = true;
 }
 
 //
 // Thread main loop.
 //
 
-void *kappa_fifo_threadloop(void *data)
+void *kappa_fifo_threadreader(void *data)
 {
 	int grp = (int) data;
 		
 	char *name = kappa_fifo_groupname[ grp ];
 
-	fprintf(stderr,"Started thread %s\n",name);
+	fprintf(stderr,"Started thread %s reader\n",name);
 	
 	//
 	// Identify output pipe.
@@ -226,7 +302,7 @@ void *kappa_fifo_threadloop(void *data)
 		usleep(100000);
 	}
 	
-	fprintf(stderr,"Running thread %s\n",kappa_fifo_groupname[ grp ]);
+	fprintf(stderr,"Running thread %s reader\n",kappa_fifo_groupname[ grp ]);
 
 	//
 	// Derive basic info from pipe names.
@@ -242,80 +318,141 @@ void *kappa_fifo_threadloop(void *data)
 	
 	kafifo_t *input;
 	
-	int todo;
+	int ends;
 	int offs;
 	int xfer;
 	int yfer;
 	int wait;
+	int done;
 		
 	while (true)
 	{
 		wait = true;
 		
 		//
-		// Check for undelivered buffer parts.
+		// Write as much as possible.
 		//
 		
-		if (output->iobytes > 0)
+		for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 		{
-			if (kappa_fifo_grouptodo[ grp ] != 0) continue;
-			
-			todo = 0;
+			input = &kappa_fifo_inputinfo[ cnt ];
 		
-			for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
+			if (input->group != grp) continue;
+
+			if (output->isyuv4mpeg && ! input->isheader) 
 			{
-				input = &kappa_fifo_inputinfo[ cnt ];
-				
-				if (input->group != grp) continue;
-				
-				if (input->iobytes == output->iobytes) continue;
+				if (! output->isheader) continue;
 			
-				offs = input->iobytes;
-				xfer = output->iobytes - offs;
-				
-				yfer = write(input->fd,output->buffer + offs,xfer);
-				
-				if (yfer > 0)
-				{
-					input->iobytes += yfer;
-					input->total   += yfer;
-					
-					wait = false;
-				}
-				
-				todo++;
+				kappa_fifo_write_yuv4mpeg(name,output,input);
 			}
 			
-			if (todo == 0) output->iobytes = 0;
+			if (input->iobytes == output->iobytes) continue;
+			
+			offs = input->iobytes;
+			
+			if (offs < output->iobytes)
+			{
+				xfer = output->iobytes - offs;
+			}
+			else
+			{
+				xfer = output->bufsiz - offs;
+			}
+			
+			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+
+			yfer = write(input->fd,output->buffer + offs,xfer);
+			
+			if ((grp == 999) && (yfer > 0)) fprintf(stderr,"Send %s %7d %6d\n",name,offs,yfer);
+
+			if (yfer > 0)
+			{
+				input->iobytes += yfer;
+				input->total   += yfer;
+				
+				wait = false;
+			}
 		}
 		
-		if (output->iobytes == 0)
-		{	
+		//
+		// Read as much as possible.
+		//
+		
+		ends = output->bufsiz;
+
+		if (kappa_fifo_grouptodo[ grp ] != 0)
+		{
 			//
-			// We have delivered a complete buffer to all input pipes.
+			// Some inputs are not yet ready. Read
+			// until buffer filled completely and wait.
 			//
+		}
+		else
+		{
+			done = true;
+			
+			if (output->iobytes == output->bufsiz)
+			{
+				//
+				// Wrap buffer now.
+				//
+			
+				output->iobytes = 0;
+			}
 
 			for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 			{
 				input = &kappa_fifo_inputinfo[ cnt ];
 				
 				if (input->group != grp) continue;
-		
-				input->iobytes = 0;
 				
-				if (output->fd < 0)
+				if (input->fd < 0) continue;
+				
+				if (input->iobytes == output->bufsiz)
 				{
 					//
-					// Output pipe is closed and buffer delivered,
-					// so close corresponding input pipes.
+					// Input has written until end of buffer,
+					// wrap it now.
+					//
+				
+					input->iobytes = 0;
+				}
+			
+				if (output->iobytes < input->iobytes)
+				{
+					//
+					// Input pointer is behind us in buffer,
+					// means, we have wrapped and input not yet.
+					// Stay before as close as we can.
+					//
+				
+					if (ends > (input->iobytes - 1))
+					{
+						//
+						// Limit our buffer end to this point.
+						//
+					
+						ends = input->iobytes - 1;
+					}
+				}
+				
+				if ((output->iobytes == input->iobytes) && (output->fd < 0))
+				{
+					//
+					// Output pipe is closed, input pipe has all written,
+					// close this now.
 					//
 					
 					close(input->fd);
 					input->fd = -1;
+					
+					continue;
 				}
+				
+				done = false;
 			}
 			
-			if (output->fd < 0)
+			if (done)
 			{
 				//
 				// Read and write pipes are closed,
@@ -325,14 +462,17 @@ void *kappa_fifo_threadloop(void *data)
 				break;
 			}
 		}
-		
-		if ((output->fd >= 0) &&
-			(output->iobytes < output->bufsiz))
+
+		if ((output->fd >= 0) && (output->iobytes < ends))
 		{
 			offs = output->iobytes;
-			xfer = output->bufsiz - offs;
+			xfer = ends - offs;
+			
+			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
 			
 			yfer = read(output->fd,output->buffer + offs,xfer);
+			
+			if ((grp == 999) && (yfer > 0))  fprintf(stderr,"Read %s %7d %6d\n",name,offs,yfer);
 			
 			if (yfer > 0)
 			{
@@ -349,18 +489,23 @@ void *kappa_fifo_threadloop(void *data)
 			else
 			if (yfer == 0)
 			{
-				if ((output->total >  0) && (output->iobytes == 0))
+				if (output->total > 0)
 				{
+					//
+					// We had already input, means pipe
+					// is at end, so close it.
+					//
+					
 					close(output->fd);
 					output->fd = -1;
 				}
 			}
 		}
-		
+						
 		if (wait) usleep(1000);
 	}
 	
-	fprintf(stderr,"Closing thread %s\n",name);
+	fprintf(stderr,"Closing thread %s reader\n",name);
 						
 	kappa_fifo_outputdone++;
 
@@ -368,7 +513,7 @@ void *kappa_fifo_threadloop(void *data)
 }
 
 //
-// Get group index and fork threat.
+// Get group index.
 //
 
 int kappa_fifo_groupindex(char *pipe)
@@ -409,8 +554,6 @@ int kappa_fifo_groupindex(char *pipe)
 	kappa_fifo_grouptodo[ inx ] = -1;
 	
 	fprintf(stderr,"Created group  %s\n",indx);
-	
-	pthread_create(&kappa_fifo_groupthrd[ inx ],NULL,kappa_fifo_threadloop,(void *) inx);
 	
 	kappa_fifo_groupscnt++;
 
@@ -486,7 +629,6 @@ void kappa_fifo_open_all(int pass)
 			}
 			else
 			{
-				
 				memset(&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ],0,sizeof(kafifo_t));
 				strcpy( kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].name,entry->d_name);
 				
@@ -494,6 +636,13 @@ void kappa_fifo_open_all(int pass)
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].group  = grp;
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].bufsiz = BUFSIZE;
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].buffer = (byte *) malloc(BUFSIZE);
+	
+				pthread_create(
+					&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].thread,
+					NULL,
+					kappa_fifo_threadreader,
+					(void *) grp
+					);
 
 				kappa_fifo_outputscnt++;
 
