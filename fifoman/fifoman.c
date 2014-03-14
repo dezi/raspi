@@ -13,6 +13,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "libavutil/common.h"
 #include "libavutil/opt.h"
@@ -28,35 +29,75 @@ typedef unsigned char byte;
 
 #define MAXSLOTS 32
 
-#define BUFSIZE  1024 * 1024
-#define RWSIZE     64 * 1024
+#define BUFSIZE  4 * 1024 * 1024
+
+//
+// Pipe info structure.
+//
+
+struct kafifo
+{
+	//
+	// Video related.
+	//
+	
+	int		isvideo;
+	int		isyuv4mpeg;
+	int		isheader;
+	
+	int		width;
+	int		height;
+	int		format;
+	int		pixfmt;
+	
+	//
+	// Audio related.
+	//
+	
+	int		isaudio;
+	
+	int		channels;
+	int		rate;
+
+	//
+	// Pipe related.
+	//
+	
+	char    name[ MAXPATHLEN ];
+	int		framesize;
+	int		chunksize;
+	int		iobytes;
+	long	total;
+	int 	group;
+	int		fd;
+	
+	int		bufsiz;
+	byte   *buffer;
+};
+
+typedef struct kafifo kafifo_t;
 
 //
 // Globals
 //
 
-char *kappa_fifo_version = "v1.0";
+char	   *kappa_fifo_version = "1.0.0";
 
-int   kappa_fifo_passes = 1;
+int   		kappa_fifo_passes = 1;
 
-int	  kappa_fifo_groupscnt = 0;
-int	  kappa_fifo_groupmore = 0;
-char  kappa_fifo_groupname[ MAXSLOTS ][ 64 ];
-int   kappa_fifo_grouptodo[ MAXSLOTS ];
+int	  		kappa_fifo_groupscnt = 0;
+int	  		kappa_fifo_groupmore = 0;
+char  		kappa_fifo_groupname[ MAXSLOTS ][ 64 ];
+int   		kappa_fifo_grouptodo[ MAXSLOTS ];
+pthread_t 	kappa_fifo_groupthrd[ MAXSLOTS ];
 
-int	  kappa_fifo_inputscnt = 0;
-char  kappa_fifo_inputname[ MAXSLOTS ][ MAXPATHLEN ];	
-int   kappa_fifo_inputginx[ MAXSLOTS ];
-int   kappa_fifo_inputfdwr[ MAXSLOTS ];
-int   kappa_fifo_inputdone[ MAXSLOTS ];
+int	  		kappa_fifo_inputscnt = 0;
+int	  		kappa_fifo_inputdone = 0;
+kafifo_t 	kappa_fifo_inputinfo[ MAXSLOTS ];
 
-int	  kappa_fifo_outputscnt = 0;
-char  kappa_fifo_outputname[ MAXSLOTS ][ MAXPATHLEN ];
-int   kappa_fifo_outputginx[ MAXSLOTS ];
-int   kappa_fifo_outputfdrd[ MAXSLOTS ];
-byte *kappa_fifo_outputbufs[ MAXSLOTS ];
-int   kappa_fifo_outputread[ MAXSLOTS ];
-long  kappa_fifo_outputtotl[ MAXSLOTS ];
+int	  		kappa_fifo_outputscnt = 0;
+int	  		kappa_fifo_outputdone = 0;
+kafifo_t 	kappa_fifo_outputinfo[ MAXSLOTS ];
 
 //
 // Usage print.
@@ -71,7 +112,263 @@ void kappa_fifo_usage()
 }
 
 //
-// Get group index.
+// Check and parse YUV4MPEG header according to 
+// http://wiki.multimedia.cx/index.php?title=YUV4MPEG2
+//
+
+void *kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
+{
+	if (strncmp(info->buffer,"YUV4MPEG2",9))
+	{
+		fprintf(stderr,"Pipe name %s is not YUV4MPEG2, exitting now...\n",info->name);
+		exit(1);
+	}
+	
+	byte *headend = index(info->buffer,'\n');
+	
+	*headend = '\0';
+	fprintf(stderr,"Header  output %s %s\n",group,info->buffer);
+	*headend = '\n';
+	
+	if (strstr(info->buffer," W"))
+	{
+		info->width = atoi(strstr(info->buffer," W") + 2);
+	}
+	
+	if (strstr(info->buffer," H"))
+	{
+		info->height = atoi(strstr(info->buffer," H") + 2);
+	}
+	
+	if (strstr(info->buffer," C"))
+	{
+		info->format = atoi(strstr(info->buffer," C") + 2);
+		
+		if (info->format == 420) 
+		{
+			info->pixfmt    = AV_PIX_FMT_YUV420P;
+			info->framesize = info->width * info->height * 3 / 2;
+		}
+		
+		if (info->format == 422) 
+		{
+			info->pixfmt    = AV_PIX_FMT_YUV422P;
+			info->framesize = info->width * info->height * 2;
+		}
+		
+		if (info->format == 444) 
+		{
+			info->pixfmt    = AV_PIX_FMT_YUV422P;
+			info->framesize = info->width * info->height * 3;
+		}
+	}
+	
+	info->chunksize = info->framesize + strlen("FRAME\n");
+	
+	fprintf(stderr,"Header  output %s %d %d %d %s framesize=%d\n",
+			group,info->width,info->height,info->format,
+			av_get_pix_fmt_name(info->pixfmt),
+			info->framesize);
+	
+	//
+	// If current buffer size is too small for frame,
+	// reallocate buffer.
+	//
+	
+	if (info->bufsiz < info->chunksize)
+	{
+		byte *newbuf = (byte *) malloc(info->chunksize);
+		
+		memcpy(newbuf,info->buffer,info->bufsiz);
+		
+		free(info->buffer);
+		
+		info->buffer = newbuf;
+		info->bufsiz = info->chunksize;
+	}
+	
+	info->isheader = true;
+}
+
+//
+// Thread main loop.
+//
+
+void *kappa_fifo_threadloop(void *data)
+{
+	int grp = (int) data;
+		
+	char *name = kappa_fifo_groupname[ grp ];
+
+	fprintf(stderr,"Started thread %s\n",name);
+	
+	//
+	// Identify output pipe.
+	//
+	
+	int inx = -1;
+	int cnt;
+
+	while (true)
+	{
+		for (cnt = 0; cnt < kappa_fifo_outputscnt; cnt++)
+		{
+			if (grp == kappa_fifo_outputinfo[ cnt ].group)
+			{
+				inx = cnt;
+				
+				break;
+			}
+		}
+		
+		if (inx >= 0) break;
+		
+		usleep(100000);
+	}
+	
+	fprintf(stderr,"Running thread %s\n",kappa_fifo_groupname[ grp ]);
+
+	//
+	// Derive basic info from pipe names.
+	//
+	
+	kafifo_t *output = &kappa_fifo_outputinfo[ inx ];
+
+	if (rindex(output->name,'.') && ! strcmp(rindex(output->name,'.'),".y4m"))
+	{
+		output->isvideo    = true;
+		output->isyuv4mpeg = true;
+	}	
+	
+	kafifo_t *input;
+	
+	int todo;
+	int offs;
+	int xfer;
+	int yfer;
+	int wait;
+		
+	while (true)
+	{
+		wait = true;
+		
+		//
+		// Check for undelivered buffer parts.
+		//
+		
+		if (output->iobytes > 0)
+		{
+			if (kappa_fifo_grouptodo[ grp ] != 0) continue;
+			
+			todo = 0;
+		
+			for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
+			{
+				input = &kappa_fifo_inputinfo[ cnt ];
+				
+				if (input->group != grp) continue;
+				
+				if (input->iobytes == output->iobytes) continue;
+			
+				offs = input->iobytes;
+				xfer = output->iobytes - offs;
+				
+				yfer = write(input->fd,output->buffer + offs,xfer);
+				
+				if (yfer > 0)
+				{
+					input->iobytes += yfer;
+					input->total   += yfer;
+					
+					wait = false;
+				}
+				
+				todo++;
+			}
+			
+			if (todo == 0) output->iobytes = 0;
+		}
+		
+		if (output->iobytes == 0)
+		{	
+			//
+			// We have delivered a complete buffer to all input pipes.
+			//
+
+			for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
+			{
+				input = &kappa_fifo_inputinfo[ cnt ];
+				
+				if (input->group != grp) continue;
+		
+				input->iobytes = 0;
+				
+				if (output->fd < 0)
+				{
+					//
+					// Output pipe is closed and buffer delivered,
+					// so close corresponding input pipes.
+					//
+					
+					close(input->fd);
+					input->fd = -1;
+				}
+			}
+			
+			if (output->fd < 0)
+			{
+				//
+				// Read and write pipes are closed,
+				// break main loop now.
+				//
+				 
+				break;
+			}
+		}
+		
+		if ((output->fd >= 0) &&
+			(output->iobytes < output->bufsiz))
+		{
+			offs = output->iobytes;
+			xfer = output->bufsiz - offs;
+			
+			yfer = read(output->fd,output->buffer + offs,xfer);
+			
+			if (yfer > 0)
+			{
+				if (output->isyuv4mpeg && ! output->isheader) 
+				{
+					kappa_fifo_parse_yuv4mpeg(name,output);
+				}
+				
+				output->iobytes += yfer;
+				output->total   += yfer;
+				
+				wait = false;
+			}
+			else
+			if (yfer == 0)
+			{
+				if ((output->total >  0) && (output->iobytes == 0))
+				{
+					close(output->fd);
+					output->fd = -1;
+				}
+			}
+		}
+		
+		if (wait) usleep(1000);
+	}
+	
+	fprintf(stderr,"Closing thread %s\n",name);
+						
+	kappa_fifo_outputdone++;
+
+	return NULL;
+}
+
+//
+// Get group index and fork threat.
 //
 
 int kappa_fifo_groupindex(char *pipe)
@@ -109,11 +406,13 @@ int kappa_fifo_groupindex(char *pipe)
 	
 	strcpy(kappa_fifo_groupname[ inx ],indx);
 	
-	kappa_fifo_grouptodo[ inx ] = 0;
+	kappa_fifo_grouptodo[ inx ] = -1;
+	
+	fprintf(stderr,"Created group  %s\n",indx);
+	
+	pthread_create(&kappa_fifo_groupthrd[ inx ],NULL,kappa_fifo_threadloop,(void *) inx);
 	
 	kappa_fifo_groupscnt++;
-	
-	fprintf(stderr,"Created group %2d named %s ...\n",inx,indx);
 
 	return inx;
 }
@@ -136,15 +435,22 @@ void kappa_fifo_open_all(int pass)
 	snprintf(pattern_in ,sizeof(pattern_in ),"Kappa.inp.%d" ,pass);
 	snprintf(pattern_out,sizeof(pattern_out),"Kappa.out.%d",pass);
 	
-	fprintf(stdout,"Looking for Kappa pipes.\n");
+	//
+	// Setup private todo counters.
+	//
 	
-	kappa_fifo_groupmore = 0;
+	int temptodo[ MAXSLOTS ];
+	int tempmore = 0;
 	
-	for (grp = 0; grp < kappa_fifo_groupscnt; grp++)
+	for (grp = 0; grp < MAXSLOTS; grp++)
 	{
-		kappa_fifo_grouptodo[ inx ] = 0;
+		temptodo[ grp ] = 0;
 	}
 
+	//
+	// Scan working directory for pipes.
+	//
+	
 	DIR *dir = opendir(".");
 	struct dirent *entry;
 	
@@ -157,7 +463,7 @@ void kappa_fifo_open_all(int pass)
 		{
 			for (dup = false, cnt = 0; cnt < kappa_fifo_outputscnt; cnt++)
 			{
-				if (! strcmp(kappa_fifo_outputname[ cnt ],entry->d_name))
+				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,entry->d_name))
 				{
 					dup = true;
 					break;
@@ -169,25 +475,28 @@ void kappa_fifo_open_all(int pass)
 			grp = kappa_fifo_groupindex(entry->d_name);
 			
 			tfd = open(entry->d_name,O_RDONLY | O_NONBLOCK);
-			fprintf(stdout,"Opening output pipe %2d = %2d => %s\n",tfd,grp,entry->d_name);
+			
+			fprintf(stdout,"Opening output %s = %2d => %s\n",
+					kappa_fifo_groupname[ grp ],tfd,entry->d_name);
 			
 			if (tfd < 0)
 			{
-				kappa_fifo_grouptodo[ grp ]++;
-				kappa_fifo_groupmore++;
+				temptodo[ grp ]++;
+				tempmore++;
 			}
 			else
 			{
-				strcpy(kappa_fifo_outputname[ kappa_fifo_outputscnt ],entry->d_name);
 				
-				kappa_fifo_outputfdrd[ kappa_fifo_outputscnt ] = tfd;
-				kappa_fifo_outputginx[ kappa_fifo_outputscnt ] = grp;
-				kappa_fifo_outputbufs[ kappa_fifo_outputscnt ] = (byte *) malloc(BUFSIZE);
-				kappa_fifo_outputread[ kappa_fifo_outputscnt ] = 0;
-				kappa_fifo_outputtotl[ kappa_fifo_outputscnt ] = 0;
+				memset(&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ],0,sizeof(kafifo_t));
+				strcpy( kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].name,entry->d_name);
+				
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].fd     = tfd;
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].group  = grp;
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].bufsiz = BUFSIZE;
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].buffer = (byte *) malloc(BUFSIZE);
 
 				kappa_fifo_outputscnt++;
-			
+
 				continue;
 			}
 		}
@@ -196,7 +505,7 @@ void kappa_fifo_open_all(int pass)
 		{
 			for (dup = false, cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 			{
-				if (! strcmp(kappa_fifo_inputname[ cnt ],entry->d_name))
+				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,entry->d_name))
 				{
 					dup = true;
 					break;
@@ -208,30 +517,47 @@ void kappa_fifo_open_all(int pass)
 			grp = kappa_fifo_groupindex(entry->d_name);
 			
 			tfd = open(entry->d_name,O_RDWR | O_NONBLOCK);
-			fprintf(stdout,"Opening input  pipe %2d = %2d => %s\n",tfd,grp,entry->d_name);
+			
+			fprintf(stdout,"Opening input  %s = %2d => %s\n",
+					kappa_fifo_groupname[ grp ],tfd,entry->d_name);
 			
 			if (tfd < 0)
 			{
-				kappa_fifo_grouptodo[ grp ]++;
-				kappa_fifo_groupmore++;
+				temptodo[ grp ]++;
+				tempmore++;
 			}
 			else
 			{
-				strcpy(kappa_fifo_inputname[ kappa_fifo_inputscnt ],entry->d_name);
-				
-				kappa_fifo_inputfdwr[ kappa_fifo_inputscnt ] = tfd;
-				kappa_fifo_inputginx[ kappa_fifo_inputscnt ] = grp;
-				kappa_fifo_inputdone[ kappa_fifo_inputscnt ] = 0;
+				memset(&kappa_fifo_inputinfo[ kappa_fifo_inputscnt ],0,sizeof(kafifo_t));
+				strcpy( kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].name,entry->d_name);
+
+				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].fd    = tfd;
+				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].group = grp;
 							
 				kappa_fifo_inputscnt++;
-			
+
 				continue;
 			}
 		}
 	}
 
 	closedir(dir);
+	
+	//
+	// Copy results for waiting threads.
+	//
+	
+	for (grp = 0; grp < kappa_fifo_groupscnt; grp++)
+	{
+		kappa_fifo_grouptodo[ grp ] = temptodo[ grp ];
+	}
+
+	kappa_fifo_groupmore = tempmore;
 }
+
+//
+// Close all pipes.
+//
 
 void kappa_fifo_close_all()
 {
@@ -239,19 +565,23 @@ void kappa_fifo_close_all()
 	
 	for (inx = 0; inx < kappa_fifo_inputscnt; inx++)
 	{
-		if (kappa_fifo_inputfdwr[ inx ] >= 0)
+		kafifo_t *input = &kappa_fifo_inputinfo[ inx ];
+
+		if (input->fd >= 0)
 		{
-			close(kappa_fifo_inputfdwr[ inx ]);
-			kappa_fifo_inputfdwr[ inx ] = -1;
+			close(input->fd);
+			input->fd = -1;
 		}
 	}
 
 	for (inx = 0; inx < kappa_fifo_outputscnt; inx++)
 	{
-		if (kappa_fifo_outputfdrd[ inx ] >= 0)
+		kafifo_t *output = &kappa_fifo_outputinfo[ inx ];
+		
+		if (output->fd >= 0)
 		{
-			close(kappa_fifo_outputfdrd[ inx ]);
-			kappa_fifo_outputfdrd[ inx ] = -1;
+			close(output->fd);
+			output->fd = -1;
 		}
 	}
 }
@@ -263,139 +593,37 @@ void kappa_fifo_close_all()
 int kappa_fifo_execute_pass(int pass)
 {	
 	//
-	// Main read loop.
+	// Initial open loop.
 	//
-		
-	int	 inx;
-	int	 cnt;
-	int	 grp;
-	int	 offs;
-	int	 xfer;
-	int	 yfer;
-	int  todo;
+			
+	fprintf(stdout,"Looking for Kappa pipes on pass %d.\n",pass);
+
+	while (! kappa_fifo_outputscnt)
+	{
+		kappa_fifo_open_all(pass);
+	}
 	
-	long  totalr = 0;
-	long  totalw = 0;
-	
-	int  done = 0;
-	int  modu = 0;
-	
-	kappa_fifo_open_all(pass);
-	
-	while (done < kappa_fifo_outputscnt)
+	//
+	// Working and open loop.
+	//
+
+	while (kappa_fifo_outputdone < kappa_fifo_outputscnt)
 	{
 		if (kappa_fifo_groupmore)
 		{
 			kappa_fifo_open_all(pass);
 		}
 		
-		for (inx = 0; inx < kappa_fifo_outputscnt; inx++)
-		{
-			grp = kappa_fifo_outputginx[ inx ];
-	
-			//
-			// Check for undelivered buffer parts.
-			//
-			
-			if (kappa_fifo_outputread[ inx ] > 0)
-			{
-				if (kappa_fifo_grouptodo[ grp ]) continue;
-				
-				todo = 0;
-			
-				for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
-				{
-					if (kappa_fifo_inputginx[ cnt ] != grp) continue;
-					
-					if (kappa_fifo_inputdone[ cnt ] == kappa_fifo_outputread[ inx ]) continue;
-				
-					offs = kappa_fifo_inputdone[ cnt ];
-					xfer = kappa_fifo_outputread[ inx ] - offs;
-					if (xfer > RWSIZE) xfer = RWSIZE;
-					
-					yfer = write(kappa_fifo_inputfdwr[ cnt ],kappa_fifo_outputbufs[ inx ] + offs,xfer);
-					
-					if (yfer > 0)
-					{
-						totalw += yfer;
-						
-						kappa_fifo_inputdone[ cnt ] += yfer;
-					}
-					else
-					{
-						usleep(1000);
-					}
-					
-					todo++;
-				}
-				
-				if (todo == 0) kappa_fifo_outputread[ inx ] = 0;
-			}
-			
-			if (kappa_fifo_outputread[ inx ] == 0)
-			{	
-				for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
-				{
-					if (kappa_fifo_inputginx[ cnt ] != grp) continue;
-			
-					kappa_fifo_inputdone[ cnt ] = 0;
-					
-					if (kappa_fifo_outputfdrd[ inx ] < 0)
-					{
-						close(kappa_fifo_inputfdwr[ cnt ]);
-						kappa_fifo_inputfdwr[ cnt ] = -1;
-					}
-				}
-			}
-			
-			if (kappa_fifo_outputfdrd[ inx ] < 0) continue;
+		sleep(1);
+	}	
 
-			if (kappa_fifo_outputread[ inx ] < BUFSIZE)
-			{
-				offs = kappa_fifo_outputread[ inx ];
-				xfer = BUFSIZE - offs;
-				if (xfer > RWSIZE) xfer = RWSIZE;
-				
-				yfer = read(kappa_fifo_outputfdrd[ inx ],kappa_fifo_outputbufs[ inx ] + offs,xfer);
-				
-				if (yfer > 0)
-				{
-					totalr += yfer;
-					kappa_fifo_outputread[ inx ] += yfer;
-					kappa_fifo_outputtotl[ inx ] += yfer;
-				}
-				else
-				if (yfer == 0)
-				{
-					usleep(1000);
-					
-					if ((kappa_fifo_outputtotl[ inx ] >  0) &&
-						(kappa_fifo_outputread[ inx ] == 0))
-					{
-						close(kappa_fifo_outputfdrd[ inx ]);
-						kappa_fifo_outputfdrd[ inx ] = -1;
-						
-						done++;
-					}
-				}
-			}
-			
-			if (! (++modu % 777))
-			{
-				/*
-				fprintf(stdout,"Buffer %4d MB %s\n",
-					kappa_fifo_outputtotl[ inx ] >> 20,
-					kappa_fifo_outputname[ inx ]
-					);
-				*/
-			}
-		}
-	}
-	
-	fprintf(stdout,"Totalr=%ld\n",totalr);
-	fprintf(stdout,"Totalw=%ld\n",totalw);
+	//
+	// Close remaining pipes.
+	//
 	
 	kappa_fifo_close_all();
+	
+	return 0;
 }
 
 //
@@ -404,6 +632,8 @@ int kappa_fifo_execute_pass(int pass)
 
 int main(int argc, char **argv)
 {
+	fprintf(stdout,"Kappa Fifo Manager %s.\n",kappa_fifo_version);
+
 	if (argc == 0) kappa_fifo_usage();
 	
 	int inx;
