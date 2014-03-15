@@ -403,6 +403,10 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	input->isheader = true;
 }
 
+//
+// Crop frame.
+//
+
 void kappa_fifo_crop(AVFrame *dst,AVFrame *src,int top,int left)
 {
 	const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(dst->format);
@@ -423,8 +427,11 @@ void kappa_fifo_crop(AVFrame *dst,AVFrame *src,int top,int left)
 	dptr[ 2 ] = dst->data[ 2 ];
 	
 	int line;
-
-	for (line = 0; line < dst->height; line++)
+	int maxh;
+	
+	maxh = dst->height;
+	
+	for (line = 0; line < maxh; line++)
 	{
 		memcpy(dptr[ 0 ],sptr[ 0 ],dst->linesize[ 0 ]);
 		
@@ -432,7 +439,9 @@ void kappa_fifo_crop(AVFrame *dst,AVFrame *src,int top,int left)
 		sptr[ 0 ] += src->linesize[ 0 ];
 	}
 	
-	for (line = 0; line < dst->height >> y_shift; line++)
+	maxh = dst->height >> y_shift;
+	
+	for (line = 0; line < maxh; line++)
 	{
 		memcpy(dptr[ 1 ],sptr[ 1 ],dst->linesize[ 1 ]);
 		memcpy(dptr[ 2 ],sptr[ 2 ],dst->linesize[ 2 ]);
@@ -585,7 +594,7 @@ void *kappa_fifo_thread_writer(void *data)
 
 			input->framecount++;
 			
-			fprintf(stderr,"Frame %s %7d\n",name,input->framecount);
+			fprintf(stderr,"Frame writer %s %7d\n",name,input->framecount);
 			
 			//
 			// Do frame processing now.
@@ -594,7 +603,7 @@ void *kappa_fifo_thread_writer(void *data)
 			if (! (input->wantscale || input->wantcrop))
 			{
 				//
-				// No scale, no crop, we just copy the image.
+				// No scale, no crop, we just copy the pointer.
 				//
 				
 				bufp = output->buffer + offs + 6;
@@ -733,6 +742,7 @@ void *kappa_fifo_thread_reader(void *data)
 	int yfer;
 	int wrap;
 	int done;
+	int rest;
 	int cnt;
 	
 	while (true)
@@ -810,7 +820,7 @@ void *kappa_fifo_thread_reader(void *data)
 				if (input->iobytes == output->bufsiz)
 				{
 					//
-					// We can now safely wrap the inputs.
+					// We can now safely wrap this input.
 					//
 					
 					input->iobytes = 0;
@@ -842,13 +852,30 @@ void *kappa_fifo_thread_reader(void *data)
 		offs = output->iobytes;
 		xfer = ends - offs;
 		
-		if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+		if (output->isyuv4mpeg && output->isheader)
+		{
+			//
+			// We prefer to read full frames for processing.
+			//
+			
+			rest = output->chunksize - (output->iobytes % output->chunksize);
+			
+			//
+			// Try to read the rest of frame or another.
+			//
+				
+			if (xfer > rest) xfer = rest;
+		}
+		else
+		{
+			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+		}
 		
 		yfer = read(output->fd,output->buffer + offs,xfer);
 		
 		if ((output->group == 999) && (yfer > 0))
 		{
-			fprintf(stderr,"Read %s %7d %6d\n",name,offs,yfer);
+			fprintf(stderr,"Read %s %7d %6d %6d\n",name,offs,xfer,yfer);
 		}
 		
 		if (yfer == 0)
@@ -872,9 +899,29 @@ void *kappa_fifo_thread_reader(void *data)
 			output->iobytes += yfer;
 			output->total   += yfer;
 
-			if (output->isyuv4mpeg && ! output->isheader) 
+			if (output->isyuv4mpeg) 
 			{
-				kappa_fifo_parse_yuv4mpeg(name,output);
+				if (! output->isheader)
+				{
+					kappa_fifo_parse_yuv4mpeg(name,output);
+					
+					continue;
+				}
+				
+				if ((output->iobytes > 0) && ((output->iobytes % output->chunksize) == 0))
+				{
+					if (strncmp(output->buffer + output->iobytes - output->chunksize,"FRAME\n",6))
+					{
+						fprintf(stderr,"Frame magic wrong %s, exitting now...\n",name);
+						exit(1);
+					}
+					else
+					{
+						output->framecount++;
+			
+						fprintf(stderr,"Frame reader %s %7d\n",name,output->framecount);
+					}
+				}
 			}
 		}
 	}
