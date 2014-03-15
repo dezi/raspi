@@ -16,7 +16,7 @@ ffmpeg -y -i ./Test.mkv \
 	-f yuv4mpegpipe -r 25 -vf yadif=0 -pix_fmt yuv420p Kappa.out.1.1.yuv.size~720x576.y4m \
 	> Kappa.1.log 2>&1 &
 
-x264 --profile baseline --preset veryfast --bitrate 4000 --demuxer y4m --muxer mkv --quiet \
+x264 --profile baseline --preset veryfast --bitrate 4000 --demuxer y4m --muxer mkv \
 	-o Kappa.out.1.2.264.size~720x576.mkv \
 	   Kappa.inp.1.2.yuv.size~720x576.y4m \
 	> Kappa.2.log 2>&1 &

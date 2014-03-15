@@ -42,47 +42,54 @@ struct kafifo
 	// Video related.
 	//
 	
-	int		isvideo;
-	int		isyuv4mpeg;
-	int		isheader;
+	int			isvideo;
+	int			isyuv4mpeg;
+	int			isheader;
 	
-	int		width;
-	int		height;
-	int		format;
-	int		pixfmt;
+	int			width;
+	int			height;
+	int			format;
+	int			pixfmt;
 	
-	int		aspect_num;
-	int 	aspect_den;
+	int			aspect_num;
+	int 		aspect_den;
 	
-	int		fps_num;
-	int 	fps_den;
+	int			fps_num;
+	int 		fps_den;
 	
-	char	mode;
+	char		mode;
 	
 	//
 	// Audio related.
 	//
 	
-	int		isaudio;
+	int			isaudio;
 	
-	int		channels;
-	int		rate;
+	int			channels;
+	int			rate;
 
 	//
 	// Pipe related.
 	//
 	
-	char    name[ MAXPATHLEN ];
-	int		framesize;
-	int		chunksize;
-	int		iobytes;
-	long	total;
-	int 	group;
-	int		fd;
+	char    	name[ MAXPATHLEN ];
+	int			framesize;
+	int			chunksize;
+	int			iobytes;
+	long		total;
+	int 		group;
+	int			fd;
 	
 	int			bufsiz;
 	byte	   *buffer;
 	pthread_t	thread;
+	
+	//
+	// Frame related.
+	//
+	
+	byte	   *framebuffer;
+	byte	   *framemalloc;
 };
 
 typedef struct kafifo kafifo_t;
@@ -239,14 +246,12 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	input->height		= output->height;
 	input->format		= output->format;
 	input->pixfmt		= output->pixfmt;
-	
 	input->aspect_num	= output->aspect_num;
 	input->aspect_den	= output->aspect_den;
-	
 	input->fps_num		= output->fps_num;
 	input->fps_den		= output->fps_den;
-	
 	input->mode			= output->mode;
+	input->framesize    = output->framesize;
 	
 	char yheader[ 256 ];
 	
@@ -262,162 +267,254 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	int xfer = write(input->fd,yheader,strlen(yheader));
 	
 	fprintf(stderr,"Header  input  %s %d %s",group,xfer,yheader);
-		
+	
+	input->framemalloc = (byte *) malloc(input->framesize);
+	
 	input->isheader = true;
 }
 
 //
-// Thread main loop.
+// Thread writer main loop.
 //
 
-void *kappa_fifo_threadreader(void *data)
+void *kappa_fifo_thread_writer(void *data)
 {
-	int grp = (int) data;
-		
-	char *name = kappa_fifo_groupname[ grp ];
+	int inx = (int) data;
+	
+	kafifo_t *input = &kappa_fifo_inputinfo[ inx ];
+	char 	 *name  = kappa_fifo_groupname[ input->group ];
 
-	fprintf(stderr,"Started thread %s reader\n",name);
-	
-	//
-	// Identify output pipe.
-	//
-	
-	int inx = -1;
-	int cnt;
-
-	while (true)
-	{
-		for (cnt = 0; cnt < kappa_fifo_outputscnt; cnt++)
-		{
-			if (grp == kappa_fifo_outputinfo[ cnt ].group)
-			{
-				inx = cnt;
-				
-				break;
-			}
-		}
-		
-		if (inx >= 0) break;
-		
-		usleep(100000);
-	}
-	
-	fprintf(stderr,"Running thread %s reader\n",kappa_fifo_groupname[ grp ]);
+	fprintf(stderr,"Started thread %s writer\n",name);
 
 	//
 	// Derive basic info from pipe names.
 	//
 	
-	kafifo_t *output = &kappa_fifo_outputinfo[ inx ];
+	if (rindex(input->name,'.') && ! strcmp(rindex(input->name,'.'),".y4m"))
+	{
+		input->isvideo    = true;
+		input->isyuv4mpeg = true;
+	}	
+	
+	//
+	// Identify output pipe.
+	//
+	
+	kafifo_t *output = NULL;
+	
+	int cnt;
+	
+	while (true)
+	{
+		for (cnt = 0; cnt < kappa_fifo_outputscnt; cnt++)
+		{
+			if (input->group == kappa_fifo_outputinfo[ cnt ].group)
+			{
+				output = &kappa_fifo_outputinfo[ cnt ];
+				
+				break;
+			}
+		}
 
+		if (output) break;
+			
+		usleep(100000);
+	}
+	
+	//
+	// We switch to blocking mode.
+	//
+	
+	fcntl(input->fd,F_SETFL,fcntl(input->fd,F_GETFL,0) & ~O_NONBLOCK);
+
+	fprintf(stderr,"Running thread %s writer\n",name);
+	
+	int offs;
+	int xfer;
+	int yfer;
+	
+	while (true)
+	{
+		if (output->isyuv4mpeg && ! input->isheader) 
+		{
+			//
+			// We did not yet prepare the header.
+			//
+			
+			if (! output->isheader) 
+			{
+				//
+				// Nor did the output reader.
+				//
+				
+				usleep(1000);
+				
+				continue;
+			}
+			
+			kappa_fifo_write_yuv4mpeg(name,output,input);
+		}
+	
+		if (input->iobytes == output->iobytes)
+		{
+			//
+			// Nothing to do.
+			//
+			
+			if (output->fd < 0)
+			{
+				//
+				// Output pipe is closed, input pipe has all written,
+				// no more work to do, close this now.
+				//
+		
+				fprintf(stderr,"Closing write pipe %s\n",name);
+				
+				close(input->fd);
+				input->fd = -1;
+		
+				break;
+			}
+
+			usleep(1000);
+				
+			continue;
+		}
+		
+		offs = input->iobytes;
+
+		if (offs < output->iobytes)
+		{
+			xfer = output->iobytes - offs;
+		}
+		else
+		{
+			xfer = output->bufsiz - offs;
+		}
+
+		if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+
+		yfer = write(input->fd,output->buffer + offs,xfer);
+
+		if ((output->group == 999) && (yfer > 0)) 
+		{
+			fprintf(stderr,"Send %s %7d %6d\n",name,offs,yfer);
+		}
+	
+		if (yfer <= 0)
+		{
+			usleep(1000);
+			continue;
+		}
+		
+		if (yfer > 0)
+		{
+			input->iobytes += yfer;
+			input->total   += yfer;
+		}
+	}
+	
+	fprintf(stderr,"Closing thread %s writer\n",name);
+						
+	kappa_fifo_inputdone++;
+
+	return NULL;
+}
+
+//
+// Thread reader main loop.
+//
+
+void *kappa_fifo_thread_reader(void *data)
+{
+	int 	  inx    = (int) data;
+	kafifo_t *output = &kappa_fifo_outputinfo[ inx ];
+	char 	 *name   = kappa_fifo_groupname[ output->group ];
+
+	fprintf(stderr,"Started thread %s reader\n",name);
+
+	//
+	// Derive basic info from pipe names.
+	//
+	
 	if (rindex(output->name,'.') && ! strcmp(rindex(output->name,'.'),".y4m"))
 	{
 		output->isvideo    = true;
 		output->isyuv4mpeg = true;
 	}	
 	
+	//
+	// We switch to blocking mode.
+	//
+	
+	fcntl(output->fd,F_SETFL,fcntl(output->fd,F_GETFL,0) & ~O_NONBLOCK);
+	
+	fprintf(stderr,"Running thread %s reader\n",name);
+
 	kafifo_t *input;
 	
 	int ends;
 	int offs;
 	int xfer;
 	int yfer;
-	int wait;
+	int wrap;
 	int done;
-		
+	int cnt;
+	
 	while (true)
 	{
-		wait = true;
-		
-		//
-		// Write as much as possible.
-		//
-		
-		for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
-		{
-			input = &kappa_fifo_inputinfo[ cnt ];
-		
-			if (input->group != grp) continue;
-
-			if (output->isyuv4mpeg && ! input->isheader) 
-			{
-				if (! output->isheader) continue;
-			
-				kappa_fifo_write_yuv4mpeg(name,output,input);
-			}
-			
-			if (input->iobytes == output->iobytes) continue;
-			
-			offs = input->iobytes;
-			
-			if (offs < output->iobytes)
-			{
-				xfer = output->iobytes - offs;
-			}
-			else
-			{
-				xfer = output->bufsiz - offs;
-			}
-			
-			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
-
-			yfer = write(input->fd,output->buffer + offs,xfer);
-			
-			if ((grp == 999) && (yfer > 0)) fprintf(stderr,"Send %s %7d %6d\n",name,offs,yfer);
-
-			if (yfer > 0)
-			{
-				input->iobytes += yfer;
-				input->total   += yfer;
-				
-				wait = false;
-			}
-		}
-		
 		//
 		// Read as much as possible.
 		//
 		
 		ends = output->bufsiz;
 
-		if (kappa_fifo_grouptodo[ grp ] != 0)
+		if (kappa_fifo_grouptodo[ output->group ] != 0)
 		{
 			//
 			// Some inputs are not yet ready. Read
-			// until buffer filled completely and wait.
+			// until buffer filled completely and wait
+			// for inputs to come alive.
 			//
 		}
 		else
 		{
-			done = true;
-			
 			if (output->iobytes == output->bufsiz)
 			{
+				//
+				// We like to wrap. Only possible if
+				// all input pointers are not at start
+				// of buffer.
+				//
+				
+				wrap = true;
+				
+				for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
+				{
+					input = &kappa_fifo_inputinfo[ cnt ];
+				
+					if (input->group != output->group) continue;
+					
+					if (input->iobytes == 0) wrap = false;
+				}
+				
 				//
 				// Wrap buffer now.
 				//
 			
-				output->iobytes = 0;
+				if (wrap) output->iobytes = 0;
 			}
 
+			done = true;
+			
 			for (cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 			{
 				input = &kappa_fifo_inputinfo[ cnt ];
 				
-				if (input->group != grp) continue;
+				if (input->group != output->group) continue;
 				
-				if (input->fd < 0) continue;
+				if (input-> fd < 0) continue;
 				
-				if (input->iobytes == output->bufsiz)
-				{
-					//
-					// Input has written until end of buffer,
-					// wrap it now.
-					//
-				
-					input->iobytes = 0;
-				}
-			
 				if (output->iobytes < input->iobytes)
 				{
 					//
@@ -436,17 +533,13 @@ void *kappa_fifo_threadreader(void *data)
 					}
 				}
 				
-				if ((output->iobytes == input->iobytes) && (output->fd < 0))
+				if (input->iobytes == output->bufsiz)
 				{
 					//
-					// Output pipe is closed, input pipe has all written,
-					// close this now.
+					// We can now safely wrap the inputs.
 					//
 					
-					close(input->fd);
-					input->fd = -1;
-					
-					continue;
+					input->iobytes = 0;
 				}
 				
 				done = false;
@@ -455,54 +548,62 @@ void *kappa_fifo_threadreader(void *data)
 			if (done)
 			{
 				//
-				// Read and write pipes are closed,
-				// break main loop now.
+				// Leave thread loop.
 				//
-				 
+				
 				break;
 			}
 		}
 
-		if ((output->fd >= 0) && (output->iobytes < ends))
+		if ((output->iobytes == ends) || (output->fd < 0))
 		{
-			offs = output->iobytes;
-			xfer = ends - offs;
+			//
+			// Nothing todo.
+			//
 			
-			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
-			
-			yfer = read(output->fd,output->buffer + offs,xfer);
-			
-			if ((grp == 999) && (yfer > 0))  fprintf(stderr,"Read %s %7d %6d\n",name,offs,yfer);
-			
-			if (yfer > 0)
+			usleep(1000);
+			continue;
+		}
+		
+		offs = output->iobytes;
+		xfer = ends - offs;
+		
+		if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+		
+		yfer = read(output->fd,output->buffer + offs,xfer);
+		
+		if ((output->group == 999) && (yfer > 0))
+		{
+			fprintf(stderr,"Read %s %7d %6d\n",name,offs,yfer);
+		}
+		
+		if (yfer == 0)
+		{
+			if (output->total > 0)
 			{
-				if (output->isyuv4mpeg && ! output->isheader) 
-				{
-					kappa_fifo_parse_yuv4mpeg(name,output);
-				}
+				//
+				// We had already input, means pipe
+				// is at end, so close it and leave loop.
+				//
 				
-				output->iobytes += yfer;
-				output->total   += yfer;
-				
-				wait = false;
-			}
-			else
-			if (yfer == 0)
-			{
-				if (output->total > 0)
-				{
-					//
-					// We had already input, means pipe
-					// is at end, so close it.
-					//
-					
-					close(output->fd);
-					output->fd = -1;
-				}
+				fprintf(stderr,"Closing reader pipe %s\n",name);
+
+				close(output->fd);
+				output->fd = -1;
 			}
 		}
-						
-		if (wait) usleep(1000);
+	
+		if (yfer > 0)
+		{				
+			output->iobytes += yfer;
+			output->total   += yfer;
+
+			if (output->isyuv4mpeg && ! output->isheader) 
+			{
+				kappa_fifo_parse_yuv4mpeg(name,output);
+			}
+			
+		}
 	}
 	
 	fprintf(stderr,"Closing thread %s reader\n",name);
@@ -640,8 +741,8 @@ void kappa_fifo_open_all(int pass)
 				pthread_create(
 					&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].thread,
 					NULL,
-					kappa_fifo_threadreader,
-					(void *) grp
+					kappa_fifo_thread_reader,
+					(void *) kappa_fifo_outputscnt
 					);
 
 				kappa_fifo_outputscnt++;
@@ -682,6 +783,13 @@ void kappa_fifo_open_all(int pass)
 
 				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].fd    = tfd;
 				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].group = grp;
+				
+				pthread_create(
+					&kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].thread,
+					NULL,
+					kappa_fifo_thread_writer,
+					(void *) kappa_fifo_inputscnt
+					);
 							
 				kappa_fifo_inputscnt++;
 
@@ -756,7 +864,8 @@ int kappa_fifo_execute_pass(int pass)
 	// Working and open loop.
 	//
 
-	while (kappa_fifo_outputdone < kappa_fifo_outputscnt)
+	while ((kappa_fifo_outputdone < kappa_fifo_outputscnt) ||
+		   (kappa_fifo_inputdone  < kappa_fifo_inputscnt ))
 	{
 		if (kappa_fifo_groupmore)
 		{
