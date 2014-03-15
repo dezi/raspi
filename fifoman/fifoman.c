@@ -51,6 +51,11 @@ struct kafifo
 	int			format;
 	int			pixfmt;
 	
+	int			crop_top;
+	int			crop_left;
+	int			crop_width;
+	int			crop_height;
+	
 	int			aspect_num;
 	int 		aspect_den;
 	
@@ -88,8 +93,27 @@ struct kafifo
 	// Frame related.
 	//
 	
-	byte	   *framebuffer;
-	byte	   *framemalloc;
+	char    	logo[ MAXPATHLEN ];
+	int 	    framecount;
+	
+	int			wantscale;
+	int			wantcrop;
+	
+	int			final_width;
+	int			final_height;
+	
+	int			finalsize;
+	int			scalesize;
+
+	byte	   *finalpixels;
+	byte	   *scalepixels;
+	byte	   *outputpixels;
+	
+	AVFrame	   *finalframe;
+	AVFrame	   *scaleframe;
+	AVFrame	   *outputframe;
+	
+	struct SwsContext *sws;
 };
 
 typedef struct kafifo kafifo_t;
@@ -125,6 +149,50 @@ void kappa_fifo_usage()
 	fprintf(stdout,"--passes 1|2\n");
 	
 	exit(1);
+}
+
+//
+// Check and parse fifo name for infos and options. 
+//
+
+void kappa_fifo_parse_fifoname(char *group,kafifo_t *info)
+{
+	char *poi;
+	
+	if (rindex(info->name,'.') && ! strcmp(rindex(info->name,'.'),".y4m"))
+	{
+		info->isvideo    = true;
+		info->isyuv4mpeg = true;
+	}	
+
+	if ((poi = strstr(info->name,".size~")) != NULL)
+	{
+		sscanf(poi + 6,"%dx%d",&info->width,&info->height);
+	}
+	
+	if ((poi = strstr(info->name,".ac~")) != NULL)
+	{
+		sscanf(poi + 4,"%d",&info->channels);
+	}
+	
+	if ((poi = strstr(info->name,".ar~")) != NULL)
+	{
+		sscanf(poi + 4,"%d",&info->rate);
+	}
+	
+	if ((poi = strstr(info->name,".crop~")) != NULL)
+	{
+		sscanf(poi + 6,"%dx%d~%dx%d",
+			&info->crop_left,&info->crop_top,
+			&info->crop_width,&info->crop_height
+			);
+	}
+	
+	if ((poi = strstr(info->name,".logo~")) != NULL)
+	{
+		strcpy(info->logo,poi + 6);
+		*index(info->logo,'.') = '\0';
+	}
 }
 
 //
@@ -181,57 +249,45 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	{
 		info->format = atoi(strstr(info->buffer," C") + 2);
 		
-		if (info->format == 420) 
-		{
-			info->pixfmt    = AV_PIX_FMT_YUV420P;
-			info->framesize = info->width * info->height * 3 / 2;
-		}
-		
-		if (info->format == 422) 
-		{
-			info->pixfmt    = AV_PIX_FMT_YUV422P;
-			info->framesize = info->width * info->height * 2;
-		}
-		
-		if (info->format == 444) 
-		{
-			info->pixfmt    = AV_PIX_FMT_YUV422P;
-			info->framesize = info->width * info->height * 3;
-		}
+		if (info->format == 420) info->pixfmt = AV_PIX_FMT_YUV420P;		
+		if (info->format == 422) info->pixfmt = AV_PIX_FMT_YUV422P;
+		if (info->format == 444) info->pixfmt = AV_PIX_FMT_YUV444P;
 	}
 	
+	info->framesize = avpicture_get_size(info->pixfmt,info->width,info->height);
 	info->chunksize = info->framesize + strlen("FRAME\n");
 	
 	fprintf(stderr,"Header  output %s %d %d %d F%d:%d A%d:%d I%c %s framesize=%d\n",
-			group,info->width,info->height,info->format,
+			group,
+			info->width,info->height,
+			info->format,
 			info->fps_num,info->fps_den,
 			info->aspect_num,info->aspect_den,
 			info->mode,av_get_pix_fmt_name(info->pixfmt),
 			info->framesize);
-	
-	//
-	// If current buffer size is too small for frame,
-	// reallocate buffer.
-	//
-	
-	if (info->bufsiz < info->chunksize)
-	{
-		byte *newbuf = (byte *) malloc(info->chunksize);
 		
-		memcpy(newbuf,info->buffer,info->bufsiz);
-		
-		free(info->buffer);
-		
-		info->buffer = newbuf;
-		info->bufsiz = info->chunksize;
-	}
-	
 	//
 	// Remove header from buffer.
 	//
 	
 	memcpy(info->buffer,info->buffer + headlen,info->bufsiz - headlen);
 	info->iobytes -= headlen;
+
+	//
+	// Reallocate the current buffer to a multiple
+	// of the frame chunk size including header.
+	//
+	
+	int frames = (info->bufsiz / info->chunksize) + 1;
+	
+	byte *newbuf = (byte *) malloc(info->chunksize * frames);
+		
+	memcpy(newbuf,info->buffer,info->bufsiz);
+		
+	free(info->buffer);
+		
+	info->buffer = newbuf;
+	info->bufsiz = info->chunksize * frames;
 	
 	info->isheader = true;
 }
@@ -242,22 +298,30 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 
 void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 {
-	input->width		= output->width;
-	input->height		= output->height;
-	input->format		= output->format;
-	input->pixfmt		= output->pixfmt;
-	input->aspect_num	= output->aspect_num;
-	input->aspect_den	= output->aspect_den;
-	input->fps_num		= output->fps_num;
-	input->fps_den		= output->fps_den;
-	input->mode			= output->mode;
-	input->framesize    = output->framesize;
+	if (! input->width) 		input->width		= output->width;
+	if (! input->height) 		input->height		= output->height;
+	if (! input->format) 		input->format		= output->format;
+	if (! input->pixfmt) 		input->pixfmt		= output->pixfmt;
+	if (! input->aspect_num) 	input->aspect_num	= output->aspect_num;
+	if (! input->aspect_den) 	input->aspect_den	= output->aspect_den;
+	if (! input->fps_num) 		input->fps_num		= output->fps_num;
+	if (! input->fps_den) 		input->fps_den		= output->fps_den;
+	if (! input->mode) 			input->mode			= output->mode;
+	if (! input->crop_width)	input->crop_width	= input->crop_width;
+	if (! input->crop_height)	input->crop_height	= input->crop_height;
+	
+	input->final_width  = input->crop_width  ? input->crop_width  : input->width;
+	input->final_height = input->crop_height ? input->crop_height : input->height;
+	
+	input->scalesize = avpicture_get_size(input->pixfmt,input->width,input->height);
+	input->finalsize = avpicture_get_size(input->pixfmt,input->final_width,input->final_height);
+	input->chunksize = input->finalsize + strlen("FRAME\n");
 	
 	char yheader[ 256 ];
 	
 	snprintf(yheader,sizeof(yheader),
 			 "YUV4MPEG2 W%d H%d F%d:%d I%c A%d:%d C%03dmpeg2 XYSCSS=%03dMPEG2\n",
-			 input->width,input->height,
+			 input->final_width,input->final_height,
 			 input->fps_num,input->fps_den,
 			 input->mode,
 			 input->aspect_num,input->aspect_den,
@@ -268,9 +332,117 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	
 	fprintf(stderr,"Header  input  %s %d %s",group,xfer,yheader);
 	
-	input->framemalloc = (byte *) malloc(input->framesize);
+	//
+	// Create the scaler context.
+	//
+
+	input->sws = sws_getContext(
+		output->width,
+		output->height,
+        output->pixfmt,
+        input->width,
+        input->height,
+        input->pixfmt,
+        SWS_BICUBIC,
+        NULL, NULL, NULL
+        );
 	
+	//
+	// Decide what to do.
+	//
+				
+	input->wantscale = (input->width  != output->width)  ||
+					   (input->height != output->height) ||
+					   (input->pixfmt != output->pixfmt);
+								
+	input->wantcrop  = (input->final_width  != input->width) ||
+					   (input->final_height != input->height);
+
+	//
+	// Lay out allocated frame buffer on frame struct.
+	//
+	
+	if (input->wantscale && input->wantcrop)
+	{			
+		input->scalepixels = malloc(input->scalesize);
+	
+		input->scaleframe = av_frame_alloc();
+			
+		input->scaleframe->format = input->pixfmt;
+		input->scaleframe->width  = input->width;
+		input->scaleframe->height = input->height;
+
+		avpicture_fill((AVPicture *) input->scaleframe,
+			input->scalepixels,
+			input->pixfmt,
+			input->width,
+			input->height
+		   );
+	}
+	
+	if (input->wantscale || input->wantcrop)
+	{			
+		input->finalpixels = malloc(input->finalsize);
+	
+		input->finalframe = av_frame_alloc();
+		
+		input->finalframe->format = input->pixfmt;
+		input->finalframe->width  = input->final_width;
+		input->finalframe->height = input->final_height;
+		
+		avpicture_fill((AVPicture *) input->finalframe,
+			input->finalpixels,
+			input->pixfmt,
+			input->final_width,
+			input->final_height
+		   );
+	
+		input->outputframe = av_frame_alloc();
+	}
+
 	input->isheader = true;
+}
+
+void kappa_fifo_crop(AVFrame *dst,AVFrame *src,int top,int left)
+{
+	const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(dst->format);
+	
+	int y_shift = desc->log2_chroma_h;
+	int x_shift = desc->log2_chroma_w;
+	
+	byte *sptr[ 3 ];
+	
+	sptr[ 0 ] = src->data[ 0 ] + ( top             * src->linesize[ 0 ]) +  left;
+	sptr[ 1 ] = src->data[ 1 ] + ((top >> y_shift) * src->linesize[ 1 ]) + (left >> x_shift);
+	sptr[ 2 ] = src->data[ 2 ] + ((top >> y_shift) * src->linesize[ 2 ]) + (left >> x_shift);
+	
+	byte *dptr[ 3 ];
+	
+	dptr[ 0 ] = dst->data[ 0 ];
+	dptr[ 1 ] = dst->data[ 1 ];
+	dptr[ 2 ] = dst->data[ 2 ];
+	
+	int line;
+
+	for (line = 0; line < dst->height; line++)
+	{
+		memcpy(dptr[ 0 ],sptr[ 0 ],dst->linesize[ 0 ]);
+		
+		dptr[ 0 ] += dst->linesize[ 0 ];
+		sptr[ 0 ] += src->linesize[ 0 ];
+	}
+	
+	for (line = 0; line < dst->height >> y_shift; line++)
+	{
+		memcpy(dptr[ 1 ],sptr[ 1 ],dst->linesize[ 1 ]);
+		memcpy(dptr[ 2 ],sptr[ 2 ],dst->linesize[ 2 ]);
+		
+		dptr[ 1 ] += dst->linesize[ 1 ];
+		dptr[ 2 ] += dst->linesize[ 2 ];
+		
+		sptr[ 1 ] += src->linesize[ 1 ];
+		sptr[ 2 ] += src->linesize[ 2 ];
+	}
 }
 
 //
@@ -286,16 +458,6 @@ void *kappa_fifo_thread_writer(void *data)
 
 	fprintf(stderr,"Started thread %s writer\n",name);
 
-	//
-	// Derive basic info from pipe names.
-	//
-	
-	if (rindex(input->name,'.') && ! strcmp(rindex(input->name,'.'),".y4m"))
-	{
-		input->isvideo    = true;
-		input->isyuv4mpeg = true;
-	}	
-	
 	//
 	// Identify output pipe.
 	//
@@ -322,6 +484,12 @@ void *kappa_fifo_thread_writer(void *data)
 	}
 	
 	//
+	// Derive basic info from pipe names.
+	//
+	
+	kappa_fifo_parse_fifoname(name,input);
+
+	//
 	// We switch to blocking mode.
 	//
 	
@@ -329,9 +497,10 @@ void *kappa_fifo_thread_writer(void *data)
 
 	fprintf(stderr,"Running thread %s writer\n",name);
 	
-	int offs;
-	int xfer;
-	int yfer;
+	int   offs;
+	int   xfer;
+	int   yfer;
+	byte *bufp;
 	
 	while (true)
 	{
@@ -381,6 +550,7 @@ void *kappa_fifo_thread_writer(void *data)
 			continue;
 		}
 		
+		bufp = output->buffer;
 		offs = input->iobytes;
 
 		if (offs < output->iobytes)
@@ -392,10 +562,118 @@ void *kappa_fifo_thread_writer(void *data)
 			xfer = output->bufsiz - offs;
 		}
 
-		if (xfer > RDWRSIZE) xfer = RDWRSIZE;
+		if (input->isyuv4mpeg)
+		{
+			//
+			// We want full frames in each write.
+			//
+			
+			if (xfer < output->chunksize)
+			{
+				usleep(1000);
+				
+				continue;
+			}
+			
+			if (xfer > output->chunksize) xfer = output->chunksize;
+			
+			if (strncmp(output->buffer + offs,"FRAME\n",6))
+			{
+				fprintf(stderr,"Frame magic wrong %s, exitting now...\n",name);
+				exit(1);
+			}
 
-		yfer = write(input->fd,output->buffer + offs,xfer);
+			input->framecount++;
+			
+			fprintf(stderr,"Frame %s %7d\n",name,input->framecount);
+			
+			//
+			// Do frame processing now.
+			//
 
+			if (! (input->wantscale || input->wantcrop))
+			{
+				//
+				// No scale, no crop, we just copy the image.
+				//
+				
+				bufp = output->buffer + offs + 6;
+			}
+			else
+			{
+				//
+				// We want to scale or crop or both.
+				//
+				
+				avpicture_fill((AVPicture *) input->outputframe,
+					output->buffer + offs + 6,
+					output->pixfmt,
+					output->width,
+					output->height
+				   );
+				
+				if (input->wantscale)			
+				{
+					//
+					// We want to scale.
+					//
+					
+					if (input->wantcrop)
+					{
+						sws_scale(
+							input->sws,
+							(const uint8_t * const *) input->outputframe->data, 
+							input->outputframe->linesize, 
+							0,output->height,
+							input->scaleframe->data,
+							input->scaleframe->linesize
+							);
+							
+						kappa_fifo_crop(
+							input->finalframe,
+							input->scaleframe,
+							input->crop_top,
+							input->crop_left
+							);
+					}	
+					else
+					{
+						sws_scale(
+							input->sws,
+							(const uint8_t * const *) input->outputframe->data, 
+							input->outputframe->linesize, 
+							0,output->height,
+							input->finalframe->data,
+							input->finalframe->linesize
+							);
+					}
+				}
+				else
+				{
+					if (input->wantcrop)
+					{
+						kappa_fifo_crop(
+							input->finalframe,
+							input->outputframe,
+							input->crop_top,
+							input->crop_left
+							);
+					}
+				}
+				
+				bufp = input->finalpixels;
+			}
+			
+			write(input->fd,"FRAME\n",6);
+			write(input->fd,bufp,input->finalsize);
+
+			yfer = xfer;
+		}
+		else
+		{
+			yfer = write(input->fd,bufp + offs,xfer);
+		}
+		
 		if ((output->group == 999) && (yfer > 0)) 
 		{
 			fprintf(stderr,"Send %s %7d %6d\n",name,offs,yfer);
@@ -437,11 +715,7 @@ void *kappa_fifo_thread_reader(void *data)
 	// Derive basic info from pipe names.
 	//
 	
-	if (rindex(output->name,'.') && ! strcmp(rindex(output->name,'.'),".y4m"))
-	{
-		output->isvideo    = true;
-		output->isyuv4mpeg = true;
-	}	
+	kappa_fifo_parse_fifoname(name,output);
 	
 	//
 	// We switch to blocking mode.
@@ -602,7 +876,6 @@ void *kappa_fifo_thread_reader(void *data)
 			{
 				kappa_fifo_parse_yuv4mpeg(name,output);
 			}
-			
 		}
 	}
 	
