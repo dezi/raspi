@@ -86,8 +86,9 @@ struct kafifo
 	int			logo_pixfmt;
 	
 	uint8_t	   *logo_rgb_data[ 4 ];
-	uint8_t	   *logo_yuv_data[ 4 ];
 	int			logo_rgb_size[ 4 ];
+
+	uint8_t	   *logo_yuv_data[ 4 ];
 	int			logo_yuv_size[ 4 ];
 	
 	uint8_t	   *alphatable;
@@ -126,7 +127,6 @@ struct kafifo
 
 	byte	   *finalpixels;
 	byte	   *scalepixels;
-	byte	   *outputpixels;
 
 	AVFrame	   *finalframe;
 	AVFrame	   *scaleframe;
@@ -858,7 +858,7 @@ void *kappa_fifo_thread_writer(void *data)
 
 		if (output) break;
 
-		usleep(100000);
+		usleep(10000);
 	}
 
 	//
@@ -894,7 +894,7 @@ void *kappa_fifo_thread_writer(void *data)
 				// Nor did the output reader.
 				//
 
-				usleep(1000);
+				usleep(10000);
 
 				continue;
 			}
@@ -923,7 +923,7 @@ void *kappa_fifo_thread_writer(void *data)
 				break;
 			}
 
-			usleep(1000);
+			usleep(10000);
 
 			continue;
 		}
@@ -948,7 +948,7 @@ void *kappa_fifo_thread_writer(void *data)
 
 			if (xfer < output->chunksize)
 			{
-				usleep(1000);
+				usleep(10000);
 
 				continue;
 			}
@@ -1064,7 +1064,7 @@ void *kappa_fifo_thread_writer(void *data)
 
 		if (yfer <= 0)
 		{
-			usleep(1000);
+			usleep(10000);
 			continue;
 		}
 
@@ -1219,7 +1219,7 @@ void *kappa_fifo_thread_reader(void *data)
 			// Nothing todo.
 			//
 
-			usleep(1000);
+			usleep(10000);
 			continue;
 		}
 
