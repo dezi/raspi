@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <jpeglib.h>
 
 #include "libavutil/common.h"
 #include "libavutil/opt.h"
@@ -153,7 +154,7 @@ int			kappa_fifo_passes 		= 1;
 int			kappa_fifo_aspect_num 	= 16;
 int			kappa_fifo_aspect_den 	= 9;
 char	   *kappa_fifo_stills 		= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
-char	   *kappa_fifo_fileprefix 	= "Test";
+char	   *kappa_fifo_fileprefix 	= "output";
 
 int			kappa_fifo_groupscnt = 0;
 int			kappa_fifo_groupmore = 0;
@@ -336,8 +337,47 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 // Save frame as JPEG image.
 //
 
-void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe)
+void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *filename)
 {
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+	
+	JSAMPROW row_pointer[ 1 ];
+	FILE *outfile;
+	
+	if ((outfile = fopen(filename, "wb")) == NULL) 
+	{
+		fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
+		exit(1);
+	}
+
+	cinfo.err = jpeg_std_error(&jerr);	
+	jpeg_create_compress(&cinfo);
+	
+	jpeg_stdio_dest(&cinfo,outfile);
+	
+	cinfo.image_width      = stillframe->width;
+	cinfo.image_height     = stillframe->height;
+	cinfo.input_components = 3;     
+	cinfo.in_color_space   = JCS_RGB;
+
+	jpeg_set_defaults(&cinfo);
+	
+	jpeg_start_compress(&cinfo, TRUE);
+
+	row_pointer[ 0 ] = stillframe->data[ 0 ];
+	
+    while (cinfo.next_scanline < cinfo.image_height) 
+	{
+		jpeg_write_scanlines(&cinfo,row_pointer,1);
+		
+		row_pointer[ 0 ] += stillframe->linesize[ 0 ];
+	}
+	
+	jpeg_finish_compress(&cinfo);
+	jpeg_destroy_compress(&cinfo);
+	
+	fclose(outfile);
 }
 
 //
@@ -356,17 +396,17 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height)
 	// Create destination frame
 	//
 	
-	int 	 stillsize   = avpicture_get_size(PIX_FMT_RGB,width,height);
+	int 	 stillsize   = avpicture_get_size(AV_PIX_FMT_RGB24,width,height);
 	uint8_t *stillpixels = malloc(stillsize);
 	AVFrame *stillframe  = av_frame_alloc();
 
-	stillframe->format = PIX_FMT_RGB;
+	stillframe->format = AV_PIX_FMT_RGB24;
 	stillframe->width  = width;
 	stillframe->height = height;
 
 	avpicture_fill((AVPicture *) stillframe,
 		stillpixels,
-		PIX_FMT_RGB,
+		AV_PIX_FMT_RGB24,
 		width,
 		height
 		);
@@ -381,7 +421,7 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height)
 		info->pixfmt,
 		width,
 		height,
-		PIX_FMT_RGB,
+		AV_PIX_FMT_RGB24,
 		SWS_BICUBIC,
 		NULL, NULL, NULL
 		);
@@ -401,7 +441,7 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height)
 	// Save image as JPEG.
 	//
 	
-	kappa_fifo_save_jpeg(group,info,stillframe);
+	kappa_fifo_save_jpeg(group,info,stillframe,jpegfile);
 	
 	av_frame_free(&stillframe);
 }

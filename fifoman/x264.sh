@@ -24,5 +24,5 @@ x264 --profile baseline --preset veryfast --bitrate 4000 --demuxer y4m --muxer m
 ffmpeg -y \
 	-f s16le -ac 2 -ar 48000 -probesize 32 -i Kappa.inp.1.3.pcm.s16le \
 	-f matroska                            -i Kappa.inp.1.3.264.mkv \
-	-vcodec copy -f mp4 Test.mp4
+	-vcodec copy -f mp4 output.mp4
 
