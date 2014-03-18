@@ -44,7 +44,6 @@ struct kafifo
 
 	int			isvideo;
 	int			isyuv4mpeg;
-	int			isheader;
 
 	int			width;
 	int			height;
@@ -96,6 +95,9 @@ struct kafifo
 	//
 	// Pipe related.
 	//
+	
+	int			haveheader;
+	int			havestills;
 
 	char		name[ MAXPATHLEN ];
 	int			framesize;
@@ -115,6 +117,7 @@ struct kafifo
 
 	int			framecount;
 
+	int			wantstill;
 	int			wantscale;
 	int			wantcrop;
 	int			wantlogo;
@@ -128,6 +131,7 @@ struct kafifo
 	byte	   *finalpixels;
 	byte	   *scalepixels;
 
+	AVFrame	   *stillframe;
 	AVFrame	   *finalframe;
 	AVFrame	   *scaleframe;
 	AVFrame	   *outputframe;
@@ -141,9 +145,15 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version = "1.0.0";
+char	   *kappa_fifo_version 		= "1.0.0";
 
-int			kappa_fifo_passes = 1;
+int			kappa_fifo_pass 		= 0;
+
+int			kappa_fifo_passes 		= 1;
+int			kappa_fifo_aspect_num 	= 16;
+int			kappa_fifo_aspect_den 	= 9;
+char	   *kappa_fifo_stills 		= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
+char	   *kappa_fifo_fileprefix 	= "Test";
 
 int			kappa_fifo_groupscnt = 0;
 int			kappa_fifo_groupmore = 0;
@@ -307,8 +317,157 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 
 	info->buffer = newbuf;
 	info->bufsiz = info->chunksize * frames;
+	
+	info->wantstill = (kappa_fifo_stills != NULL);
+	
+	if (info->wantstill)
+	{
+		info->stillframe = av_frame_alloc();
 
-	info->isheader = true;
+		info->stillframe->format = info->pixfmt;
+		info->stillframe->width  = info->width;
+		info->stillframe->height = info->height;
+	}
+	
+	info->haveheader = true;
+}
+
+//
+// Save frame as JPEG image.
+//
+
+void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe)
+{
+}
+
+//
+// Make single still image.
+//
+
+void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height)
+{
+	char jpegfile[ MAXPATHLEN ];
+	
+	snprintf(jpegfile,sizeof(jpegfile),"%s_%dx%d.jpg",kappa_fifo_fileprefix,width,height);
+	
+	fprintf(stderr,"Header	still   %s %s\n",group,jpegfile);
+
+	//
+	// Create destination frame
+	//
+	
+	int 	 stillsize   = avpicture_get_size(PIX_FMT_RGB,width,height);
+	uint8_t *stillpixels = malloc(stillsize);
+	AVFrame *stillframe  = av_frame_alloc();
+
+	stillframe->format = PIX_FMT_RGB;
+	stillframe->width  = width;
+	stillframe->height = height;
+
+	avpicture_fill((AVPicture *) stillframe,
+		stillpixels,
+		PIX_FMT_RGB,
+		width,
+		height
+		);
+	
+	//
+	// Create the scaler context and scale.
+	//
+
+	struct SwsContext *ctx = sws_getContext(
+		info->width,
+		info->height,
+		info->pixfmt,
+		width,
+		height,
+		PIX_FMT_RGB,
+		SWS_BICUBIC,
+		NULL, NULL, NULL
+		);
+		
+	sws_scale(
+		ctx,
+		(const uint8_t * const *) info->stillframe->data,
+		info->stillframe->linesize,
+		0,info->height,
+		stillframe->data,
+		stillframe->linesize
+		);
+	
+	sws_freeContext(ctx);
+	
+	//
+	// Save image as JPEG.
+	//
+	
+	kappa_fifo_save_jpeg(group,info,stillframe);
+	
+	av_frame_free(&stillframe);
+}
+
+//
+// Make all still images.
+//
+
+void kappa_fifo_make_stills(char *group,kafifo_t *info)
+{
+	if (kappa_fifo_pass != 1)
+	{
+		info->havestills = true;
+		return;
+	}
+	
+	if ((info->framecount < 5) || ! kappa_fifo_stills) return;
+	
+	//
+	// Prepare current frame buffer.
+	//
+	
+	uint8_t *framepixels = info->buffer + info->iobytes - info->framesize;
+
+	avpicture_fill((AVPicture *) info->stillframe,
+		framepixels,
+		info->pixfmt,
+		info->width,
+		info->height
+	   );
+
+	//
+	// Loop through desired resolutions.
+	//
+	
+	char *stillargs = kappa_fifo_stills;
+	
+	while (*stillargs)
+	{
+		int width;
+		int height;
+		
+		sscanf(stillargs,"%dx%d",&width,&height);
+		
+		if (width == 0)
+		{
+			width = (height * kappa_fifo_aspect_num) / kappa_fifo_aspect_den;
+			
+			if (width % 2) width++;
+		}
+		
+		if (height == 0)
+		{
+			height = (width * kappa_fifo_aspect_den) / kappa_fifo_aspect_num;
+			
+			if (height % 2) width++;
+		}
+		
+		kappa_fifo_make_still(group,info,width,height);
+		
+		if (! index(stillargs,':')) break;
+		
+		stillargs = index(stillargs,':') + 1;
+	}
+	
+	info->havestills = true;
 }
 
 //
@@ -652,7 +811,7 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	
 	kappa_fifo_create_scale_crop(group,output,input);
 
-	input->isheader = true;
+	input->haveheader = true;
 }
 
 //
@@ -882,13 +1041,13 @@ void *kappa_fifo_thread_writer(void *data)
 
 	while (true)
 	{
-		if (output->isyuv4mpeg && ! input->isheader)
+		if (output->isyuv4mpeg && ! input->haveheader)
 		{
 			//
 			// We did not yet prepare the header.
 			//
 
-			if (! output->isheader)
+			if (! output->haveheader)
 			{
 				//
 				// Nor did the output reader.
@@ -1226,7 +1385,7 @@ void *kappa_fifo_thread_reader(void *data)
 		offs = output->iobytes;
 		xfer = ends - offs;
 
-		if (output->isyuv4mpeg && output->isheader)
+		if (output->isyuv4mpeg && output->haveheader)
 		{
 			//
 			// We prefer to read full frames for processing.
@@ -1275,7 +1434,7 @@ void *kappa_fifo_thread_reader(void *data)
 
 			if (output->isyuv4mpeg)
 			{
-				if (! output->isheader)
+				if (! output->haveheader)
 				{
 					kappa_fifo_parse_yuv4mpeg(name,output);
 
@@ -1292,8 +1451,13 @@ void *kappa_fifo_thread_reader(void *data)
 					else
 					{
 						output->framecount++;
-
+						
 						fprintf(stderr,"Frame reader %s %7d\n",name,output->framecount);
+
+						if (! output->havestills)
+						{
+							kappa_fifo_make_stills(name,output);
+						}
 					}
 				}
 			}
@@ -1601,12 +1765,12 @@ int main(int argc, char **argv)
 	//
 	// Execute number of passes.
 	//
-
-	int res = 0;
-
-	for (inx = 0; inx < kappa_fifo_passes; inx++)
+	
+	int res;
+	
+	for (kappa_fifo_pass = 1; kappa_fifo_pass <= kappa_fifo_passes; kappa_fifo_pass++)
 	{
-		res = kappa_fifo_execute_pass(inx + 1);
+		res = kappa_fifo_execute_pass(kappa_fifo_pass);
 
 		if (res) break;
 	}

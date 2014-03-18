@@ -3,6 +3,6 @@ all:
 		-lavfilter_pure -lavformat_pure \
 		-lavcodec_pure -lswresample_pure \
 		-lswscale_pure -lavutil_pure \
-		-lbz2 -lz -lm -lpthread \
+		-ljpeg -lbz2 -lz -lm -lpthread \
 		-o fifoman
 
