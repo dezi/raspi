@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <jpeglib.h>
+#include <zip.h>
 
 #include "libavutil/common.h"
 #include "libavutil/opt.h"
@@ -113,11 +114,33 @@ struct kafifo
 	pthread_t	thread;
 
 	//
+	// Scene related.
+	//
+
+	int			threshold;
+	int			minframes;
+	int			maxframes;
+	int			lastscene;
+	
+	uint8_t	   *lastframe;
+	uint8_t	   *thisframe;
+	
+	char		scenezipname[ MAXPATHLEN ];
+	char	   *scenesizes;
+	struct zip *scenezip;
+	
+	AVFrame	   *stillframe;
+	uint8_t	   *stillbuffer;
+	int			stillalloc;
+	int			stillfinal;
+	
+	//
 	// Frame related.
 	//
 
 	int			framecount;
 
+	int			wantscene;
 	int			wantstill;
 	int			wantscale;
 	int			wantcrop;
@@ -132,7 +155,6 @@ struct kafifo
 	byte	   *finalpixels;
 	byte	   *scalepixels;
 
-	AVFrame	   *stillframe;
 	AVFrame	   *finalframe;
 	AVFrame	   *scaleframe;
 	AVFrame	   *outputframe;
@@ -153,8 +175,9 @@ int			kappa_fifo_pass 		= 0;
 int			kappa_fifo_passes 		= 1;
 int			kappa_fifo_aspect_num 	= 16;
 int			kappa_fifo_aspect_den 	= 9;
-char	   *kappa_fifo_stills 		= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
 char	   *kappa_fifo_fileprefix 	= "output";
+char	   *kappa_fifo_stillsizes 	= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
+char	   *kappa_fifo_sceneparam 	= "40:10:1000:0x360:0x120";
 
 int			kappa_fifo_groupscnt = 0;
 int			kappa_fifo_groupmore = 0;
@@ -175,10 +198,23 @@ kafifo_t	kappa_fifo_outputinfo[ MAXSLOTS ];
 
 void kappa_fifo_usage()
 {
-	fprintf(stdout,"Kappa TSM Version %s\n\n",kappa_fifo_version);
-	fprintf(stdout,"--passes 1|2\n");
+	fprintf(stderr,"Kappa TSM Version %s\n\n",kappa_fifo_version);
+	fprintf(stderr,"--passes 1|2\n");
 
 	exit(1);
+}
+
+//
+// Close info structure and deallocated everything.
+//
+
+void kappa_fifo_close_info(char *group,kafifo_t *info)
+{
+	if (info->scenezip)
+	{
+		zip_close(info->scenezip);
+		info->scenezip = NULL;
+	}
 }
 
 //
@@ -319,15 +355,57 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	info->buffer = newbuf;
 	info->bufsiz = info->chunksize * frames;
 	
-	info->wantstill = (kappa_fifo_stills != NULL);
+	info->wantstill = (kappa_fifo_stillsizes != NULL);
+	info->wantscene = (kappa_fifo_sceneparam != NULL) && (kappa_fifo_pass == 1);
+
+	if (info->wantscene)
+	{
+		int error;
+		
+		sscanf(kappa_fifo_sceneparam,"%d:%d:%d",&info->threshold,&info->minframes,&info->maxframes);
+		
+		info->scenesizes = kappa_fifo_sceneparam;
+		
+		if (info->scenesizes) info->scenesizes = index(info->scenesizes + 1,':');
+		if (info->scenesizes) info->scenesizes = index(info->scenesizes + 1,':');
+		if (info->scenesizes) info->scenesizes = index(info->scenesizes + 1,':');
+		
+		if (info->scenesizes)
+		{
+			info->scenesizes++;
+		}
+		else
+		{
+			info->scenesizes = "0x360:0x120";
+		}
+		
+		if (! info->threshold) info->threshold = 40;
+		if (! info->minframes) info->minframes = 10;
+		if (! info->maxframes) info->maxframes = 60 * 25;
+		
+		snprintf(info->scenezipname,sizeof(info->scenezipname),"%s_scene.zip",kappa_fifo_fileprefix);
 	
-	if (info->wantstill)
+		info->scenezip = zip_open(info->scenezipname,ZIP_CREATE,&error);
+		
+		fprintf(stderr,"Header	scene   %s %s => %d\n",group,info->scenezipname,error);
+		
+		if (! info->scenezip)
+		{
+			fprintf(stderr,"Could not create scene zip %s, exitting now...\n",info->scenezipname);
+			exit(1);
+		}
+	}
+		
+	if (info->wantstill || info->wantscene)
 	{
 		info->stillframe = av_frame_alloc();
 
 		info->stillframe->format = info->pixfmt;
 		info->stillframe->width  = info->width;
 		info->stillframe->height = info->height;
+		
+		info->stillalloc  = 256 * 1024;
+		info->stillbuffer = (uint8_t *) malloc(info->stillalloc);
 	}
 	
 	info->haveheader = true;
@@ -345,17 +423,15 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 	JSAMPROW row_pointer[ 1 ];
 	FILE *outfile;
 	
-	if ((outfile = fopen(filename, "wb")) == NULL) 
-	{
-		fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
-		exit(1);
-	}
-
+	unsigned char *mem = NULL;
+	unsigned long memsize = 0;
+	
+	cinfo.client_data = info;
 	cinfo.err = jpeg_std_error(&jerr);	
 	jpeg_create_compress(&cinfo);
 	
-	jpeg_stdio_dest(&cinfo,outfile);
-	
+	jpeg_mem_dest(&cinfo,&mem,&memsize);
+
 	cinfo.image_width      = stillframe->width;
 	cinfo.image_height     = stillframe->height;
 	cinfo.input_components = 3;     
@@ -363,7 +439,7 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 
 	jpeg_set_defaults(&cinfo);
 	
-	jpeg_start_compress(&cinfo, TRUE);
+	jpeg_start_compress(&cinfo,TRUE);
 
 	row_pointer[ 0 ] = stillframe->data[ 0 ];
 	
@@ -377,18 +453,35 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 	jpeg_finish_compress(&cinfo);
 	jpeg_destroy_compress(&cinfo);
 	
+	if ((outfile = fopen(filename, "wb")) == NULL) 
+	{
+		fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
+		exit(1);
+	}
+	
+	fwrite(mem,memsize,1,outfile);
+
 	fclose(outfile);
+	
+	free(mem);
 }
 
 //
 // Make single still image.
 //
 
-void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height)
+void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height,int framecount)
 {
 	char jpegfile[ MAXPATHLEN ];
 	
-	snprintf(jpegfile,sizeof(jpegfile),"%s_%dx%d.jpg",kappa_fifo_fileprefix,width,height);
+	if (framecount >= 0)
+	{
+		snprintf(jpegfile,sizeof(jpegfile),"%s_%08d_%dx%d.jpg",kappa_fifo_fileprefix,framecount,width,height);
+	}
+	else
+	{
+		snprintf(jpegfile,sizeof(jpegfile),"%s_%dx%d.jpg",kappa_fifo_fileprefix,width,height);
+	}
 	
 	fprintf(stderr,"Header	still   %s %s\n",group,jpegfile);
 
@@ -458,7 +551,7 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 		return;
 	}
 	
-	if ((info->framecount < 5) || ! kappa_fifo_stills) return;
+	if ((info->framecount < 5) || ! kappa_fifo_stillsizes) return;
 	
 	//
 	// Prepare current frame buffer.
@@ -477,7 +570,7 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 	// Loop through desired resolutions.
 	//
 	
-	char *stillargs = kappa_fifo_stills;
+	char *stillargs = kappa_fifo_stillsizes;
 	
 	while (*stillargs)
 	{
@@ -500,7 +593,7 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 			if (height % 2) width++;
 		}
 		
-		kappa_fifo_make_still(group,info,width,height);
+		kappa_fifo_make_still(group,info,width,height,-1);
 		
 		if (! index(stillargs,':')) break;
 		
@@ -508,6 +601,101 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 	}
 	
 	info->havestills = true;
+}
+
+//
+// Make scene detect.
+//
+
+void kappa_fifo_make_scene(char *group,kafifo_t *info)
+{	
+	//
+	// Prepare current frame buffer.
+	//
+	
+	info->lastframe = info->thisframe;
+	info->thisframe = info->buffer + info->iobytes - info->framesize;
+	
+	int numsamples = 131;
+	int stepsize   = info->framesize / numsamples;
+	int	values     = 0;
+	int	saminx     = 0;
+	int doit = true;
+	
+	if (info->lastframe)
+	{
+		//
+		// Derive sample pixel values all over the frame.
+		//
+		
+		for (saminx = 0; saminx < info->framesize; saminx += stepsize)
+		{
+			if (info->thisframe[ saminx ] > info->lastframe[ saminx ])
+			{
+				values += info->thisframe[ saminx ] - info->lastframe[ saminx ];
+			}
+			else
+			{
+				values += info->lastframe[ saminx ] - info->thisframe[ saminx ];
+			}
+		}
+		
+		values /= numsamples;
+		
+		doit = ((values > info->threshold) && ((info->framecount - info->lastscene) > info->minframes))
+			|| ((info->framecount - info->lastscene) > info->maxframes);
+	}
+	
+	if (! doit) return;
+	
+	fprintf(stderr,"Header	scene   %s %d %d\n",group,info->framecount,values);
+
+	info->lastscene = info->framecount - 1;
+	
+	//
+	// Prepare current frame buffer.
+	//
+	
+	avpicture_fill((AVPicture *) info->stillframe,
+		info->thisframe,
+		info->pixfmt,
+		info->width,
+		info->height
+	   );
+
+	//
+	// Loop through desired resolutions.
+	//
+	
+	char *stillargs = info->scenesizes;
+	
+	while (*stillargs)
+	{
+		int width;
+		int height;
+		
+		sscanf(stillargs,"%dx%d",&width,&height);
+		
+		if (width == 0)
+		{
+			width = (height * kappa_fifo_aspect_num) / kappa_fifo_aspect_den;
+			
+			if (width % 2) width++;
+		}
+		
+		if (height == 0)
+		{
+			height = (width * kappa_fifo_aspect_den) / kappa_fifo_aspect_num;
+			
+			if (height % 2) width++;
+		}
+		
+		kappa_fifo_make_still(group,info,width,height,info->lastscene);
+		
+		if (! index(stillargs,':')) break;
+		
+		stillargs = index(stillargs,':') + 1;
+	}
 }
 
 //
@@ -1276,6 +1464,8 @@ void *kappa_fifo_thread_writer(void *data)
 
 	fprintf(stderr,"Closing thread %s writer\n",name);
 
+	kappa_fifo_close_info(name,input);
+	
 	kappa_fifo_inputdone++;
 
 	return NULL;
@@ -1498,6 +1688,8 @@ void *kappa_fifo_thread_reader(void *data)
 						{
 							kappa_fifo_make_stills(name,output);
 						}
+						
+						if (output->wantscene) kappa_fifo_make_scene(name,output);
 					}
 				}
 			}
@@ -1505,7 +1697,9 @@ void *kappa_fifo_thread_reader(void *data)
 	}
 
 	fprintf(stderr,"Closing thread %s reader\n",name);
-
+	
+	kappa_fifo_close_info(name,output);
+	
 	kappa_fifo_outputdone++;
 
 	return NULL;
