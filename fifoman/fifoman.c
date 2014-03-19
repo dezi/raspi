@@ -387,11 +387,11 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	
 		info->scenezip = zip_open(info->scenezipname,ZIP_CREATE,&error);
 		
-		fprintf(stderr,"Header	scene   %s %s => %d\n",group,info->scenezipname,error);
+		fprintf(stderr,"Header	scene   %s %s => %d %s\n",group,info->scenezipname,error,zip_strerror(info->scenezip));
 		
 		if (! info->scenezip)
 		{
-			fprintf(stderr,"Could not create scene zip %s, exitting now...\n",info->scenezipname);
+			fprintf(stderr,"Could not create scene zip %s %d, exitting now...\n",info->scenezipname,error);
 			exit(1);
 		}
 	}
@@ -415,7 +415,7 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 // Save frame as JPEG image.
 //
 
-void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *filename)
+void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *filename,int isscene)
 {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
@@ -426,7 +426,6 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 	unsigned char *mem = NULL;
 	unsigned long memsize = 0;
 	
-	cinfo.client_data = info;
 	cinfo.err = jpeg_std_error(&jerr);	
 	jpeg_create_compress(&cinfo);
 	
@@ -453,17 +452,33 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 	jpeg_finish_compress(&cinfo);
 	jpeg_destroy_compress(&cinfo);
 	
-	if ((outfile = fopen(filename, "wb")) == NULL) 
+	if (isscene)
 	{
-		fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
-		exit(1);
+		struct zip_source *source = zip_source_buffer(info->scenezip,mem,memsize,1);
+		
+		if (! zip_file_add(info->scenezip,filename,source,ZIP_FL_OVERWRITE + ZIP_FL_ENC_UTF_8))
+		{
+			fprintf(stderr,"Could not add still to zip %s => %s, exitting now...\n",
+					group,info->scenezipname,
+					zip_strerror(info->scenezip)
+					);
+					
+			exit(1);
+		}
 	}
-	
-	fwrite(mem,memsize,1,outfile);
-
-	fclose(outfile);
-	
-	free(mem);
+	else
+	{
+		if ((outfile = fopen(filename,"wb")) == NULL) 
+		{
+			fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
+			exit(1);
+		}
+		
+		fwrite(mem,memsize,1,outfile);
+		fclose(outfile);
+		
+		free(mem);
+	}
 }
 
 //
@@ -534,7 +549,7 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height,int f
 	// Save image as JPEG.
 	//
 	
-	kappa_fifo_save_jpeg(group,info,stillframe,jpegfile);
+	kappa_fifo_save_jpeg(group,info,stillframe,jpegfile,(framecount >= 0));
 	
 	av_frame_free(&stillframe);
 }
