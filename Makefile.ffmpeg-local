@@ -45,7 +45,7 @@ $(ffmpeg)/libavfilter/vf_logo.c:
 	fi; \
 	
 ffmpeg-common = \
-	--disable-sse2 \
+	--disable-asm \
 	--enable-gpl \
 	--enable-version3 \
 	--enable-nonfree \
@@ -169,6 +169,7 @@ ffmpeg-libs = \
 	--extra-libs="-lz" \
 	--extra-libs="-ldl" \
 	--extra-libs="-lbz2" \
+	--extra-libs="-lxml2" \
 	--extra-libs="-lexpat" \
 	--extra-libs="-lfreetype" \
 	--extra-libs="-lfontconfig" \
@@ -224,7 +225,7 @@ $(ffmpeg)/dezi.static.conf: ffmpeg-static
 
 $(ffmpeg)/dezi.static.done: $(ffmpeg)/dezi.static.conf
 	cd $(ffmpeg); \
-	make || exit; \
+	make -j6 || exit; \
 	sudo make install; \
 	[ -f ffmpeg   ] && sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-static   || true; \
 	[ -f ffplay   ] && sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-static   || true; \
@@ -240,7 +241,7 @@ $(ffmpeg)/dezi.shared.conf:
 	
 $(ffmpeg)/dezi.shared.done: $(ffmpeg)/dezi.shared.conf
 	cd $(ffmpeg); \
-	make || exit; \
+	make -j6 || exit; \
 	sudo make install; \
 	[ -f ffmpeg   ] && sudo mv -f /usr/local/bin/ffmpeg   /usr/local/bin/ffmpeg-shared   || true; \
 	[ -f ffplay   ] && sudo mv -f /usr/local/bin/ffplay   /usr/local/bin/ffplay-shared   || true; \

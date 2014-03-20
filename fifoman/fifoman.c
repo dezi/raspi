@@ -1214,11 +1214,9 @@ void kappa_fifo_crop(AVFrame *dst,AVFrame *src,int top,int left)
 // Thread writer main loop.
 //
 
-void *kappa_fifo_thread_writer(void *data)
+void *kappa_fifo_thread_writer(void *kafifoptr)
 {
-	int inx = (int) data;
-
-	kafifo_t *input = &kappa_fifo_inputinfo[ inx ];
+	kafifo_t *input = (kafifo_t *) kafifoptr;
 	char	 *name	= kappa_fifo_groupname[ input->group ];
 
 	fprintf(stderr,"Started thread %s writer\n",name);
@@ -1475,10 +1473,9 @@ void *kappa_fifo_thread_writer(void *data)
 // Thread reader main loop.
 //
 
-void *kappa_fifo_thread_reader(void *data)
+void *kappa_fifo_thread_reader(void *kafifoptr)
 {
-	int		  inx	 = (int) data;
-	kafifo_t *output = &kappa_fifo_outputinfo[ inx ];
+	kafifo_t *output = (kafifo_t *) kafifoptr;
 	char	 *name	 = kappa_fifo_groupname[ output->group ];
 
 	fprintf(stderr,"Started thread %s reader\n",name);
@@ -1834,7 +1831,7 @@ void kappa_fifo_open_all(int pass)
 					&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].thread,
 					NULL,
 					kappa_fifo_thread_reader,
-					(void *) kappa_fifo_outputscnt
+					(void *) &kappa_fifo_outputinfo[ kappa_fifo_outputscnt ]
 					);
 
 				kappa_fifo_outputscnt++;
@@ -1880,7 +1877,7 @@ void kappa_fifo_open_all(int pass)
 					&kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].thread,
 					NULL,
 					kappa_fifo_thread_writer,
-					(void *) kappa_fifo_inputscnt
+					(void *) &kappa_fifo_inputinfo[ kappa_fifo_inputscnt ]
 					);
 
 				kappa_fifo_inputscnt++;

@@ -11,7 +11,7 @@ mkfifo Kappa.out.1.2.264.mkv
 mkfifo Kappa.inp.1.3.264.mkv
 mkfifo Kappa.inp.1.3.pcm.s16le
 
-ffmpeg -y -i ./Test.mkv \
+ffmpeg -y -i ./H264.mp4 \
 	-f s16le        -ac 2 -ar 48000                    Kappa.out.1.1.pcm.s16le \
 	-f yuv4mpegpipe -r 25 -vf yadif=0 -pix_fmt yuv420p Kappa.out.1.1.yuv.y4m \
 	> Kappa.1.log 2>&1 &
@@ -24,5 +24,5 @@ x264 --profile baseline --preset veryfast --bitrate 4000 --demuxer y4m --muxer m
 ffmpeg -y \
 	-f s16le -ac 2 -ar 48000 -probesize 32 -i Kappa.inp.1.3.pcm.s16le \
 	-f matroska                            -i Kappa.inp.1.3.264.mkv \
-	-vcodec copy -f mp4 output.mp4
+	-strict -2 -vcodec copy -f mp4 output.mp4
 
