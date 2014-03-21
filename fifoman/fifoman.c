@@ -385,7 +385,7 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 		
 		snprintf(info->scenezipname,sizeof(info->scenezipname),"%s_scene.zip",kappa_fifo_fileprefix);
 	
-		info->scenezip = zip_open(info->scenezipname,ZIP_CREATE,&error);
+		info->scenezip = zip_open(info->scenezipname,ZIP_CREATE + ZIP_TRUNCATE,&error);
 		
 		fprintf(stderr,"Header	scene   %s %s => %d %s\n",group,info->scenezipname,error,zip_strerror(info->scenezip));
 		
@@ -456,7 +456,7 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 	{
 		struct zip_source *source = zip_source_buffer(info->scenezip,mem,memsize,1);
 		
-		if (! zip_file_add(info->scenezip,filename,source,ZIP_FL_OVERWRITE + ZIP_FL_ENC_UTF_8))
+		if (zip_file_add(info->scenezip,filename,source,ZIP_FL_ENC_UTF_8) < 0)
 		{
 			fprintf(stderr,"Could not add still to zip %s => %s, exitting now...\n",
 					group,info->scenezipname,
@@ -1363,7 +1363,7 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 
 			input->framecount++;
 
-			fprintf(stderr,"Frame writer %s %7d\n",name,input->framecount);
+			//fprintf(stderr,"Frame writer %s %7d\n",name,input->framecount);
 
 			//
 			// Do frame processing now.
@@ -1694,7 +1694,7 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 					{
 						output->framecount++;
 						
-						fprintf(stderr,"Frame reader %s %7d\n",name,output->framecount);
+						//fprintf(stderr,"Frame reader %s %7d\n",name,output->framecount);
 
 						if (! output->havestills)
 						{
