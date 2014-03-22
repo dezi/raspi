@@ -170,11 +170,12 @@ typedef struct kafifo kafifo_t;
 
 char	   *kappa_fifo_version 		= "1.0.0";
 
-int			kappa_fifo_pass 		= 0;
-
-int			kappa_fifo_passes 		= 1;
+int			kappa_fifo_pass 		= 1;
+int			kappa_fifo_maxframe 	= 0;
+int			kappa_fifo_percentdone 	= 0;
 int			kappa_fifo_aspect_num 	= 16;
 int			kappa_fifo_aspect_den 	= 9;
+char	   *kappa_fifo_pipedir		= ".";
 char	   *kappa_fifo_fileprefix 	= "output";
 char	   *kappa_fifo_stillsizes 	= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
 char	   *kappa_fifo_sceneparam 	= "40:10:1000:0x360:0x120";
@@ -198,8 +199,14 @@ kafifo_t	kappa_fifo_outputinfo[ MAXSLOTS ];
 
 void kappa_fifo_usage()
 {
-	fprintf(stderr,"Kappa TSM Version %s\n\n",kappa_fifo_version);
-	fprintf(stderr,"--passes 1|2\n");
+	fprintf(stderr,"Kappa Fifoman Version %s\n\n",kappa_fifo_version);
+	fprintf(stderr,"--pass 1|2\n");
+	fprintf(stderr,"--aspect 16:9\n");
+	fprintf(stderr,"--pipedir .\n");
+	fprintf(stderr,"--prefix output\n");
+	fprintf(stderr,"--frames number\n");
+	fprintf(stderr,"--images 0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60\n");
+	fprintf(stderr,"--scene 40:10:1000:0x360:0x120\n");
 
 	exit(1);
 }
@@ -355,7 +362,7 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	info->buffer = newbuf;
 	info->bufsiz = info->chunksize * frames;
 	
-	info->wantstill = (kappa_fifo_stillsizes != NULL);
+	info->wantstill = (kappa_fifo_stillsizes != NULL) && (kappa_fifo_pass == 1);
 	info->wantscene = (kappa_fifo_sceneparam != NULL) && (kappa_fifo_pass == 1);
 
 	if (info->wantscene)
@@ -394,6 +401,9 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 			fprintf(stderr,"Could not create scene zip %s %d, exitting now...\n",info->scenezipname,error);
 			exit(1);
 		}
+		
+		fprintf(stderr,"Scenezip:%s\n",info->scenezipname);
+		fflush(stderr);
 	}
 		
 	if (info->wantstill || info->wantscene)
@@ -473,11 +483,14 @@ void kappa_fifo_save_jpeg(char *group,kafifo_t *info,AVFrame *stillframe,char *f
 			fprintf(stderr,"Could not create still %s, exitting now...\n",filename);
 			exit(1);
 		}
-		
+
 		fwrite(mem,memsize,1,outfile);
 		fclose(outfile);
 		
 		free(mem);
+		
+		fprintf(stderr,"Stillimage:%s\n",filename);
+		fflush(stderr);
 	}
 }
 
@@ -1694,7 +1707,25 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 					{
 						output->framecount++;
 						
-						//fprintf(stderr,"Frame reader %s %7d\n",name,output->framecount);
+						if (kappa_fifo_maxframe > 0)
+						{
+							int percent = 100 * output->framecount / kappa_fifo_maxframe;
+							
+							if (percent != kappa_fifo_percentdone)
+							{
+								fprintf(stderr,"Progress:%d\n",percent);
+								fflush(stderr);
+								
+								kappa_fifo_percentdone = percent;
+							}
+						}
+						else
+						{
+							if ((output->framecount % 10) == 0)
+							{
+								fprintf(stderr,"Actframe:%d\n",output->framecount);
+							}
+						}
 
 						if (! output->havestills)
 						{
@@ -1777,10 +1808,10 @@ void kappa_fifo_open_all(int pass)
 	int tfd;
 	int grp;
 
-	char pattern_in [ 64 ];
+	char pattern_inp[ 64 ];
 	char pattern_out[ 64 ];
 
-	snprintf(pattern_in ,sizeof(pattern_in ),"Kappa.inp.%d" ,pass);
+	snprintf(pattern_inp,sizeof(pattern_inp),"Kappa.inp.%d",pass);
 	snprintf(pattern_out,sizeof(pattern_out),"Kappa.out.%d",pass);
 
 	//
@@ -1799,19 +1830,22 @@ void kappa_fifo_open_all(int pass)
 	// Scan working directory for pipes.
 	//
 
-	DIR *dir = opendir(".");
+	char pipepath[ MAXPATHLEN ];
+	DIR *dir = opendir(kappa_fifo_pipedir);
 	struct dirent *entry;
-
+	 
 	while (true)
 	{
 		entry = readdir(dir);
 		if (! entry) break;
+		
+		snprintf(pipepath,sizeof(pipepath),"%s/%s",kappa_fifo_pipedir,entry->d_name);
 
 		if (strncmp(entry->d_name,pattern_out,strlen(pattern_out)) == 0)
 		{
 			for (dup = false, cnt = 0; cnt < kappa_fifo_outputscnt; cnt++)
 			{
-				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,entry->d_name))
+				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,pipepath))
 				{
 					dup = true;
 					break;
@@ -1819,13 +1853,13 @@ void kappa_fifo_open_all(int pass)
 			}
 
 			if (dup) continue;
-
+			
 			grp = kappa_fifo_groupindex(entry->d_name);
 
-			tfd = open(entry->d_name,O_RDONLY | O_NONBLOCK);
+			tfd = open(pipepath,O_RDONLY | O_NONBLOCK);
 
-			fprintf(stdout,"Opening output %s = %2d => %s\n",
-					kappa_fifo_groupname[ grp ],tfd,entry->d_name);
+			fprintf(stderr,"Opening output %s = %2d => %s\n",
+					kappa_fifo_groupname[ grp ],tfd,pipepath);
 
 			if (tfd < 0)
 			{
@@ -1835,7 +1869,7 @@ void kappa_fifo_open_all(int pass)
 			else
 			{
 				memset(&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ],0,sizeof(kafifo_t));
-				strcpy( kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].name,entry->d_name);
+				strcpy( kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].name,pipepath);
 
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].fd	  = tfd;
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].group  = grp;
@@ -1855,11 +1889,11 @@ void kappa_fifo_open_all(int pass)
 			}
 		}
 
-		if (strncmp(entry->d_name,pattern_in,strlen(pattern_in)) == 0)
+		if (strncmp(entry->d_name,pattern_inp,strlen(pattern_inp)) == 0)
 		{
 			for (dup = false, cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 			{
-				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,entry->d_name))
+				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,pipepath))
 				{
 					dup = true;
 					break;
@@ -1870,10 +1904,10 @@ void kappa_fifo_open_all(int pass)
 
 			grp = kappa_fifo_groupindex(entry->d_name);
 
-			tfd = open(entry->d_name,O_RDWR | O_NONBLOCK);
+			tfd = open(pipepath,O_RDWR | O_NONBLOCK);
 
-			fprintf(stdout,"Opening input  %s = %2d => %s\n",
-					kappa_fifo_groupname[ grp ],tfd,entry->d_name);
+			fprintf(stderr,"Opening input  %s = %2d => %s\n",
+					kappa_fifo_groupname[ grp ],tfd,pipepath);
 
 			if (tfd < 0)
 			{
@@ -1883,7 +1917,7 @@ void kappa_fifo_open_all(int pass)
 			else
 			{
 				memset(&kappa_fifo_inputinfo[ kappa_fifo_inputscnt ],0,sizeof(kafifo_t));
-				strcpy( kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].name,entry->d_name);
+				strcpy( kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].name,pipepath);
 
 				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].fd	   = tfd;
 				kappa_fifo_inputinfo[ kappa_fifo_inputscnt ].group = grp;
@@ -1957,7 +1991,7 @@ int kappa_fifo_execute_pass(int pass)
 	// Initial open loop.
 	//
 
-	fprintf(stdout,"Looking for Kappa pipes on pass %d.\n",pass);
+	fprintf(stderr,"Looking for Kappa pipes on pass %d.\n",pass);
 
 	while (! kappa_fifo_outputscnt)
 	{
@@ -1975,6 +2009,8 @@ int kappa_fifo_execute_pass(int pass)
 		{
 			kappa_fifo_open_all(pass);
 		}
+
+		fflush(stderr);
 
 		sleep(1);
 	}
@@ -1994,7 +2030,8 @@ int kappa_fifo_execute_pass(int pass)
 
 int main(int argc, char **argv)
 {
-	fprintf(stdout,"Kappa Fifo Manager %s.\n",kappa_fifo_version);
+	fprintf(stderr,"Kappa Fifo Manager %s.\n",kappa_fifo_version);
+	fflush(stderr);
 
 	if (argc == 0) kappa_fifo_usage();
 
@@ -2002,25 +2039,54 @@ int main(int argc, char **argv)
 
 	for (inx = 1; inx + 1 < argc; inx++)
 	{
-		if (! strcmp(argv[ inx ],"--passes"))
+		if (! strcmp(argv[ inx ],"--pass"))
 		{
-			kappa_fifo_passes = atoi(argv[ inx + 1 ]);
+			kappa_fifo_pass = atoi(argv[ inx + 1 ]);
+		}
+		
+		if (! strcmp(argv[ inx ],"--frames"))
+		{
+			kappa_fifo_maxframe = atoi(argv[ inx + 1 ]);
+		}
+		
+		if (! strcmp(argv[ inx ],"--aspect"))
+		{
+			if (! strstr(argv[ inx + 1 ],":"))
+			{
+				fprintf(stderr,"Aspect parameter malformatted %s, exitting now...\n",argv[ inx + 1 ]);
+				exit(1);
+			}
+			
+			kappa_fifo_aspect_num = atoi(argv[ inx + 1 ]);
+			kappa_fifo_aspect_den = atoi(argv[ inx + 1 ]);
+		}
+				
+		if (! strcmp(argv[ inx ],"--pipedir"))
+		{
+			kappa_fifo_pipedir = argv[ inx + 1 ];
+		}
+
+		if (! strcmp(argv[ inx ],"--prefix"))
+		{
+			kappa_fifo_fileprefix = argv[ inx + 1 ];
+		}
+		
+		if (! strcmp(argv[ inx ],"--images"))
+		{
+			kappa_fifo_stillsizes = argv[ inx + 1 ];
+		}
+		
+		if (! strcmp(argv[ inx ],"--scene"))
+		{
+			kappa_fifo_sceneparam = argv[ inx + 1 ];
 		}
 	}
 
 	//
-	// Execute number of passes.
+	// Execute desired pass.
 	//
 	
-	int res;
-	
-	for (kappa_fifo_pass = 1; kappa_fifo_pass <= kappa_fifo_passes; kappa_fifo_pass++)
-	{
-		res = kappa_fifo_execute_pass(kappa_fifo_pass);
-
-		if (res) break;
-	}
+	int res = kappa_fifo_execute_pass(kappa_fifo_pass);
 
 	return res;
 }
-
