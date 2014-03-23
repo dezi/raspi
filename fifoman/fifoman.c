@@ -743,8 +743,7 @@ void kappa_fifo_create_logo(char *group,kafifo_t *output,kafifo_t *input)
 	strcat(target,".png");
 	
 	DIR *dir = opendir(strcpy(fullpath,"./fliegen"));
-	
-	if (! dir) dir = opendir(strcpy(fullpath,"."));
+	if (! dir) dir = opendir(strcpy(fullpath,kappa_fifo_pipedir));
 	
 	struct dirent *entry;
 	int match = false;
@@ -1449,6 +1448,14 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 							input->crop_top,
 							input->crop_left
 							);
+					}
+					else
+					{
+						//
+						// Only logo desired, must copy pixels.
+						//
+						
+						memcpy(input->finalpixels,output->buffer + offs + 6,input->finalsize);
 					}
 				}
 
