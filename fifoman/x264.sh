@@ -11,7 +11,7 @@ mkfifo Kappa.out.1.2.264.mkv
 mkfifo Kappa.inp.1.3.264.mkv
 mkfifo Kappa.inp.1.3.pcm.s16le
 
-ffmpeg-static -y -vcodec h264 -i ./H264.mp4 \
+ffmpeg-static -y -vcodec h264 -i ./Test-SD.mp4 \
 	-f yuv4mpegpipe -r 25 -vf yadif=0 -pix_fmt yuv420p Kappa.out.1.1.yuv.y4m \
 	-f s16le        -ac 2 -ar 48000                    Kappa.out.1.1.pcm.s16le \
 	> Kappa.1.log 2>&1 &
