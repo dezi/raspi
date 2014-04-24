@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <jpeglib.h>
 #include <zip.h>
+#include <png.h>
 
 #include "libavutil/common.h"
 #include "libavutil/opt.h"
@@ -727,6 +728,112 @@ void kappa_fifo_make_scene(char *group,kafifo_t *info)
 }
 
 //
+// Read PNG image.
+//
+
+int read_png_file(uint8_t *data[ 4 ], int linesize[ 4 ],
+                  int *width, int *height, enum AVPixelFormat *pix_fmt,
+                  const char *filename, void *log_ctx)
+{
+	png_structp png_ptr;
+	png_infop info_ptr;
+	int number_of_passes;
+	png_bytep *row_pointers;	
+	png_bytep image_data;	
+	png_byte color_type;
+	png_byte bit_depth;
+	char header[ 8 ];
+	int rowbytes;
+	int res = 0;
+	
+	FILE *fp = fopen(filename,"rb");
+	if (! fp) return -1;
+ 	
+	while (true)
+	{
+		fread(header,1,8,fp);
+		
+		if (png_sig_cmp(header,0,8)) 
+		{ 
+			res = -1; 
+			break;
+		}
+		
+		png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,NULL,NULL,NULL);
+
+		if (! png_ptr)
+		{
+			res = -1; 
+			break;
+		}
+
+		info_ptr = png_create_info_struct(png_ptr);
+		
+		if (! info_ptr)
+		{
+			res = -1; 
+			break;
+		}
+
+		if (setjmp(png_jmpbuf(png_ptr)))
+		{
+			res = -1; 
+			break;
+		}
+
+		png_init_io(png_ptr,fp);
+		png_set_sig_bytes(png_ptr,8);
+
+		png_read_info(png_ptr, info_ptr);
+
+		*width   = png_get_image_width (png_ptr,info_ptr);
+		*height  = png_get_image_height(png_ptr,info_ptr);
+		*pix_fmt = AV_PIX_FMT_RGBA;
+		
+		color_type = png_get_color_type(png_ptr,info_ptr);
+		bit_depth  = png_get_bit_depth (png_ptr,info_ptr);
+
+		number_of_passes = png_set_interlace_handling(png_ptr);
+		png_read_update_info(png_ptr,info_ptr);
+
+		if (setjmp(png_jmpbuf(png_ptr)))
+		{
+			res = -1; 
+			break;
+		}
+
+		rowbytes = png_get_rowbytes(png_ptr,info_ptr);
+		image_data = (png_bytep) malloc(rowbytes * *height);
+		row_pointers = (png_bytep *) malloc(sizeof(png_bytep) * *height);
+		
+		int y;
+		
+		for (y = 0; y < *height; y++)
+		{
+			row_pointers[ y ] = image_data + (y * rowbytes);
+		}
+
+		png_read_image(png_ptr,row_pointers);
+	
+		data[ 0 ] = image_data;
+		data[ 1 ] = 0;
+		data[ 2 ] = 0;
+		data[ 3 ] = 0;
+		
+		linesize[ 0 ] = rowbytes;
+		linesize[ 1 ] = 0;
+		linesize[ 2 ] = 0;
+		linesize[ 3 ] = 0;
+		
+		break;
+	}
+	
+	fclose(fp);
+	
+	return res;
+}
+
+//
 // Create logo.
 //
 
@@ -771,7 +878,12 @@ void kappa_fifo_create_logo(char *group,kafifo_t *output,kafifo_t *input)
 	
 	if (! match) return;
 	
-	int res = ff_load_image(
+	//
+	// int res = ff_load_image(
+	// int res = read_png_file(
+	//
+	
+	int res = read_png_file(
 		input->logo_rgb_data,input->logo_rgb_size,
 		&input->logo_width,&input->logo_height,
 		&input->logo_pixfmt,

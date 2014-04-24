@@ -8,7 +8,7 @@ all:
 		-lavfilter_pure -lavformat_pure \
 		-lavcodec_pure -lswresample_pure \
 		-lswscale_pure -lavutil_pure \
-		-ljpeg -lzip -lz -lm -lpthread \
+		-ljpeg -lpng12 -lzip -lz -lm -lpthread \
 		-o fifoman
 
 centos:
