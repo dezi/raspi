@@ -1448,20 +1448,29 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 			}
 
 			usleep(10000);
-
 			continue;
 		}
 
 		bufp = output->buffer;
 		offs = input->iobytes;
 
-		if (offs < output->iobytes)
+		if (offs <= output->iobytes)
 		{
 			xfer = output->iobytes - offs;
 		}
 		else
 		{
 			xfer = output->bufsiz - offs;
+		}
+
+		if (xfer == 0)
+		{
+			//
+			// Nothing todo.
+			//
+			
+			usleep(10000);
+			continue;
 		}
 
 		if (input->isyuv4mpeg)
@@ -1473,7 +1482,6 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 			if (xfer < output->chunksize)
 			{
 				usleep(10000);
-
 				continue;
 			}
 
@@ -1506,7 +1514,7 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 				//
 				// We want to scale or crop or both.
 				//
-
+				
 				avpicture_fill((AVPicture *) input->outputframe,
 					output->buffer + offs + 6,
 					output->pixfmt,
@@ -1589,11 +1597,6 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 			yfer = write(input->fd,bufp + offs,xfer);
 		}
 
-		if ((output->group == 999) && (yfer > 0))
-		{
-			fprintf(stderr,"Send %s %7d %6d\n",name,offs,yfer);
-		}
-
 		if (yfer <= 0)
 		{
 			usleep(10000);
@@ -1607,7 +1610,7 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 		}
 	}
 
-	fprintf(stderr,"Closing thread %s writer\n",name);
+	fprintf(stderr,"Closing thread %s writer with %d frames %s\n",name,input->framecount,input->name);
 
 	kappa_fifo_close_info(name,input);
 	
@@ -1704,7 +1707,7 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 
 				if (input->group != output->group) continue;
 
-				if (input-> fd < 0) continue;
+				if (input->fd < 0) continue;
 
 				if (output->iobytes < input->iobytes)
 				{
@@ -1724,7 +1727,8 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 					}
 				}
 
-				if (input->iobytes == output->bufsiz)
+				if ((input->iobytes  == output->bufsiz) &&
+					(output->iobytes != output->bufsiz))
 				{
 					//
 					// We can now safely wrap this input.
@@ -1736,7 +1740,7 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 				done = false;
 			}
 
-			if (done)
+			if (done && (output->fd < 0))
 			{
 				//
 				// Leave thread loop.
@@ -1780,11 +1784,6 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 
 		yfer = read(output->fd,output->buffer + offs,xfer);
 
-		if ((output->group == 999) && (yfer > 0))
-		{
-			fprintf(stderr,"Read %s %7d %6d %6d\n",name,offs,xfer,yfer);
-		}
-
 		if (yfer == 0)
 		{
 			if (output->total > 0)
@@ -1822,43 +1821,41 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 						fprintf(stderr,"Frame magic wrong %s, exitting now...\n",name);
 						exit(1);
 					}
+
+					output->framecount++;
+						
+					if (kappa_fifo_maxframe > 0)
+					{
+						int percent = 100 * output->framecount / kappa_fifo_maxframe;
+						
+						if (percent != kappa_fifo_percentdone)
+						{
+							fprintf(stderr,"Progress:%d\n",percent);
+							fflush(stderr);
+							
+							kappa_fifo_percentdone = percent;
+						}
+					}
 					else
 					{
-						output->framecount++;
-						
-						if (kappa_fifo_maxframe > 0)
+						if ((output->framecount % 10) == 0)
 						{
-							int percent = 100 * output->framecount / kappa_fifo_maxframe;
-							
-							if (percent != kappa_fifo_percentdone)
-							{
-								fprintf(stderr,"Progress:%d\n",percent);
-								fflush(stderr);
-								
-								kappa_fifo_percentdone = percent;
-							}
+							fprintf(stderr,"Actframe:%d\n",output->framecount);
 						}
-						else
-						{
-							if ((output->framecount % 10) == 0)
-							{
-								fprintf(stderr,"Actframe:%d\n",output->framecount);
-							}
-						}
-
-						if (! output->havestills)
-						{
-							kappa_fifo_make_stills(name,output);
-						}
-						
-						if (output->wantscene) kappa_fifo_make_scene(name,output);
 					}
+
+					if (! output->havestills)
+					{
+						kappa_fifo_make_stills(name,output);
+					}
+					
+					if (output->wantscene) kappa_fifo_make_scene(name,output);
 				}
 			}
 		}
 	}
 
-	fprintf(stderr,"Closing thread %s reader\n",name);
+	fprintf(stderr,"Closing thread %s reader with %d frames\n",name,output->framecount);
 	
 	kappa_fifo_close_info(name,output);
 	
