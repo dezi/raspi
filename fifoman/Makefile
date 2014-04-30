@@ -8,7 +8,7 @@ all:
 		-lavfilter_pure -lavformat_pure \
 		-lavcodec_pure -lswresample_pure \
 		-lswscale_pure -lavutil_pure \
-		-ljpeg -lpng12 -lzip -lz -lm -lpthread \
+		-l:libjpeg.a -l:libpng12.a -l:libzip.a -l:libz.a -lm -lpthread \
 		-o fifoman
 
 centos:
@@ -21,7 +21,7 @@ centos:
 		-lavfilter -lavformat \
 		-lavcodec -lswresample \
 		-lswscale -lavutil \
-		-ljpeg -lzip -lz -lm -lpthread \
+		-l:libjpeg.a -l:libpng12.a -l:libzip.a -l:libz.a -lm -lpthread \
 		-o fifoman
 
 osx:
