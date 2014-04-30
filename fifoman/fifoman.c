@@ -57,6 +57,7 @@ struct kafifo
 	int			crop_left;
 	int			crop_width;
 	int			crop_height;
+	int			crop_center;
 
 	int			aspect_num;
 	int			aspect_den;
@@ -256,8 +257,19 @@ void kappa_fifo_parse_fifoname(char *group,kafifo_t *info)
 
 	if ((poi = strstr(info->name,".crop~")) != NULL)
 	{
+		info->crop_center = 0;
+		
 		sscanf(poi + 6,"%dx%d~%dx%d",
 			&info->crop_left,&info->crop_top,
+			&info->crop_width,&info->crop_height
+			);
+	}
+
+	if ((poi = strstr(info->name,".center~")) != NULL)
+	{
+		info->crop_center = 1;
+		
+		sscanf(poi + 8,"%dx%d",
 			&info->crop_width,&info->crop_height
 			);
 	}
@@ -1149,12 +1161,16 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 	if (! input->fps_num)		input->fps_num		= output->fps_num;
 	if (! input->fps_den)		input->fps_den		= output->fps_den;
 	if (! input->mode)			input->mode			= output->mode;
-	if (! input->crop_width)	input->crop_width	= input->crop_width;
-	if (! input->crop_height)	input->crop_height	= input->crop_height;
 
 	input->final_width	= input->crop_width	 ? input->crop_width  : input->width;
 	input->final_height = input->crop_height ? input->crop_height : input->height;
 
+	if (input->crop_center)
+	{
+		input->crop_left = (input->width  - input->crop_width ) >> 1;
+		input->crop_top  = (input->height - input->crop_height) >> 1;
+	}
+	
 	input->scalesize = avpicture_get_size(input->pixfmt,input->width,input->height);
 	input->finalsize = avpicture_get_size(input->pixfmt,input->final_width,input->final_height);
 	input->chunksize = input->finalsize + strlen("FRAME\n");
