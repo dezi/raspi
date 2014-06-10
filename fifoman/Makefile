@@ -12,7 +12,7 @@ all:
 		-o fifoman
 
 centos:
-	gcc fifoman.c -g \
+	gcc fifoman.c -O3 \
 		-I /usr/local/include \
 		-I /usr/local/lib/libzip/include \
 		-I /usr/lib/arm-linux-gnueabihf/libzip/include \

@@ -179,8 +179,8 @@ int			kappa_fifo_aspect_num 	= 16;
 int			kappa_fifo_aspect_den 	= 9;
 char	   *kappa_fifo_pipedir		= ".";
 char	   *kappa_fifo_fileprefix 	= "output";
-char	   *kappa_fifo_stillsizes 	= "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
-char	   *kappa_fifo_sceneparam 	= "40:10:1000:0x360:0x120";
+char	   *kappa_fifo_stillsizes 	= NULL; // "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
+char	   *kappa_fifo_sceneparam 	= NULL; // "40:10:1000:0x360:0x120";
 
 int			kappa_fifo_groupscnt = 0;
 int			kappa_fifo_groupmore = 0;
@@ -375,8 +375,8 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 	info->buffer = newbuf;
 	info->bufsiz = info->chunksize * frames;
 	
-	info->wantstill = (kappa_fifo_stillsizes != NULL) && (kappa_fifo_pass == 1);
-	info->wantscene = (kappa_fifo_sceneparam != NULL) && (kappa_fifo_pass == 1);
+	info->wantstill = (kappa_fifo_stillsizes != NULL);
+	info->wantscene = (kappa_fifo_sceneparam != NULL);
 
 	if (info->wantscene)
 	{
@@ -586,7 +586,7 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height,int f
 
 void kappa_fifo_make_stills(char *group,kafifo_t *info)
 {
-	if (kappa_fifo_pass != 1)
+	if (! kappa_fifo_stillsizes)
 	{
 		info->havestills = true;
 		return;
