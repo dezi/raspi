@@ -30,7 +30,7 @@
 
 typedef unsigned char byte;
 
-#define MAXSLOTS 32
+#define MAXSLOTS 64
 
 #define BUFSIZE	 4 * 1024 * 1024
 #define RDWRSIZE	   64 * 1024
