@@ -18,10 +18,10 @@ centos:
 		-I /usr/lib/arm-linux-gnueabihf/libzip/include \
 		-I /usr/local/include \
 		-L /usr/local/lib \
-		-lavfilter -lavformat \
-		-lavcodec -lswresample \
-		-lswscale -lavutil \
-		-l:libjpeg.a -l:libpng12.a -l:libzip.a -l:libz.a -lm -lpthread \
+		-lavfilter_pure -lavformat_pure \
+		-lavcodec_pure -lswresample_pure \
+		-lswscale_pure -lavutil_pure \
+		-l:libjpeg.a -l:libpng12.a -l:libzip.a -l:libz.a -lrt -lm -lpthread \
 		-o fifoman
 
 osx:
