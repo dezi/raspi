@@ -34,6 +34,12 @@ osx:
 		-lavfilter_pure -lavformat_pure \
 		-lavcodec_pure -lswresample_pure \
 		-lswscale_pure -lavutil_pure \
-		-liconv -ljpeg -lzip -lbz2 -lz -lm -lpthread \
+		/usr/local/lib/libiconv.a \
+		/usr/local/lib/libjpeg.a \
+		/usr/local/lib/libpng12.a \
+		/usr/local/lib/libzip.a \
+		/usr/local/lib/libbz2.a \
+		/usr/local/lib/libz.a \
+		-lm -lpthread \
 		-o fifoman
 
