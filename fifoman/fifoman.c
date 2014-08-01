@@ -129,6 +129,7 @@ struct kafifo
 	
 	char		scenezipname[ MAXPATHLEN ];
 	int			scenecount;
+	int			scenemaximg;
 	char	   *scenesizes;
 	struct zip *scenezip;
 	
@@ -172,7 +173,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.0";
+char	   *kappa_fifo_version 		= "1.0.1";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -445,9 +446,10 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 		int numimages = atoi(kappa_fifo_stillparam);
 		int intervall = (kappa_fifo_maxframe <= 0) ? (25 * 60) : (kappa_fifo_maxframe / numimages);
 		
-		info->threshold = 0;
-		info->minframes = intervall;
-		info->maxframes = intervall;
+		info->threshold   = 0;
+		info->minframes   = intervall;
+		info->maxframes   = intervall;
+		info->scenemaximg = numimages;
 		
 		fprintf(stderr,"Header	still   %s %d %d %d\n",group,kappa_fifo_maxframe,numimages,intervall);
 	}
@@ -556,15 +558,17 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height,int f
 		
 		if (info->wantstill)
 		{
-			long millisecs = (((long) framecount) * 1000 * info->fps_den / info->fps_num);
+			if (info->scenecount > info->scenemaximg) return;
+
+			long millisecs = (((long) framecount) * 1000 * info->fps_den / info->fps_num);			
 			
 			if (onlyoneres)
 			{
-				snprintf(jpegfile,sizeof(jpegfile),"%s_%08d_%08d.jpg",kappa_fifo_fileprefix,info->scenecount,millisecs);
+				snprintf(jpegfile,sizeof(jpegfile),"%08d_%08ld.jpg",info->scenecount,millisecs);
 			}
 			else
 			{
-				snprintf(jpegfile,sizeof(jpegfile),"%s_%08d_%08d_%dx%d.jpg",kappa_fifo_fileprefix,info->scenecount,millisecs,width,height);
+				snprintf(jpegfile,sizeof(jpegfile),"%08d_%08ld_%dx%d.jpg",info->scenecount,millisecs,width,height);
 			}
 		}
 		else
