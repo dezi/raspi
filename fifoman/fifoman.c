@@ -32,7 +32,7 @@ typedef unsigned char byte;
 
 #define MAXSLOTS 64
 
-#define BUFSIZE	 4 * 1024 * 1024
+#define BUFSIZE	16 * 1024 * 1024
 #define RDWRSIZE	   64 * 1024
 
 //
@@ -173,7 +173,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.1";
+char	   *kappa_fifo_version 		= "1.0.7";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -1682,6 +1682,8 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 		else
 		{
 			yfer = write(input->fd,bufp + offs,xfer);
+			
+			//fprintf(stderr,"Thread %s writer wrote (%d/%d) %s\n",name,xfer,yfer,input->name);
 		}
 
 		if (yfer <= 0)
@@ -2059,7 +2061,7 @@ void kappa_fifo_open_all(int pass)
 			
 			grp = kappa_fifo_groupindex(entry->d_name);
 
-			tfd = open(pipepath,O_RDONLY | O_NONBLOCK);
+			tfd = open(pipepath,O_RDONLY | O_NONBLOCK | O_SYNC);
 
 			fprintf(stderr,"Opening output %s = %2d => %s\n",
 					kappa_fifo_groupname[ grp ],tfd,pipepath);
@@ -2096,7 +2098,7 @@ void kappa_fifo_open_all(int pass)
 		{
 			for (dup = false, cnt = 0; cnt < kappa_fifo_inputscnt; cnt++)
 			{
-				if (! strcmp(kappa_fifo_outputinfo[ cnt ].name,pipepath))
+				if (! strcmp(kappa_fifo_inputinfo[ cnt ].name,pipepath))
 				{
 					dup = true;
 					break;
@@ -2107,7 +2109,7 @@ void kappa_fifo_open_all(int pass)
 
 			grp = kappa_fifo_groupindex(entry->d_name);
 
-			tfd = open(pipepath,O_RDWR | O_NONBLOCK);
+			tfd = open(pipepath,O_WRONLY | O_NONBLOCK | O_SYNC);
 
 			fprintf(stderr,"Opening input  %s = %2d => %s\n",
 					kappa_fifo_groupname[ grp ],tfd,pipepath);
