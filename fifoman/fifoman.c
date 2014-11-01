@@ -107,7 +107,7 @@ struct kafifo
 	int			framesize;
 	int			chunksize;
 	int			iobytes;
-	long		total;
+	long long	total;
 	int			group;
 	int			fd;
 
@@ -560,7 +560,7 @@ void kappa_fifo_make_still(char *group,kafifo_t *info,int width,int height,int f
 		{
 			if (info->scenecount > info->scenemaximg) return;
 
-			long millisecs = (((long) framecount) * 1000 * info->fps_den / info->fps_num);			
+			long millisecs = (long) (((long long) framecount) * 1000 * info->fps_den / info->fps_num);
 			
 			if (onlyoneres)
 			{
