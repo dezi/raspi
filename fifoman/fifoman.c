@@ -32,7 +32,7 @@ typedef unsigned char byte;
 
 #define MAXSLOTS 64
 
-#define BUFSIZE	16 * 1024 * 1024
+#define BUFSIZE	32 * 1024 * 1024
 #define RDWRSIZE	   64 * 1024
 
 //
@@ -173,7 +173,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.7";
+char	   *kappa_fifo_version 		= "1.0.8";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -429,7 +429,14 @@ void kappa_fifo_parse_yuv4mpeg(char *group,kafifo_t *info)
 		
 		info->scenezip = zip_open(info->scenezipname,ZIP_CREATE + ZIP_TRUNCATE,&error);
 		
-		fprintf(stderr,"Header	scene   %s %s => %d %s\n",group,info->scenezipname,error,zip_strerror(info->scenezip));
+		if (error == 0)
+		{
+			fprintf(stderr,"Header	scene   %s %s => %d %s\n",group,info->scenezipname,error,"Success");
+		}
+		else
+		{
+			fprintf(stderr,"Header	scene   %s %s => %d %s\n",group,info->scenezipname,error,zip_strerror(info->scenezip));
+		}
 		
 		if (! info->scenezip)
 		{
