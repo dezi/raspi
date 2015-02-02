@@ -173,7 +173,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.9";
+char	   *kappa_fifo_version 		= "1.0.10";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -659,7 +659,7 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 {
 	if (! kappa_fifo_stillsizes)
 	{
-		info->havestills = true;
+		info->havestills++;
 		return;
 	}
 	
@@ -712,14 +712,14 @@ void kappa_fifo_make_stills(char *group,kafifo_t *info)
 		stillargs = index(stillargs,':') + 1;
 	}
 	
-	info->havestills = true;
+	info->havestills++;
 }
 
 //
 // Make scene detect.
 //
 
-void kappa_fifo_make_scene(char *group,kafifo_t *info)
+int kappa_fifo_make_scene(char *group,kafifo_t *info)
 {	
 	//
 	// Prepare current frame buffer.
@@ -758,7 +758,7 @@ void kappa_fifo_make_scene(char *group,kafifo_t *info)
 			|| ((info->framecount - info->lastscene) > info->maxframes);
 	}
 	
-	if (! doit) return;
+	if (! doit) return false;
 	
 	fprintf(stderr,"Header	scene   %s %d %d\n",group,info->framecount,values);
 
@@ -815,6 +815,8 @@ void kappa_fifo_make_scene(char *group,kafifo_t *info)
 		
 		stillargs = index(stillargs,':') + 1;
 	}
+	
+	return true;
 }
 
 //
@@ -1939,13 +1941,21 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 							fprintf(stderr,"Actframe:%d\n",output->framecount);
 						}
 					}
+					
+					if (output->wantscene) 
+					{
+						int wasscene = kappa_fifo_make_scene(name,output);
+						
+						if (output->wantimage && wasscene && (output->havestills  == 1))
+						{
+							kappa_fifo_make_stills(name,output);
+						}		
+					}
 
-					if (! output->havestills)
+					if (output->havestills == 0)
 					{
 						kappa_fifo_make_stills(name,output);
 					}
-					
-					if (output->wantscene) kappa_fifo_make_scene(name,output);
 				}
 			}
 		}
