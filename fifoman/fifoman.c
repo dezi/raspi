@@ -32,8 +32,10 @@ typedef unsigned char byte;
 
 #define MAXSLOTS 64
 
-#define BUFSIZE	32 * 1024 * 1024
-#define RDWRSIZE	   64 * 1024
+#define VBUFSIZE 96 * 1024 * 1024
+#define RBUFSIZE  4 * 1024 * 1024
+#define ABUFSIZE  1 * 1024 * 1024
+#define RDWRSIZE	    64 * 1024
 
 //
 // Pipe info structure.
@@ -173,7 +175,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.10";
+char	   *kappa_fifo_version 		= "1.0.11";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -2080,8 +2082,13 @@ void kappa_fifo_open_all(int pass)
 
 			tfd = open(pipepath,O_RDONLY | O_NONBLOCK | O_SYNC);
 
-			fprintf(stderr,"Opening output %s = %2d => %s\n",
-					kappa_fifo_groupname[ grp ],tfd,pipepath);
+			int bufsize = RBUFSIZE;
+				
+			if (strcmp(pipepath + strlen(pipepath) - 4,".y4m"  ) == 0) bufsize = VBUFSIZE;
+			if (strcmp(pipepath + strlen(pipepath) - 6,".s16le") == 0) bufsize = ABUFSIZE;
+
+			fprintf(stderr,"Opening output %s = %2d => %s (%d)\n",
+					kappa_fifo_groupname[ grp ],tfd,pipepath,bufsize);
 
 			if (tfd < 0)
 			{
@@ -2092,11 +2099,11 @@ void kappa_fifo_open_all(int pass)
 			{
 				memset(&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ],0,sizeof(kafifo_t));
 				strcpy( kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].name,pipepath);
-
+				
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].fd	  = tfd;
 				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].group  = grp;
-				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].bufsiz = BUFSIZE;
-				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].buffer = (byte *) malloc(BUFSIZE);
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].bufsiz = bufsize;
+				kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].buffer = (byte *) malloc(bufsize);
 
 				pthread_create(
 					&kappa_fifo_outputinfo[ kappa_fifo_outputscnt ].thread,
