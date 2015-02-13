@@ -33,8 +33,8 @@ typedef unsigned char byte;
 #define MAXSLOTS 64
 
 #define VBUFSIZE 96 * 1024 * 1024
-#define RBUFSIZE  4 * 1024 * 1024
-#define ABUFSIZE  1 * 1024 * 1024
+#define RBUFSIZE 16 * 1024 * 1024
+#define ABUFSIZE  8 * 1024 * 1024
 #define RDWRSIZE	    64 * 1024
 
 //
@@ -175,7 +175,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.11";
+char	   *kappa_fifo_version 		= "1.0.13";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
