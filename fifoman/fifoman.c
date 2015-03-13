@@ -175,7 +175,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.13";
+char	   *kappa_fifo_version 		= "1.0.15";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -245,6 +245,11 @@ void kappa_fifo_parse_fifoname(char *group,kafifo_t *info)
 	{
 		info->isvideo	 = true;
 		info->isyuv4mpeg = true;
+	}
+
+	if (rindex(info->name,'.') && ! strcmp(rindex(info->name,'.'),".s16le"))
+	{
+		info->isaudio = true;
 	}
 
 	if ((poi = strstr(info->name,".size~")) != NULL)
@@ -1692,7 +1697,13 @@ void *kappa_fifo_thread_writer(void *kafifoptr)
 		}
 		else
 		{
+			if (xfer > (128 * 1024)) xfer = 128 * 1024;
+
+			//if (input->isaudio) fprintf(stderr,"Want write audio pipe %s %d\n",name,xfer);
+
 			yfer = write(input->fd,bufp + offs,xfer);
+
+			//if (input->isaudio) fprintf(stderr,"Done write audio pipe %s %d\n",name,yfer);
 			
 			//fprintf(stderr,"Thread %s writer wrote (%d/%d) %s\n",name,xfer,yfer,input->name);
 		}
@@ -1882,7 +1893,11 @@ void *kappa_fifo_thread_reader(void *kafifoptr)
 			if (xfer > RDWRSIZE) xfer = RDWRSIZE;
 		}
 
+		//if (output->isaudio) fprintf(stderr,"Want read  audio pipe %s %d\n",name,xfer);
+
 		yfer = read(output->fd,output->buffer + offs,xfer);
+
+		//if (output->isaudio) fprintf(stderr,"Done read  audio pipe %s %d\n",name,yfer);
 
 		if (yfer == 0)
 		{
