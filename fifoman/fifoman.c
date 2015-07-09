@@ -1300,8 +1300,8 @@ int kappa_fifo_logovisible(kafifo_t *info)
 	if (! kappa_fifo_logooocnt)
 	{
 		//
-		// No options specified, logo
-		// always visible.
+		// No options specified, 
+		// logo is always visible.
 		//
 		
 		return 255;
@@ -1343,6 +1343,11 @@ int kappa_fifo_logovisible(kafifo_t *info)
 		
 		if (dist < 0.0) dist = 0.0;
 
+		//
+		// Distance is 0.0 just before event and 
+		// 1.0 when fading is about to start.
+		//
+		
 		if (kappa_fifo_logofade > 0.0) dist = (dist / kappa_fifo_logofade);
 		
 		double fade = (kappa_fifo_logomode[ inx ] == 0) ? 0.0 + dist : 1.0 - dist;
@@ -2381,7 +2386,16 @@ int main(int argc, char **argv)
 			kappa_fifo_logotime[ kappa_fifo_logooocnt ] = strtod(argv[ inx + 1 ],NULL);
 			kappa_fifo_logomode[ kappa_fifo_logooocnt ] = 1;
 			
-			kappa_fifo_logooocnt++;
+			if ((kappa_fifo_logooocnt == 0) ||
+				(kappa_fifo_logomode[ kappa_fifo_logooocnt - 1 ] !=
+				 kappa_fifo_logomode[ kappa_fifo_logooocnt - 0 ]))
+			{
+				//
+				// Avoid duplicate instructions.
+				//
+				
+				kappa_fifo_logooocnt++;
+			}
 		}
 		
 		if ((! strcmp(argv[ inx ],"--logooff")) && (kappa_fifo_logooocnt < MAXONOFF))
@@ -2389,7 +2403,16 @@ int main(int argc, char **argv)
 			kappa_fifo_logotime[ kappa_fifo_logooocnt ] = strtod(argv[ inx + 1 ],NULL);
 			kappa_fifo_logomode[ kappa_fifo_logooocnt ] = 0;
 			
-			kappa_fifo_logooocnt++;
+			if ((kappa_fifo_logooocnt == 0) ||
+				(kappa_fifo_logomode[ kappa_fifo_logooocnt - 1 ] !=
+				 kappa_fifo_logomode[ kappa_fifo_logooocnt - 0 ]))
+			{
+				//
+				// Avoid duplicate instructions.
+				//
+				
+				kappa_fifo_logooocnt++;
+			}
 		}
 		
 		if (! strcmp(argv[ inx ],"--aspect"))
