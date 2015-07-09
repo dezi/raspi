@@ -31,6 +31,7 @@
 typedef unsigned char byte;
 
 #define MAXSLOTS 64
+#define MAXONOFF 64
 
 #define VBUFSIZE 96 * 1024 * 1024
 #define RBUFSIZE 16 * 1024 * 1024
@@ -175,7 +176,7 @@ typedef struct kafifo kafifo_t;
 // Globals
 //
 
-char	   *kappa_fifo_version 		= "1.0.15";
+char	   *kappa_fifo_version 		= "1.0.16";
 
 int			kappa_fifo_pass 		= 1;
 int			kappa_fifo_maxframe 	= 0;
@@ -187,6 +188,11 @@ char	   *kappa_fifo_fileprefix 	= "output";
 char	   *kappa_fifo_stillsizes 	= NULL; // "0x720:0x576:0x480:0x360:0x315:0x135:106x60:80x60";
 char	   *kappa_fifo_sceneparam 	= NULL; // "40:10:1000:0x360:0x120";
 char	   *kappa_fifo_stillparam 	= NULL; // "20";
+
+double		kappa_fifo_logotime[ MAXONOFF ];
+int		    kappa_fifo_logomode[ MAXONOFF ];
+double		kappa_fifo_logofade  = 1.0;
+int		    kappa_fifo_logooocnt = 0;
 
 int			kappa_fifo_groupscnt = 0;
 int			kappa_fifo_groupmore = 0;
@@ -1285,6 +1291,71 @@ void kappa_fifo_write_yuv4mpeg(char *group,kafifo_t *output,kafifo_t *input)
 }
 
 //
+// Compute current logo visibility. 
+// 0 is transparent, 255 is visible.
+//
+
+int kappa_fifo_logovisible(kafifo_t *info)
+{
+	if (! kappa_fifo_logooocnt)
+	{
+		//
+		// No options specified, logo
+		// always visible.
+		//
+		
+		return 255;
+	}
+
+	double etime = (kappa_fifo_maxframe <= 0) ? -1 : (kappa_fifo_maxframe * info->fps_den / (double) info->fps_num);
+	double ctime = info->framecount * info->fps_den / (double) info->fps_num;
+
+	int visibility = 255;
+	int inx;
+
+	for (inx = kappa_fifo_logooocnt - 1; inx >= 0; inx--)
+	{
+		double dtime = kappa_fifo_logotime[ inx ];
+		
+		if (dtime < 0.0)
+		{
+			if (etime < 0.0) 
+			{	
+				//
+				// Time is negative and no number of frames
+				// specified, so ignore this entry.
+				//
+				
+				continue;
+			}
+			
+			dtime = etime + dtime;
+		}
+		
+		if (ctime < (dtime - kappa_fifo_logofade)) continue;
+		
+		//
+		// Compute time distance until logo either fully visible
+		// or fully invisible.
+		//
+		
+		double dist = (dtime - ctime);
+		
+		if (dist < 0.0) dist = 0.0;
+
+		if (kappa_fifo_logofade > 0.0) dist = (dist / kappa_fifo_logofade);
+		
+		double fade = (kappa_fifo_logomode[ inx ] == 0) ? 0.0 + dist : 1.0 - dist;
+		
+		visibility = (int) (255 * fade);
+		
+		break;
+	}
+	
+	return visibility;
+}
+
+//
 // Add logo to frame.
 //
 
@@ -1326,8 +1397,11 @@ void kappa_fifo_logo(AVFrame *dst,kafifo_t *info)
 	uint8_t *sptr1;
 	uint8_t *sptr2;
 	uint8_t *sptr3;
+	uint8_t  sval3;
 	
 	uint8_t *alphatable = info->alphatable;
+	
+	int logovis = kappa_fifo_logovisible(info) << 8;
 	
 	//
 	// Grey plane not subsampled.
@@ -1347,7 +1421,9 @@ void kappa_fifo_logo(AVFrame *dst,kafifo_t *info)
 		
 		for (pixi = 0; pixi < maxw; pixi++)
 		{
-			*dptr0 = alphatable[ ((255 - *sptr3) << 8) + *dptr0 ] + alphatable[ (*sptr3 << 8) + *sptr0 ];
+			sval3 = alphatable[ logovis + *sptr3 ];
+			
+			*dptr0 = alphatable[ ((255 - sval3) << 8) + *dptr0 ] + alphatable[ (sval3 << 8) + *sptr0 ];
 			
 			dptr0++;
 			
@@ -1381,8 +1457,10 @@ void kappa_fifo_logo(AVFrame *dst,kafifo_t *info)
 		
 		for (pixi = 0; pixi < maxw; pixi++)
 		{
-			*dptr1 = alphatable[ ((255 - *sptr3) << 8) + *dptr1 ] + alphatable[ (*sptr3 << 8) + *sptr1 ];
-			*dptr2 = alphatable[ ((255 - *sptr3) << 8) + *dptr2 ] + alphatable[ (*sptr3 << 8) + *sptr2 ];
+			sval3 = alphatable[ logovis + *sptr3 ];
+			
+			*dptr1 = alphatable[ ((255 - sval3) << 8) + *dptr1 ] + alphatable[ (sval3 << 8) + *sptr1 ];
+			*dptr2 = alphatable[ ((255 - sval3) << 8) + *dptr2 ] + alphatable[ (sval3 << 8) + *sptr2 ];
 			
 			dptr1++;
 			dptr2++;
@@ -2291,6 +2369,27 @@ int main(int argc, char **argv)
 		if (! strcmp(argv[ inx ],"--frames"))
 		{
 			kappa_fifo_maxframe = atoi(argv[ inx + 1 ]);
+		}
+		
+		if (! strcmp(argv[ inx ],"--logofade"))
+		{
+			kappa_fifo_logofade = strtod(argv[ inx + 1 ],NULL);
+		}
+		
+		if ((! strcmp(argv[ inx ],"--logoon")) && (kappa_fifo_logooocnt < MAXONOFF))
+		{
+			kappa_fifo_logotime[ kappa_fifo_logooocnt ] = strtod(argv[ inx + 1 ],NULL);
+			kappa_fifo_logomode[ kappa_fifo_logooocnt ] = 1;
+			
+			kappa_fifo_logooocnt++;
+		}
+		
+		if ((! strcmp(argv[ inx ],"--logooff")) && (kappa_fifo_logooocnt < MAXONOFF))
+		{
+			kappa_fifo_logotime[ kappa_fifo_logooocnt ] = strtod(argv[ inx + 1 ],NULL);
+			kappa_fifo_logomode[ kappa_fifo_logooocnt ] = 0;
+			
+			kappa_fifo_logooocnt++;
 		}
 		
 		if (! strcmp(argv[ inx ],"--aspect"))
